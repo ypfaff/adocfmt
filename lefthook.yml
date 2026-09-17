@@ -1,0 +1,11 @@
+# Install with: lefthook install
+
+pre-commit:
+  jobs:
+    - name: lint
+      run: golangci-lint run
+
+pre-push:
+  jobs:
+    - name: test
+      run: go test ./...

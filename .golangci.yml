@@ -1,0 +1,20 @@
+version: "2"
+
+linters:
+  # standard = errcheck, govet, ineffassign, staticcheck, unused.
+  default: standard
+
+  enable:
+    - errorlint # correct error wrapping (%w, errors.Is)
+    - misspell  # typos in comments and strings
+    - revive    # style and convention checks (successor to golint)
+
+  exclusions:
+    presets:
+      - common-false-positives
+      - std-error-handling
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

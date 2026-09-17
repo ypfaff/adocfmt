@@ -1,0 +1,23 @@
+= NNNN: Short title of the decision
+
+// Copy to docs/decision-records/NNNN-kebab-case-title.adoc, keep it concise.
+// Delete these comments.
+
+*Status:* proposed | accepted | superseded by <<NNNN>> +
+*Date:* YYYY-MM-DD
+
+== Context
+
+The problem and why it needs a decision, in two or three sentences.
+
+== Decision
+
+What we decided.
+
+== Consequences
+
+What follows, good and bad.
+
+== Alternatives
+
+What else was considered and why it lost.

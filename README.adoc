@@ -1,0 +1,16 @@
+= adocfmt
+
+An opinionated AsciiDoc formatter in Go.
+
+Early work in progress: no formatting rule is implemented yet.
+
+== Development
+
+[source,shell]
+----
+go build ./...
+go test ./...
+golangci-lint run
+----
+
+Run `lefthook install` once to activate the Git hooks from link:lefthook.yml[`lefthook.yml`].
