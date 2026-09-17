@@ -1,0 +1,6 @@
+:application: Asciidoctor
+
+[subs="attributes+"]
+....
+{application}
+....

@@ -1,0 +1,7 @@
+= Article
+:idprefix:
+
+[abstract]
+== Abstract Title
+
+Abstract content

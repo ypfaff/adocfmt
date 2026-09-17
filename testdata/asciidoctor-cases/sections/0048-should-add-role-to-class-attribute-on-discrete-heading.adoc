@@ -1,0 +1,4 @@
+[float, role="isolated"]
+== Independent Heading!
+
+not in section

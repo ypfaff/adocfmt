@@ -1,0 +1,5 @@
+:attribute-missing: drop-line
+
+image::{bogus}[]
+
+== Section Title

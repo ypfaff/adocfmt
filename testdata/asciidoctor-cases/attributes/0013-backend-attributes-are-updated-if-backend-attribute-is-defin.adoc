@@ -1,0 +1,6 @@
+= Document Title
+Author Name
+:backend: docbook
+:doctype: book
+
+content

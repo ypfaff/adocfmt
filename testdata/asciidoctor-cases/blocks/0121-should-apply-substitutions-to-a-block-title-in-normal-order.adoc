@@ -1,0 +1,2 @@
+.{link-url}[{link-text}]{tm}
+The one and only!

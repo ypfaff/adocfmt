@@ -1,0 +1,2 @@
+[float=left]
+image::images/tiger.png[Tiger]

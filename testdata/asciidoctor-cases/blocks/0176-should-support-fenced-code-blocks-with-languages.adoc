@@ -1,0 +1,7 @@
+```ruby
+puts "Hello, World!"
+```
+
+``` javascript
+alert("Hello, World!")
+```

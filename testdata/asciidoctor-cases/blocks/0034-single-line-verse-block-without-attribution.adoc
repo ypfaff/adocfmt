@@ -1,0 +1,4 @@
+[verse]
+____
+A famous verse.
+____

@@ -1,0 +1,5 @@
+= Document Title
+:author: Doc Writer
+:email: thedoctor@asciidoc.org
+
+content

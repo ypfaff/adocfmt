@@ -1,0 +1,6 @@
+[verse]
+____
+A famous verse.
+
+Stanza two.
+____

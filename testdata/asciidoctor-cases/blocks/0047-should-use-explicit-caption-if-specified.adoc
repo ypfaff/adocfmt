@@ -1,0 +1,7 @@
+[caption="Look! "]
+.Writing Docs with AsciiDoc
+====
+Here's how you write AsciiDoc.
+
+You just write.
+====

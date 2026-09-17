@@ -1,0 +1,4 @@
+[reftext="Links and Stuff"]
+= Links & Stuff
+
+See xref:test.adoc[]

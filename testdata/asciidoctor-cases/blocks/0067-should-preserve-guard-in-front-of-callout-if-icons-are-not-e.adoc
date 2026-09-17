@@ -1,0 +1,4 @@
+----
+puts 'Hello, World!' # <1>
+puts 'Goodbye, World ;(' # <2>
+----

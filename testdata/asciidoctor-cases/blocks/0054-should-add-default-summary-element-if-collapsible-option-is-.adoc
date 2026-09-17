@@ -1,0 +1,4 @@
+[%collapsible]
+====
+This content is revealed when the user clicks the words "Details".
+====

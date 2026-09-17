@@ -1,0 +1,7 @@
+dummy line
+
+////
+ifdef::asciidoctor[////]
+////
+
+line should be shown

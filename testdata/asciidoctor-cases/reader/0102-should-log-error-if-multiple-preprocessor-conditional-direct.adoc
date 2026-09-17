@@ -1,0 +1,8 @@
+before
+ifdef::not-set[]
+skip
+these
+lines
+ifeval::[1 == 2]
+{asciidoctor-version}
+fin

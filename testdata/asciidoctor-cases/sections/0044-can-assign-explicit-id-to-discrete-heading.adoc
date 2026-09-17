@@ -1,0 +1,5 @@
+[[unchained]]
+[float]
+=== Independent Heading!
+
+not in section

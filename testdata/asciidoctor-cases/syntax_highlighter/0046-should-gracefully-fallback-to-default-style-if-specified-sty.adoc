@@ -1,0 +1,7 @@
+:source-highlighter: rouge
+:rouge-style: unknown
+
+[source,ruby]
+----
+puts 'Hello, world!'
+----

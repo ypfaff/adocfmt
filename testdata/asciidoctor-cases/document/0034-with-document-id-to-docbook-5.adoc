@@ -1,0 +1,4 @@
+[[document-id]]
+= Document Title
+
+more info...

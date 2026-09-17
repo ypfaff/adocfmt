@@ -1,0 +1,5 @@
+= Book
+:doctype: book
+
+[partintro]
+part intro paragraph

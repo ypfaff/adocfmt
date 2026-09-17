@@ -1,0 +1,8 @@
+before
+
+[lst]
+a
+b
+c
+
+after

@@ -1,0 +1,3 @@
+[horizontal]
+[labelwidth="25", itemwidth="75"]
+term:: def

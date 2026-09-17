@@ -1,0 +1,2 @@
+[.role1%option1.role2%option2]
+Text

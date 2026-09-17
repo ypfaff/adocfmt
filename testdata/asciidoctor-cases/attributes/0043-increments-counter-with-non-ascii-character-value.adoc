@@ -1,0 +1,7 @@
+[subs=attributes]
+++++
+{counter:mycounter:é}
+{counter:mycounter}
+{counter:mycounter}
+{mycounter}
+++++

@@ -1,0 +1,6 @@
+List
+====
+:foo: bar
+
+- side a {vbar} side b
+- Take me to a {foo}.

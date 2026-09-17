@@ -1,0 +1,5 @@
+----
+require 'asciidoctor' # <1>
+----
+* foo
+<.> bar

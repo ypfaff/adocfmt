@@ -1,0 +1,5 @@
+.Simple fraction
+[asciimath]
+++++
+a//b
+++++

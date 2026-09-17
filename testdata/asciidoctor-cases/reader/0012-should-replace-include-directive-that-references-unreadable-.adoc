@@ -1,0 +1,3 @@
+include::fixtures/chapter-a.adoc[]
+
+trailing content

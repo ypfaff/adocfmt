@@ -1,0 +1,7 @@
+= Document Title
+:doctype: book
+:leveloffset: -1
+
+= Part Title
+
+== Chapter Title

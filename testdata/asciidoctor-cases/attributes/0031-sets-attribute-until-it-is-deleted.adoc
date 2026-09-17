@@ -1,0 +1,7 @@
+:foo: bar
+
+Crossing the {foo}.
+
+:foo!:
+
+Belly up to the {foo}.

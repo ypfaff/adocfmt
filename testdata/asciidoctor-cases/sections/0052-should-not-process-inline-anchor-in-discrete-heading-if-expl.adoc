@@ -1,0 +1,4 @@
+[discrete#install]
+== Install [[installation]]
+
+content

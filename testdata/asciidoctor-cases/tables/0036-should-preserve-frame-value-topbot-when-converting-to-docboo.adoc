@@ -1,0 +1,4 @@
+[frame=topbot]
+|===
+|A |B |C
+|===

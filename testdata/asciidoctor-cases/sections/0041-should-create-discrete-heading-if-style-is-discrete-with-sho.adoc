@@ -1,0 +1,4 @@
+[discrete.independent#first]
+= Independent Heading!
+
+not in section

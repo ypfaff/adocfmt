@@ -1,0 +1,7 @@
+[comment]
+--
+first line of comment
+ifdef::asciidoctor[--]
+line should not be shown
+--
+

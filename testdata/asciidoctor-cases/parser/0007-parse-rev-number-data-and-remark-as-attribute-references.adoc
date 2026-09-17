@@ -1,0 +1,2 @@
+Author Name
+v{project-version}, {release-date}: {release-summary}

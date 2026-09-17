@@ -1,0 +1,2 @@
+[style=value]
+image::images/tiger.png[Tiger]

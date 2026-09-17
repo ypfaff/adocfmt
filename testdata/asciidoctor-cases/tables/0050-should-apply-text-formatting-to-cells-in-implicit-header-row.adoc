@@ -1,0 +1,7 @@
+[cols="2*a"]
+|===
+| _foo_ | *bar*
+
+| * list item
+| paragraph
+|===

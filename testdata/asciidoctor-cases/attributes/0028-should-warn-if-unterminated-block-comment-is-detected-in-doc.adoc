@@ -1,0 +1,6 @@
+= Document Title
+:foo: bar
+////
+:hey: there
+
+content

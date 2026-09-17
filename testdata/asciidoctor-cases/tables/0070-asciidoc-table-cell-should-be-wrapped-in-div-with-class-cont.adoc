@@ -1,0 +1,3 @@
+|===
+a|AsciiDoc table cell
+|===

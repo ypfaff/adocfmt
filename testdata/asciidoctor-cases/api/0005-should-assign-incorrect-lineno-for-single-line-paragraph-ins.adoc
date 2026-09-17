@@ -1,0 +1,9 @@
+:conditional-attribute:
+
+before
+
+ifdef::conditional-attribute[]
+subject
+endif::[]
+
+after

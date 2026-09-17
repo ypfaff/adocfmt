@@ -1,0 +1,3 @@
+ifdef::on-quest[]
+Our quest is complete!
+endif::on-journey[]

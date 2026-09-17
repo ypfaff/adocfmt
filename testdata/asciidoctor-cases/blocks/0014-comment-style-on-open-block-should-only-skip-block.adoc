@@ -1,0 +1,8 @@
+[comment]
+--
+skip
+
+this block
+--
+
+not this text

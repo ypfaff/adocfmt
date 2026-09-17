@@ -1,0 +1,7 @@
+:attribute-missing: drop-line
+
+term::
++
+image::{unresolved}[]
++
+paragraph

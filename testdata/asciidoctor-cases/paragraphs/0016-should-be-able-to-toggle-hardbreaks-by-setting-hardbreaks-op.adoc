@@ -1,0 +1,9 @@
+:hardbreaks-option:
+
+make
+it
+so
+
+:!hardbreaks:
+
+roll it back

@@ -1,0 +1,4 @@
+[#idname]
+== Section
+
+content

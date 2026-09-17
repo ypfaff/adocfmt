@@ -1,0 +1,5 @@
+= Document Title
+
+See <<../section-a.adoc#section-a>>.
+
+include::../section-a.adoc[]

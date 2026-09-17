@@ -1,0 +1,6 @@
+:foo: bar
+
+[attrs]
+--
+a,b,c,key=val
+--

@@ -1,0 +1,15 @@
+= Document Title
+:toc:
+:icons: font
+
+== `run` command
+
+content
+
+== icon:bug[] Issues
+
+content
+
+== https://ecosia.org[_Sustainable_ Searches]
+
+content

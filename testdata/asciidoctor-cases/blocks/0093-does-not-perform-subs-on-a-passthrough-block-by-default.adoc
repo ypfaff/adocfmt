@@ -1,0 +1,7 @@
+:type: passthrough
+
+++++
+This is a '{type}' block.
+http://asciidoc.org
+image:tiger.png[]
+++++

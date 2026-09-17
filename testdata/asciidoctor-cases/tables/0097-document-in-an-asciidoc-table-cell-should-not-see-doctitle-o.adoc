@@ -1,0 +1,6 @@
+= Document Title
+
+[cols="1a"]
+|===
+|AsciiDoc content
+|===

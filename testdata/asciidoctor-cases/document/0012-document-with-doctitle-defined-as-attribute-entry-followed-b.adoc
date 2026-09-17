@@ -1,0 +1,4 @@
+:doctitle: Document Title
+
+.Block title
+Block content

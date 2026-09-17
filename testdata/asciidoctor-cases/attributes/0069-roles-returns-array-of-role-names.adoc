@@ -1,0 +1,2 @@
+[role="story lead"]
+A paragraph

@@ -1,0 +1,4 @@
+:lead: role="lead"
+
+[{lead}]
+A paragraph

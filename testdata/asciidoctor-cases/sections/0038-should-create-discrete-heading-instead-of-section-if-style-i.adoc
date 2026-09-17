@@ -1,0 +1,4 @@
+[discrete]
+=== Independent Heading!
+
+not in section

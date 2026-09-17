@@ -1,0 +1,7 @@
+.Terms
+[horizontal]
+first term:: description
++
+more detail
+
+second term:: description

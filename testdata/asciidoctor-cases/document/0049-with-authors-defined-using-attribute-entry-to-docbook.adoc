@@ -1,0 +1,6 @@
+= Document Title
+:authors: Doc Writer; Junior Writer
+:email_1: thedoctor@asciidoc.org
+:email_2: junior@asciidoc.org
+
+content

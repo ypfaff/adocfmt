@@ -1,0 +1,4 @@
+:data-uri:
+:imagesdir: uri:classloader:/images-in-jar
+
+image::dot.gif[Dot]

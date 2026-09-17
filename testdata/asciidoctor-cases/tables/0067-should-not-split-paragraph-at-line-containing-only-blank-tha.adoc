@@ -1,0 +1,7 @@
+|===
+|paragraph
+{blank}
+still one paragraph
+{blank}
+still one paragraph
+|===

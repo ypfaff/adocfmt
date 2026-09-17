@@ -1,0 +1,9 @@
+* parent
+ ** child
+
++
+paragraph attached to parent
+
+****
+sidebar outside list
+****

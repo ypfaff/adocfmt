@@ -1,0 +1,6 @@
+|===
+a|
+:doctype: inline
+
+content
+|===

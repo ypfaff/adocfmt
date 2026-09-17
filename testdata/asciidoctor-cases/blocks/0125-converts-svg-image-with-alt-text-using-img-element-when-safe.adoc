@@ -1,0 +1,2 @@
+[%interactive]
+image::images/tiger.svg[Tiger,100]

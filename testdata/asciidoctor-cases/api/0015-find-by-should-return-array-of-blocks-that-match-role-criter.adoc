@@ -1,0 +1,4 @@
+[#tiger.animal]
+image::tiger.png[Tiger]
+
+image::shoe.png[Shoe]

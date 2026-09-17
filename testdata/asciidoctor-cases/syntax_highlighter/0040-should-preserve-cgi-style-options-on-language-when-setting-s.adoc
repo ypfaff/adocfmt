@@ -1,0 +1,4 @@
+[,php?funcnamehighlighting=0]
+----
+cal_days_in_month(CAL_GREGORIAN, 6, 2019)
+----

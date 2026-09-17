@@ -1,0 +1,8 @@
+= Article
+:doctype: book
+:toc:
+:toclevels: 0
+
+== Chapter 1
+
+== Chapter 2

@@ -1,0 +1,4 @@
+[%reversed]
+. three
+. two
+. one

@@ -1,0 +1,9 @@
+= Document Title
+
+== Section A
+
+Content
+
+== Section B
+
+Content.footnote:[commentary]

@@ -1,0 +1,6 @@
+:foo: bar
+
+....
+You insert the text {foo} to expand the value
+of the attribute named foo in your document.
+....

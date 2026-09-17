@@ -1,0 +1,16 @@
+:!sectids:
+:!table-caption:
+
+== Outer Heading
+
+.Outer Table
+|===
+a|
+
+== Inner Heading
+
+.Inner Table
+!===
+! table cell
+!===
+|===

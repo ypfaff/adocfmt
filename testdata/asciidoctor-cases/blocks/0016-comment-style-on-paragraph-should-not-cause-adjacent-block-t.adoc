@@ -1,0 +1,5 @@
+[comment]
+skip
+this paragraph
+[example]
+not this text

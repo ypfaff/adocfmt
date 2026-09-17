@@ -1,0 +1,5 @@
+:fn-notable-text: footnote:id[about this text]
+
+notable text.{fn-notable-text}
+
+more notable text.{fn-notable-text}

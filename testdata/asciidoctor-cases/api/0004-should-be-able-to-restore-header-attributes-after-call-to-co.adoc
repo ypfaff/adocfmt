@@ -1,0 +1,8 @@
+= Document Title
+:foo: bar
+
+content
+
+:foo: baz
+
+content

@@ -1,0 +1,3 @@
+[.container]
+This is an open block.
+It holds stuff.

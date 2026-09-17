@@ -1,0 +1,11 @@
+= Document Title
+:foo: bar
+
+See <<explicit>>.
+
+:foo: baz
+
+[#explicit]
+== Section {foo}
+
+That's all, folks!

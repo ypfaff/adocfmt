@@ -1,0 +1,5 @@
+[source%linenums,ruby]
+----
+puts 'Hello, World!'
+puts 'Goodbye, World!'
+----

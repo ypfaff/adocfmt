@@ -1,0 +1,5 @@
+[#a]
+== See <<b>>
+
+[#b]
+== Consult https://google.com[Google]

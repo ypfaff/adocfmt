@@ -1,0 +1,3 @@
+include::fixtures/no-such-file.adoc[]
+
+trailing content

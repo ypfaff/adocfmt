@@ -1,0 +1,2 @@
+Our quest is complete!
+endif::on-quest[]

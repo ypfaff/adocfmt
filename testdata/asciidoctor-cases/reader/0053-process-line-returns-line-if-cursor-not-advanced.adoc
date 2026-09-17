@@ -1,0 +1,4 @@
+content
+ifdef::asciidoctor[]
+Asciidoctor!
+endif::asciidoctor[]

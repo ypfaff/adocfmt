@@ -1,0 +1,12 @@
+:doctype: book
+
+[preface]
+= Preface
+
+content
+
+= Part
+
+== Chapter
+
+content

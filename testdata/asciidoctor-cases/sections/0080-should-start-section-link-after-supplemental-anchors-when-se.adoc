@@ -1,0 +1,4 @@
+:sectlinks:
+
+[#foo]
+== [[fu]]Foo

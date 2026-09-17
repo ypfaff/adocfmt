@@ -1,0 +1,8 @@
+[verse]
+____
+A famous verse.
+
+....
+not a literal
+....
+____

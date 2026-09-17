@@ -1,0 +1,3 @@
+----
+include::fixtures/tagged-class.rb[tags=!**;!init]
+----

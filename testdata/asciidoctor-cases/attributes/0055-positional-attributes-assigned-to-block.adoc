@@ -1,0 +1,4 @@
+[quote, author, source]
+____
+A famous quote.
+____

@@ -1,0 +1,27 @@
+= Article
+:toc:
+:toc-placement: macro
+:toc-title: Ignored
+:toc-class: ignored
+:tocmacrolevels: 3
+
+Preamble.
+
+[[contents]]
+[role="contents"]
+.Contents
+toc::[levels={tocmacrolevels}]
+
+== Section 1
+
+=== Section 1.1
+
+==== Section 1.1.1
+
+==== Section 1.1.2
+
+=== Section 1.2
+
+== Section 2
+
+Fin.

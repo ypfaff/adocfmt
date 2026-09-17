@@ -1,0 +1,3 @@
+= *Document* image:logo.png[] _Title_ image:another-logo.png[another logo]
+
+content

@@ -1,0 +1,4 @@
+[subs="specialcharacters"]
+----
+No callout here <1>
+----

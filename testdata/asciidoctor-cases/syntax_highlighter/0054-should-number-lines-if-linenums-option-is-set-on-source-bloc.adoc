@@ -1,0 +1,7 @@
+:source-highlighter: pygments
+
+[source%linenums,ruby]
+----
+puts 'Hello, World!'
+puts 'Goodbye, World!'
+----

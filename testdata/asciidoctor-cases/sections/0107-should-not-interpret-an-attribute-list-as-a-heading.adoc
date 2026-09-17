@@ -1,0 +1,9 @@
+Section
+=======
+
+preamble
+
+[TIP]
+====
+This should be a tip, not a heading.
+====

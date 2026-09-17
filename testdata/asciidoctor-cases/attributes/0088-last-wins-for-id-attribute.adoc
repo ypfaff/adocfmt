@@ -1,0 +1,9 @@
+[[bar]]
+[[foo]]
+== Section
+
+paragraph
+
+[[baz]]
+[id='coolio']
+=== Section

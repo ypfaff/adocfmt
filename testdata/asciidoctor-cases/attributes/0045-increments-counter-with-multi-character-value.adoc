@@ -1,0 +1,7 @@
+[subs=attributes]
+++++
+{counter:math:1x}
+{counter:math}
+{counter:math}
+{math}
+++++

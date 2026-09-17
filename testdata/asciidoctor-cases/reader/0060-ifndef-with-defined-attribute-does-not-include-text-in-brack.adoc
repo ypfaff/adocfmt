@@ -1,0 +1,3 @@
+On our quest we go...
+ifndef::hardships[There is a holy grail!]
+There was no rejoicing.

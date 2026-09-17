@@ -1,0 +1,3 @@
+ifdef::showScript[]
+The script is shown!
+endif::showScript[]

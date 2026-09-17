@@ -1,0 +1,4 @@
+[quote, author, citetitle='http://wikipedia.org[source]']
+____
+A famous quote.
+____

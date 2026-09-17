@@ -1,0 +1,4 @@
+:data-uri:
+:imagesdir: ./
+
+image::../..//fixtures/./../../fixtures/dot.gif[Dot]

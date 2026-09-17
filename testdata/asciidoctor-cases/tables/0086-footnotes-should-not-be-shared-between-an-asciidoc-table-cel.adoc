@@ -1,0 +1,3 @@
+|===
+a|AsciiDoc footnote:[A lightweight markup language.]
+|===

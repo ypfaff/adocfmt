@@ -1,0 +1,3 @@
+= <Foo> {plus} <Bar>
+
+The name of the game is {doctitle}.

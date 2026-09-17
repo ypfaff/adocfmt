@@ -1,0 +1,6 @@
+[#foobar]
+== Foobar
+
+== Section B
+
+See <<test.adoc#foobaz>>.

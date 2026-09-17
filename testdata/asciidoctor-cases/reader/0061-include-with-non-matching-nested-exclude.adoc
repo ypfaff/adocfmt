@@ -1,0 +1,7 @@
+ifdef::grail[]
+holy
+ifdef::swallow[]
+swallow
+endif::swallow[]
+grail
+endif::grail[]

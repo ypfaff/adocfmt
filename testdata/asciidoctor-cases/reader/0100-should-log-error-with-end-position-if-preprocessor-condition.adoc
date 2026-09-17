@@ -1,0 +1,6 @@
+before
+ifdef::not-set[]
+skip
+these
+lines
+fin

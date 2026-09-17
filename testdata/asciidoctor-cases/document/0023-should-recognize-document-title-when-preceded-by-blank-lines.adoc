@@ -1,0 +1,11 @@
+ifdef::sectids[]
+
+:foo: bar
+endif::[]
+= Title
+
+preamble
+
+== Section 1
+
+text

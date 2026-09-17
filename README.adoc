@@ -3,13 +3,15 @@
 An opinionated AsciiDoc formatter in Go.
 
 Early work in progress: no formatting rule is implemented yet.
+What exists is the link:docs/render-equivalence.adoc[render equivalence] check that every rule has to pass.
 
 == Development
 
 [source,shell]
 ----
 go build ./...
-go test ./...
+go test ./...          # needs Asciidoctor on the PATH
+go test -short ./...   # skips the Asciidoctor cases
 golangci-lint run
 ----
 

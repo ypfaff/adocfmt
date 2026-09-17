@@ -1,0 +1,4 @@
+:project-name: ACME
+= {project-name} Docs
+
+{doctitle}

@@ -1,0 +1,4 @@
+= ACME Documentation
+:intro: Welcome to the {doctitle}!
+
+{intro}

@@ -1,0 +1,7 @@
+[%autowidth]
+|===
+|Column 1 |Column 2
+
+|Data A1
+|Data B1
+|===

@@ -1,0 +1,4 @@
+[%fancy]
+. three
+. two
+. one

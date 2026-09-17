@@ -1,0 +1,6 @@
+ifdef::attribute-not-set[]
+foo
+ifdef::[]
+bar
+endif::[]
+baz

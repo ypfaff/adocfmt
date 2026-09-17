@@ -1,0 +1,4 @@
+[style#idname.rolename%optionname]
+= Document Title
+
+content

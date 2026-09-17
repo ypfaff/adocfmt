@@ -1,0 +1,6 @@
+.Table with unbreakable
+[%unbreakable]
+|===
+|Item       |Quantity
+|Item 1     |1
+|===

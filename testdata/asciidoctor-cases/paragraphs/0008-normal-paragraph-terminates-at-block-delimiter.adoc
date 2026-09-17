@@ -1,0 +1,4 @@
+normal text
+--
+text in open block
+--

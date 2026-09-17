@@ -1,0 +1,4 @@
+[,php?start_inline=0]
+----
+echo "<?php";
+----

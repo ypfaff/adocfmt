@@ -1,0 +1,3 @@
+anchor:foo[b[a\]r]about
+
+see <<foo>>

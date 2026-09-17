@@ -1,0 +1,7 @@
+== Section 1
+
+para.footnote:[first footnote]
+
+== Section 2footnote:[second footnote]
+
+para.footnote:[third footnote]

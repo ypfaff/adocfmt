@@ -1,0 +1,6 @@
+:source-highlighter: rouge
+
+[source,console?prompt=$>]
+----
+$> asciidoctor --version
+----
