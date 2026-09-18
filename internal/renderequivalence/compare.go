@@ -1,7 +1,7 @@
 // Package renderequivalence checks that formatting a document does not change
 // what the reader of the rendered document sees.
 //
-// See docs/render-equivalence.adoc for the three checks and what the
+// See docs/testing-strategy.adoc for the three checks and what the
 // case set does and does not cover.
 package renderequivalence
 

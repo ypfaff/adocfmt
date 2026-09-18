@@ -1,0 +1,24 @@
+= Passthrough
+:experimental:
+
+// Input and golden are identical here: no rule claims any of this yet.
+
+An opinionated formatter leaves alone what no rule claims.
+This paragraph is written one sentence per line.
+
+* first item
+* second item
+** nested item
+
+[source,go]
+----
+func main() {
+	fmt.Println("  whitespace inside a listing block counts  ")
+}
+----
+
+|===
+| Column A | Column B
+
+| a | b
+|===

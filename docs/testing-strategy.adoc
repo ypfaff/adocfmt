@@ -1,0 +1,84 @@
+= Testing strategy
+
+The formatter is covered by two kinds of test.
+Golden files pin down what a rule does.
+Render equivalence checks that no rule changes what the rendered document shows.
+
+A new or changed rule mainly brings golden cases with it.
+Every pair is compared byte for byte and also goes through the <<render-equivalence,render equivalence>> checks.
+
+== Golden files
+
+A case is a directory under `testdata/golden` holding two files:
+
+....
+testdata/golden/
+  <case>/
+    input.adoc
+    golden.adoc
+  <group>/<case>/
+    input.adoc
+    golden.adoc
+....
+
+`input.adoc` goes through the formatter, and the result has to equal `golden.adoc` byte for byte.
+Directories nest, so cases group by rule, and the path below `testdata/golden` is the test name.
+
+To add a case, write `input.adoc`, then let the formatter write the expectation:
+
+[source,shell]
+----
+go run ./tools/update-golden
+----
+
+Read the diff before committing it.
+The tool records whatever the formatter produces, so an unreviewed update turns a bug into the expectation.
+
+Every rule also needs a case whose input is already in its target state, where `input.adoc` and `golden.adoc` are identical.
+That case is what catches a rule that keeps reformatting its own output.
+
+[#render-equivalence]
+== Render equivalence
+
+Formatting is correct when it does not change what the reader of the rendered document sees.
+Asciidoctor is the reference implementation: it defines what a document means.
+The checks render both sides and compare the two.
+
+Rendering::
+Both HTML renderings, with every run of whitespace collapsed to a single space.
+Where a paragraph wraps is invisible in the rendered page, because HTML shows any run of whitespace as one space.
+Comparing the renderings byte for byte would therefore report line breaks no reader can see.
+
+Comments::
+The comment lines of both AsciiDoc sources, in order.
+Asciidoctor drops comments before they reach the HTML, so this is the one check that reads the sources rather than the renderings.
+The scan is a heuristic: without a block scanner it cannot tell a comment from a line of code inside a listing block.
+Both sides are scanned the same way, so a misread line reports a difference only when formatting really changed it.
+
+Verbatim content::
+The content of every code and literal block, byte for byte.
+Whitespace carries meaning there, which is what lets the rendering check ignore it everywhere else.
+
+=== Where the checks run
+
+Confidence comes from breadth, so the main input is a foreign corpus: every test input of the Asciidoctor test suite, one file per case.
+Those inputs sit inside the Ruby test files rather than in `.adoc` files, so link:../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] lifts them out.
+The pinned tag tracks the Asciidoctor release the checks render with; regenerate the cases after changing it:
+
+[source,shell]
+----
+go run ./tools/fetch-asciidoctor-cases
+----
+
+Every golden pair is checked as well, input against expectation.
+Since the update tool derives `golden.adoc` from `input.adoc`, this is what keeps a rule that changes meaning from being recorded as correct.
+
+== Running
+
+[source,shell]
+----
+go test ./...
+go test -short ./...   # skips whatever renders, and needs no Asciidoctor
+----
+
+Anything that renders needs Asciidoctor on the `PATH`, and fails at once without it.

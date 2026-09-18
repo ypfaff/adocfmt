@@ -3,7 +3,7 @@
 An opinionated AsciiDoc formatter in Go.
 
 Early work in progress: no formatting rule is implemented yet.
-What exists is the link:docs/render-equivalence.adoc[render equivalence] check that every rule has to pass.
+What exists is the link:docs/testing-strategy.adoc[testing strategy] every rule has to satisfy.
 
 == Development
 
@@ -11,7 +11,7 @@ What exists is the link:docs/render-equivalence.adoc[render equivalence] check t
 ----
 go build ./...
 go test ./...          # needs Asciidoctor on the PATH
-go test -short ./...   # skips the Asciidoctor cases
+go test -short ./...   # skips whatever needs Asciidoctor
 golangci-lint run
 ----
 
