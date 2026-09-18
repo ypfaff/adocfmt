@@ -3,11 +3,15 @@
 //
 //	go run ./tools/fetch-asciidoctor-cases
 //
+// The --print-version flag prints the pinned Asciidoctor version instead, which
+// is how CI learns which Asciidoctor to install.
+//
 // See docs/render-equivalence.adoc for what the cases are and how they are used.
 package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -28,6 +32,15 @@ const (
 
 func main() {
 	log.SetFlags(0)
+
+	printVersion := flag.Bool("print-version", false, "print the pinned Asciidoctor version and exit")
+	flag.Parse()
+
+	if *printVersion {
+		fmt.Println(strings.TrimPrefix(asciidoctorTag, "v"))
+		return
+	}
+
 	if err := run(); err != nil {
 		log.Fatalln("error:", err)
 	}
