@@ -1,0 +1,40 @@
+= 0001: A new formatter, not an existing one
+
+*Status:* accepted +
+*Date:* 2026-09-18
+
+== Context
+
+AsciiDoc formatters exist, and the closest one carries much the same rule set.
+The question is therefore not whether these rules can be had, but whether the design underneath them is one to build on.
+
+== Decision
+
+Build a new formatter.
+
+The rule set can be had elsewhere, the core cannot.
+This project wants block structure classified once, with every formatting decision reading that one classification.
+Adopting a formatter built around something else means replacing what it is built around, and that is a new formatter rather than a contribution.
+
+== Consequences
+
+* Every AsciiDoc edge case belongs to this project, and no upstream supplies fixes for them.
+* The rule set, its options and its defaults are this project's own design, with nobody else's decisions to inherit or work around.
+* One classification instead of one per pass is a discipline, not a guarantee.
+The same defects return wherever the discipline slips, and nothing but the test suite will say so.
+
+== Alternatives
+
+https://github.com/dheid/adocfmt[dheid/adocfmt]::
+The closest match by rule set.
+Its core is a pipeline of eight passes over the same list of lines, each deriving block structure again from its own tracker, with no state shared between them.
+Two of its fixes show what that costs: a table pass that reformatted tables whose content an `include::` directive hid from it, and a sentence pass that merged lines ending in a hard line break.
+Both are a pass acting on a line whose block it read wrong.
+
+https://github.com/oxidecomputer/prettier-plugin-asciidoc[Oxide prettier-plugin-asciidoc]::
+It does classify once, and is the closer match by design.
+It reflows paragraphs to a print width, though, which one sentence per line rules out, so the disagreement here is the rule set rather than the core.
+
+https://github.com/asciidoctor/asciidoctor-intellij-plugin[IntelliJ AsciiDoc plugin]::
+It formats one sentence per line by default and takes its settings from `.editorconfig`.
+Its only headless path is the IntelliJ command-line formatter, which https://www.jetbrains.com/help/idea/command-line-formatter.html[does not run while an IDE instance is open], so it cannot serve a hook or CI.
