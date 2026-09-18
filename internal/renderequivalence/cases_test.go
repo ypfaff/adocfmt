@@ -42,7 +42,7 @@ func TestAsciidoctorCases(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			findings, err := differences(src, format.Format(src))
+			findings, err := Differences(src, format.Format(src))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -61,9 +61,9 @@ func comments(src []byte) []string {
 	return found
 }
 
-// differences reports one finding per check that failed. An empty result means
+// Differences reports one finding per check that failed. An empty result means
 // formatting preserved everything a reader sees.
-func differences(src, formatted []byte) ([]string, error) {
+func Differences(src, formatted []byte) ([]string, error) {
 	before, err := render(src)
 	if err != nil {
 		return nil, fmt.Errorf("rendering the input: %w", err)

@@ -55,7 +55,7 @@ func TestChecksCatchCorruption(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			findings, err := differences([]byte(src), []byte(test.corrupt))
+			findings, err := Differences([]byte(src), []byte(test.corrupt))
 			if err != nil {
 				t.Fatal(err)
 			}
