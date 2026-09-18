@@ -1,0 +1,26 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      # Majors stay out: they tend to change an action's inputs, which needs a
+      # workflow change and a review of its own.
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    groups:
+      modules:
+        patterns: ["*"]
+        update-types: [minor, patch]
