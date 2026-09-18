@@ -10,7 +10,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -19,6 +18,8 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/ypfaff/adocfmt/internal/repo"
 )
 
 const (
@@ -47,7 +48,7 @@ func main() {
 }
 
 func run() error {
-	root, err := moduleRoot()
+	root, err := repo.Root()
 	if err != nil {
 		return err
 	}
@@ -94,23 +95,6 @@ func run() error {
 	}
 	log.Printf("%d cases in %s", total, casesPath)
 	return nil
-}
-
-// moduleRoot returns the directory holding this module's go.mod, so the tool
-// works from any directory inside the repository.
-func moduleRoot() (string, error) {
-	out, err := exec.Command("go", "env", "GOMOD").Output()
-	if err != nil {
-		return "", fmt.Errorf("locating the module: %w", err)
-	}
-
-	// An empty path means GOPATH mode, os.DevNull module-aware mode without a
-	// go.mod. Either way there is no module to write into.
-	goMod := strings.TrimSpace(string(out))
-	if goMod == "" || goMod == os.DevNull {
-		return "", errors.New("run this from inside the repository")
-	}
-	return filepath.Dir(goMod), nil
 }
 
 // writeCases extracts one Ruby test file into its own directory and reports how
