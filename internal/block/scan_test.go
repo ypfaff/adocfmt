@@ -113,6 +113,14 @@ Container "====\n"
 Literal meta("[source,go]\n") "x := 1\n"`,
 		},
 		{
+			name: "a named attribute is not a style, a quoted one is",
+			src:  "[source]\n[role=x]\ncode\n\n[role=x]\nText.\n\n[\"source\"]\ncode\n",
+			want: `
+Literal meta("[source]\n") meta("[role=x]\n") "code\n"
+Paragraph meta("[role=x]\n") "Text.\n"
+Literal meta("[\"source\"]\n") "code\n"`,
+		},
+		{
 			name: "metadata binds across a blank line",
 			src:  "[#id]\n\nText.\n",
 			want: `
