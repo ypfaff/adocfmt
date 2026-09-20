@@ -1,0 +1,45 @@
+= 0002: Block tree and canonical printer
+
+*Status:* accepted +
+*Date:* 2026-09-21
+
+== Context
+
+Formatting AsciiDoc means first deciding what each line of a document is: a heading, a list item, verbatim content no rule may touch.
+Every formatting rule needs that same answer, and the formatter named in xref:0001-new-formatter-not-an-existing-one.adoc[decision record 0001] worked it out again in each of its passes, which is where its bugs and increasing complexity came from.
+So the answer has to be produced once, and what is open is where it lives and how text comes back out of it.
+
+== Decision
+
+A line-oriented scanner cuts the source into a block tree, and it is the only place a block is classified.
+Blank lines become a gap on the node that follows them, metadata lines hang off the block they bind to, and every node keeps the span of source it covers.
+The tree partitions the source: every byte belongs to exactly one node, so emitting the tree in order reproduces the input.
+
+A recursive printer emits the tree with one function per node type, and a node whose formatting is not implemented is emitted as its raw span.
+Two kinds of block share one node type until a formatting rule needs them told apart.
+
+Asciidoctor defines what a document means, and it is the oracle the tests measure against, never a dependency of the formatter.
+
+== Consequences
+
+* Every rule reads the same classification, so correctness risk sits in the scanner instead of spreading across the rules.
+* Printing is one traversal, so formatting steps have no order between them, and nothing has to run twice until the output settles.
+* Whatever the printer does not model survives byte for byte, so a misclassification costs formatting rather than the document.
+* The tree is coarser than Asciidoctor's on purpose: table cells, list item text and inline markup stay text until a rule needs them apart.
+
+== Alternatives
+
+Text-to-text rule passes::
+The shape of the formatter in decision record 0001.
+Each pass derives block structure again from its own tracker, and the pipeline needs an order between passes and repeated runs until the output settles.
+
+Rules as transformations over a shared tree::
+Fixes the shared classification, but keeps the ordering between rules and spreads the formatting of one kind of block across several of them instead of one function.
+
+A canonical printer without a raw fallback::
+What gofmt does: it prints the whole program from its model, which works because Go has a specification and a complete grammar behind it.
+AsciiDoc has neither, so a block modelled wrongly would be printed wrongly instead of surviving untouched.
+
+Asciidoctor as the parser::
+It resolves includes and conditionals before a tree exists, so the output would depend on files and flags the formatter cannot see.
+Its model also answers a different question: a parser needs to know what a document means, a formatter needs to know which bytes belong to which unit, comments and blank lines included.
