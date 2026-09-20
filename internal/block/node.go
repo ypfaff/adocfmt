@@ -51,6 +51,12 @@ const (
 	MetaTitle                      // .Title
 	MetaAnchor                     // [[id]]
 	MetaComment                    // // comment
+
+	// MetaDirective is a directive among the metadata lines. Asciidoctor
+	// resolves it first and binds the lines above to whatever block follows,
+	// so the scanner keeps them bound too and freezes the block, whose real
+	// content it cannot know.
+	MetaDirective
 )
 
 // Meta is a metadata line bound to the node below it. The binding survives
