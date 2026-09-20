@@ -6,8 +6,10 @@
 // without asking Asciidoctor anything.
 //
 // The scanner never resolves an include or a conditional, and never guesses.
-// What it cannot decide it freezes and reports.
+// Content it cannot know it freezes; structure it cannot trust it reports.
 package block
+
+import "fmt"
 
 // Span is a byte range in the source.
 type Span struct {
@@ -191,24 +193,13 @@ type FrontMatter struct{ base }
 // A construct leaves this type when a rule needs it told apart from the rest.
 type Opaque struct{ base }
 
-// Severity says what a finding costs.
-type Severity int
-
-// The two costs a finding can carry.
-const (
-	// Warn leaves one node unformatted.
-	Warn Severity = iota
-	// Skip means the document cannot be formatted at all.
-	Skip
-)
-
-// Finding is what the scanner could not decide, where, and how bad it is. The
-// scanner only collects them; what follows is the formatter's decision.
+// Finding is what the scanner could not decide, and where.
 type Finding struct {
-	Line     int
-	Severity Severity
-	Message  string
+	Line    int
+	Message string
 }
+
+func (f Finding) Error() string { return fmt.Sprintf("line %d: %s", f.Line, f.Message) }
 
 // Document is a scanned source file.
 type Document struct {

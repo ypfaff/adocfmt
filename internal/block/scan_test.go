@@ -1,6 +1,7 @@
 package block
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -257,11 +258,12 @@ Paragraph "Text.\n"`,
 		},
 		{
 			name: "the block macros that need no extension are not prose",
-			src:  "image::tiger.png[Tiger]\n\ntoc::[]\n\nfoo::bar[]\n",
+			src:  "image::tiger.png[Tiger]\n\ntoc::[]\n\nfoo::bar[]\n\ninclude::[]\n",
 			want: `
 Opaque "image::tiger.png[Tiger]\n"
 Opaque "toc::[]\n"
-Paragraph "foo::bar[]\n"`,
+Paragraph "foo::bar[]\n"
+Paragraph "include::[]\n"`,
 		},
 		{
 			name: "a Markdown quote is a quote block, not a paragraph",
@@ -348,22 +350,58 @@ func TestScanReports(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
-		want Finding
+		want []Finding
 	}{
 		{
 			name: "a block that never closes",
 			src:  "----\ncode\n",
-			want: Finding{Line: 1, Severity: Warn, Message: "block has no closing delimiter"},
+			want: []Finding{{Line: 1, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a delimiter that closes outside the region it opened in",
 			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n----\n",
-			want: Finding{Line: 2, Severity: Skip, Message: "delimiter opens and closes in different conditional regions"},
+			want: []Finding{{Line: 2, Message: "delimiter opens and closes in different conditional regions"}},
 		},
 		{
 			name: "also when the conditional sits among the metadata lines",
 			src:  "[source]\nifdef::extra[]\n----\nendif::[]\ncode\n----\n",
-			want: Finding{Line: 3, Severity: Skip, Message: "delimiter opens and closes in different conditional regions"},
+			want: []Finding{{Line: 3, Message: "delimiter opens and closes in different conditional regions"}},
+		},
+		{
+			name: "a block that never closes reports both when it also left its region",
+			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n",
+			want: []Finding{
+				{Line: 2, Message: "block has no closing delimiter"},
+				{Line: 2, Message: "delimiter opens and closes in different conditional regions"},
+			},
+		},
+		{
+			name: "a conditional that never closes, and an endif that closes nothing",
+			src:  "endif::[]\n\nifdef::extra[]\nText.\n",
+			want: []Finding{
+				{Line: 1, Message: "endif closes no conditional region"},
+				{Line: 3, Message: "conditional region has no endif"},
+			},
+		},
+		{
+			name: "a directive is not a finding, the scanner freezes around it instead",
+			src:  "include::part.adoc[]\n\nifdef::extra[]\nText.\nendif::[]\n",
+			want: nil,
+		},
+		{
+			name: "a conditional with text in the brackets opens no region",
+			src:  "Text.\nifdef::extra[Only then.]\nMore.\n",
+			want: nil,
+		},
+		{
+			name: "a malformed directive is a finding, as it is an error in Asciidoctor",
+			src:  "ifdef::[]\nifeval::target[1 == 1]\nifeval::[]\nendif::[]\n",
+			want: []Finding{
+				{Line: 1, Message: "malformed preprocessor directive"},
+				{Line: 2, Message: "malformed preprocessor directive"},
+				{Line: 3, Message: "malformed preprocessor directive"},
+				{Line: 4, Message: "endif closes no conditional region"},
+			},
 		},
 	}
 
@@ -375,8 +413,8 @@ func TestScanReports(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(doc.Findings) != 1 || doc.Findings[0] != test.want {
-				t.Errorf("got %+v, want exactly %+v", doc.Findings, test.want)
+			if !slices.Equal(doc.Findings, test.want) {
+				t.Errorf("got %+v, want %+v", doc.Findings, test.want)
 			}
 		})
 	}

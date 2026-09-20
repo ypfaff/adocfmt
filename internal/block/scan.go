@@ -36,6 +36,9 @@ func Scan(src []byte) (*Document, error) {
 	nodes, tail := s.nodes(nil)
 	doc.Nodes = append(doc.Nodes, nodes...)
 	doc.Tail = tail
+	for _, at := range s.regions {
+		s.report(at, "conditional region has no endif")
+	}
 	doc.Findings = s.findings
 	return doc, nil
 }
@@ -74,10 +77,10 @@ type scanner struct {
 	freeze bool
 	// markers are the list markers of the open lists, innermost last.
 	markers []string
-	// regions are the open conditional regions, innermost last. A delimiter
-	// that opens in one and closes in another means two documents in one.
-	regions    []int
-	lastRegion int
+	// regions are the open conditional regions, innermost last, each by the
+	// line that opened it. A delimiter that opens in one and closes in another
+	// means two documents in one.
+	regions []int
 
 	findings []Finding
 }
@@ -117,23 +120,30 @@ func (s *scanner) gap() Gap {
 	return gap
 }
 
-func (s *scanner) report(at int, severity Severity, message string) {
-	s.findings = append(s.findings, Finding{Line: at + 1, Severity: severity, Message: message})
+func (s *scanner) report(at int, message string) {
+	s.findings = append(s.findings, Finding{Line: at + 1, Message: message})
 }
 
+// track follows the directive on the current line into or out of a
+// conditional region.
 func (s *scanner) track(sh shape) {
+	if sh.bad {
+		s.report(s.at, "malformed preprocessor directive")
+	}
 	switch {
 	case sh.cond > 0:
-		s.lastRegion++
-		s.regions = append(s.regions, s.lastRegion)
+		s.regions = append(s.regions, s.at)
 	case sh.cond < 0 && len(s.regions) > 0:
 		s.regions = s.regions[:len(s.regions)-1]
+	case sh.cond < 0:
+		s.report(s.at, "endif closes no conditional region")
 	}
 }
 
+// region identifies the innermost open conditional region, or -1 outside any.
 func (s *scanner) region() int {
 	if len(s.regions) == 0 {
-		return 0
+		return -1
 	}
 	return s.regions[len(s.regions)-1]
 }
@@ -397,11 +407,11 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		}
 	}
 
-	switch {
-	case !delim.Closed():
-		s.report(openAt, Warn, "block has no closing delimiter")
-	case s.region() != region:
-		s.report(openAt, Skip, "delimiter opens and closes in different conditional regions")
+	if !delim.Closed() {
+		s.report(openAt, "block has no closing delimiter")
+	}
+	if s.region() != region {
+		s.report(openAt, "delimiter opens and closes in different conditional regions")
 	}
 	return node
 }
