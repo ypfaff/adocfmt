@@ -11,15 +11,6 @@ var byteOrderMark = []byte{0xEF, 0xBB, 0xBF}
 
 var frontMatterFence = []byte("---")
 
-const commentStyle = "comment"
-
-// verbatimStyles are the block styles that turn prose into content no rule may
-// reflow. An attribute line above a paragraph is enough to switch it.
-var verbatimStyles = map[string]bool{
-	"source": true, "listing": true, "literal": true, "verse": true,
-	"pass": true, "stem": true, "latexmath": true, "asciimath": true,
-}
-
 // Scan cuts src into the block tree.
 //
 // It fails on input it must not silently repair: anything but UTF-8, and mixed
@@ -321,40 +312,6 @@ func (s *scanner) textRun(b *base, closer []byte) {
 		b.Gap.Frozen = true
 		s.freeze = true
 	}
-}
-
-func styledVerbatim(src []byte, meta []Meta) bool {
-	style := styleOf(src, meta)
-	return verbatimStyles[style] || style == commentStyle
-}
-
-// styleOf is the block style an attribute line assigns. It overrides what the
-// delimiter says: [source] on an open block makes it code, [comment] makes it a
-// comment block.
-func styleOf(src []byte, meta []Meta) string {
-	style := ""
-	for _, m := range meta {
-		if m.Kind == MetaAttributes {
-			if named := blockStyle(src[m.Lines.Start:m.Lines.End]); named != "" {
-				style = named
-			}
-		}
-	}
-	return style
-}
-
-// blockStyle reads the style out of an attribute line, which is the first
-// positional value: [source,go] is source, [#id] is nothing.
-func blockStyle(s []byte) string {
-	s = bytes.TrimSpace(s)
-	if len(s) < 2 || s[0] != '[' {
-		return ""
-	}
-	s = s[1:]
-	if end := bytes.IndexAny(s, ",%#.]"); end >= 0 {
-		s = s[:end]
-	}
-	return string(bytes.ToLower(bytes.TrimSpace(s)))
 }
 
 func (s *scanner) directive(b base, sh shape) Node {
