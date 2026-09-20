@@ -1,15 +1,84 @@
 = Testing strategy
 
-The formatter is covered by two kinds of test.
-Golden files pin down what a rule does.
-Render equivalence checks that no rule changes what the rendered document shows.
+Beyond the unit tests of each package, the formatter is covered by checks that each guard one property.
 
-A new or changed rule mainly brings golden cases with it.
-Every pair is compared byte for byte and also goes through the <<render-equivalence,render equivalence>> checks.
+<<identity,Identity>>:: Whatever no rule claims comes back byte for byte.
+<<classification,Classification>>:: The scanner reads blocks the way Asciidoctor does.
+<<render-equivalence,Render equivalence>>:: No rule changes what the rendered document shows.
+<<golden-files,Golden files>>:: A rule does what its cases say.
+<<refusal,Refusal>>:: A document the scanner cannot read safely is not touched.
 
+A new or changed rule brings golden cases with it.
+The other checks run over the corpus, the test inputs of the Asciidoctor test suite under link:../testdata/asciidoctor-cases[`testdata/asciidoctor-cases`], and find a rule's mistakes on their own.
+
+[#identity]
+== Identity
+
+With no rule claiming a node, printing the block tree reproduces the source byte for byte.
+Render equivalence cannot stand in for this check: a lost blank line renders the same.
+
+link:../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every corpus file and every golden file back and compares bytes.
+link:../internal/block/partition_test.go[`TestScanPartitions`] checks the same property span by span, so a failure names the node rather than the byte.
+link:../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`] searches for source the corpus does not cover.
+Its seeds are fixed inputs that run as ordinary cases with every `go test`; the search mutates them and runs on demand, and an input it breaks the test with is saved under `testdata/fuzz` and runs from then on:
+
+[source,shell]
+----
+go test -fuzz=FuzzPrintIsIdentity ./internal/printer
+----
+
+[#classification]
+== Classification
+
+While no rule exists, the printer emits every node unchanged, so a misread block never shows in the output.
+link:../internal/renderequivalence/stress_test.go[`TestStressedCases`] rewrites every corpus file as hard as any planned rule will and runs the <<render-equivalence,render equivalence>> checks on the result.
+Cases the scanner still misreads sit in `stressQuarantine`, by cause; a quarantined case that passes fails the test, so the list tracks the scanner.
+A fix that empties a cause also brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
+Tables and list items are not rewritten, so a rule for either extends the stress test first.
+
+[#render-equivalence]
+== Render equivalence
+
+Formatting is correct when it does not change what the reader of the rendered document sees.
+Asciidoctor is the reference implementation: it defines what a document means.
+The checks render both sides and compare three things.
+
+Rendering::
+Both HTML renderings, with every run of whitespace collapsed to a single space.
+Where a paragraph wraps is invisible in the rendered page, because HTML shows any run of whitespace as one space.
+
+Verbatim content::
+The content of every code and literal block, byte for byte.
+Whitespace carries meaning there, which is what lets the rendering check ignore it everywhere else.
+Asciidoctor strips trailing whitespace from those lines before it renders, so a rule that changes it there is invisible here.
+
+Comments::
+The comment lines of both sources, in order, because Asciidoctor drops them before they reach the HTML.
+The check reads raw lines rather than the block tree, so a comment the scanner filed as prose still counts.
+
+While no rule exists, every case compares a document against itself, so link:../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] hands each check a document broken in the way it exists to catch.
+
+=== Where the checks run
+
+Confidence comes from breadth, so the main input is the corpus, one file per test input of the Asciidoctor test suite.
+Those inputs sit inside the Ruby test files rather than in `.adoc` files, so link:../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] lifts them out.
+The pinned tag tracks the Asciidoctor release the checks render with; regenerate the cases after changing it:
+
+[source,shell]
+----
+go run ./tools/fetch-asciidoctor-cases
+----
+
+link:../internal/renderequivalence/cases_test.go[`TestAsciidoctorCases`] formats every case and compares; link:../internal/format/golden_test.go[`TestGoldenCasesRenderEquivalent`] does the same for every golden pair, input against expectation.
+
+The corpus has two blind spots.
+Its cases are short snippets dense in syntax and short in prose, so they exercise block structure far more than sentences.
+Asciidoctor renders each case once, with no attribute set and no include file present, so a conditional is checked in that one reading only.
+
+[#golden-files]
 == Golden files
 
-A case is a directory under `testdata/golden` holding two files:
+A case is a directory under link:../testdata/golden[`testdata/golden`] holding two files:
 
 ....
 testdata/golden/
@@ -24,6 +93,8 @@ testdata/golden/
 `input.adoc` goes through the formatter, and the result has to equal `golden.adoc` byte for byte.
 Directories nest, so cases group by rule, and the path below `testdata/golden` is the test name.
 
+The cases run with every rule on, so cut the input until only the rule under test has anything to do.
+
 To add a case, write `input.adoc`, then let the formatter write the expectation:
 
 [source,shell]
@@ -33,45 +104,17 @@ go run ./tools/update-golden
 
 Read the diff before committing it.
 The tool records whatever the formatter produces, so an unreviewed update turns a bug into the expectation.
+Where the render checks are blind, such as trailing whitespace inside verbatim blocks or comments, write `golden.adoc` by hand.
 
 Every rule also needs a case whose input is already in its target state, where `input.adoc` and `golden.adoc` are identical.
 That case is what catches a rule that keeps reformatting its own output.
 
-[#render-equivalence]
-== Render equivalence
+[#refusal]
+== Refusal
 
-Formatting is correct when it does not change what the reader of the rendered document sees.
-Asciidoctor is the reference implementation: it defines what a document means.
-The checks render both sides and compare the two.
-
-Rendering::
-Both HTML renderings, with every run of whitespace collapsed to a single space.
-Where a paragraph wraps is invisible in the rendered page, because HTML shows any run of whitespace as one space.
-Comparing the renderings byte for byte would therefore report line breaks no reader can see.
-
-Comments::
-The comment lines of both AsciiDoc sources, in order.
-Asciidoctor drops comments before they reach the HTML, so this is the one check that reads the sources rather than the renderings.
-The scan is a heuristic: without a block scanner it cannot tell a comment from a line of code inside a listing block.
-Both sides are scanned the same way, so a misread line reports a difference only when formatting really changed it.
-
-Verbatim content::
-The content of every code and literal block, byte for byte.
-Whitespace carries meaning there, which is what lets the rendering check ignore it everywhere else.
-
-=== Where the checks run
-
-Confidence comes from breadth, so the main input is a foreign corpus: every test input of the Asciidoctor test suite, one file per case.
-Those inputs sit inside the Ruby test files rather than in `.adoc` files, so link:../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] lifts them out.
-The pinned tag tracks the Asciidoctor release the checks render with; regenerate the cases after changing it:
-
-[source,shell]
-----
-go run ./tools/fetch-asciidoctor-cases
-----
-
-Every golden pair is checked as well, input against expectation.
-Since the update tool derives `golden.adoc` from `input.adoc`, this is what keeps a rule that changes meaning from being recorded as correct.
+A document the scanner could not read safely comes back as an error naming every finding, and no output; link:../internal/format/format.go[`Format`] says why.
+link:../internal/format/format_test.go[`TestFormatRefuses` and `TestFormatRejects`] pin that shape.
+The `refused` list in link:../internal/renderequivalence/cases_test.go[`cases_test.go`] pins which corpus cases are turned down, by cause; one that formats after all fails the test.
 
 == Running
 
