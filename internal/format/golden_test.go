@@ -22,7 +22,10 @@ func TestGoldenCases(t *testing.T) {
 		t.Run(caseName(dir), func(t *testing.T) {
 			t.Parallel()
 
-			got := Format(readCase(t, dir, golden.InputFile))
+			got, err := Format(readCase(t, dir, golden.InputFile))
+			if err != nil {
+				t.Fatal(err)
+			}
 			if want := readCase(t, dir, golden.GoldenFile); !bytes.Equal(got, want) {
 				t.Errorf("output differs from %s at %s\nrun go run ./tools/update-golden to rewrite the golden files",
 					golden.GoldenFile, firstDifferingLine(want, got))

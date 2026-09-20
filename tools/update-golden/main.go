@@ -9,6 +9,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -43,7 +44,11 @@ func run() error {
 		if err != nil {
 			return err
 		}
-		if err := os.WriteFile(filepath.Join(dir, golden.GoldenFile), format.Format(src), 0o644); err != nil {
+		formatted, err := format.Format(src)
+		if err != nil {
+			return fmt.Errorf("%s: %w", dir, err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, golden.GoldenFile), formatted, 0o644); err != nil {
 			return err
 		}
 		log.Println(strings.TrimPrefix(dir, root+string(filepath.Separator)))
