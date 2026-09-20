@@ -231,9 +231,6 @@ var stressQuarantine = byCase(map[string][]string{
 		"manpage/0004-should-normalize-whitespace-and-skip-line-comments-before-an",
 		"sections/0054-should-add-level-offset-to-section-level",
 	},
-	"the comment check counts ///, which Asciidoctor reads as text": {
-		"parser/0018-break-header-at-line-with-three-forward-slashes",
-	},
 	"a quoted paragraph with an attribution line is a quote block": {
 		"blocks/0032-quoted-paragraph-style-quote-block-with-attribution",
 		"blocks/0033-should-parse-credit-line-in-quoted-paragraph-style-quote-blo",

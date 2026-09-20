@@ -48,18 +48,30 @@ func verbatimBlocks(rendered string) []string {
 // Asciidoctor drops comments before they reach the HTML, so this is the one
 // check that reads the sources.
 //
-// Any line starting with // counts, including a line of code inside a listing
-// block. Both sides are scanned the same way, so such a line reports a
-// difference only when formatting really changed it.
+// Any comment line counts, including a line of code inside a listing block.
+// Both sides are scanned the same way, so such a line reports a difference only
+// when formatting really changed it.
 func comments(src []byte) []string {
 	var found []string
 	for _, line := range strings.Split(string(src), "\n") {
-		trimmed := strings.TrimSpace(line)
-		if strings.HasPrefix(trimmed, "//") {
+		if trimmed := strings.TrimSpace(line); isComment(trimmed) {
 			found = append(found, trimmed)
 		}
 	}
 	return found
+}
+
+// isComment recognizes a line comment or a comment block delimiter. Asciidoctor
+// reads // as a comment only when no third slash follows, so /// is text, while
+// a run of four or more slashes fences a comment block.
+func isComment(line string) bool {
+	if !strings.HasPrefix(line, "//") {
+		return false
+	}
+	if len(line) == 2 || line[2] != '/' {
+		return true
+	}
+	return len(line) >= 4 && strings.Trim(line, "/") == ""
 }
 
 // Differences reports one finding per check that failed. An empty result means
