@@ -121,10 +121,14 @@ func (s *scanner) attached(closer []byte) []Node {
 	}
 }
 
-// carried is the block a continuation line attaches to the item.
+// carried is the block a continuation line attaches to the item. A continuation
+// with nothing left to carry gives the blank lines back, so they end up in the
+// tail of the enclosing block rather than in no node at all.
 func (s *scanner) carried(closer []byte) Node {
+	at, freeze := s.at, s.freeze
 	gap := s.gap()
 	if s.done() || s.closes(closer) {
+		s.at, s.freeze = at, freeze
 		return nil
 	}
 	return s.node(gap, closer)

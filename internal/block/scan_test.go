@@ -91,6 +91,14 @@ List "*"
   ListItem "* b\n"`,
 		},
 		{
+			name: "a continuation at the end carries nothing and keeps the blank lines",
+			src:  "* a\n+\n\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"`,
+		},
+		{
 			name: "an indented block after a blank line attaches to the item",
 			src:  "* a\n\n  code\n\n* b\n",
 			want: `
