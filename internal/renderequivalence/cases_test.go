@@ -3,15 +3,14 @@ package renderequivalence
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/ypfaff/adocfmt/internal/corpus"
 	"github.com/ypfaff/adocfmt/internal/format"
 )
 
 // casesDir is relative to this package.
-const casesDir = "../../testdata/asciidoctor-cases"
+const casesDir = "../../" + corpus.Dir
 
 // notRenderable names the cases Asciidoctor cannot render here, and why.
 // Everything else has to render, so a broken installation fails the run
@@ -28,8 +27,12 @@ func TestAsciidoctorCases(t *testing.T) {
 		t.Fatal("asciidoctor is not on the PATH")
 	}
 
-	for _, path := range asciidoctorCases(t) {
-		name := strings.TrimSuffix(strings.TrimPrefix(path, casesDir+"/"), ".adoc")
+	files, err := corpus.Files(casesDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range files {
+		name := corpus.Name(casesDir, path)
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
@@ -55,26 +58,4 @@ func TestAsciidoctorCases(t *testing.T) {
 			}
 		})
 	}
-}
-
-func asciidoctorCases(t *testing.T) []string {
-	t.Helper()
-
-	var cases []string
-	err := filepath.WalkDir(casesDir, func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !entry.IsDir() && filepath.Ext(path) == ".adoc" && entry.Name() != "README.adoc" {
-			cases = append(cases, path)
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatalf("reading the cases: %v (run go run ./tools/fetch-asciidoctor-cases)", err)
-	}
-	if len(cases) == 0 {
-		t.Fatal("no cases found; run go run ./tools/fetch-asciidoctor-cases")
-	}
-	return cases
 }
