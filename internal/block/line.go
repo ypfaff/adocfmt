@@ -161,13 +161,14 @@ func classify(src []byte, l line) shape {
 }
 
 // delimiterShape recognizes a fence. Open blocks are exactly two dashes and
-// fenced code exactly three backticks; everything else needs four or more of a
-// char, so the three-char forms in between are plain text.
+// fenced code exactly three backticks, which a language may follow; everything
+// else needs four or more of a char, so the three-char forms in between are
+// plain text.
 func delimiterShape(s []byte) (shape, bool) {
 	switch {
 	case len(s) == 2 && s[0] == '-' && s[1] == '-':
 		return shape{kind: shapeDelimiter, char: '-', width: 2, content: contentCompound}, true
-	case len(s) == 3 && uniform(s, '`'):
+	case len(s) >= 3 && uniform(s[:3], '`') && (len(s) == 3 || s[3] != '`'):
 		return shape{kind: shapeDelimiter, char: '`', width: 3, content: contentVerbatim}, true
 	case len(s) >= 4 && isTableChar(s[0]) && uniform(s[1:], '='):
 		return shape{kind: shapeDelimiter, char: s[0], width: len(s), content: contentTable}, true

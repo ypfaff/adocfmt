@@ -63,6 +63,13 @@ Verbatim "-------\n\nText.\n"`,
 Verbatim "-----\ncode\n----\nstill code\n-----\n"`,
 		},
 		{
+			name: "a fence may name a language, and only the bare fence closes it",
+			src:  "```ruby,numbered\nputs 1\n```ruby\n```\n\n````\nprose\n````\n",
+			want: `
+Verbatim "` + "```" + `ruby,numbered\nputs 1\n` + "```" + `ruby\n` + "```" + `\n"
+Paragraph "` + "````" + `\nprose\n` + "````" + `\n"`,
+		},
+		{
 			name: "an example block holds nodes, a listing block does not",
 			src:  "====\nFirst.\n\nSecond.\n====\n",
 			want: `

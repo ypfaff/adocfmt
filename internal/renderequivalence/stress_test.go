@@ -256,10 +256,6 @@ var stressQuarantine = byCase(map[string][]string{
 		"attributes/0018-should-drop-line-with-reference-to-missing-attribute-if-attr",
 		"attributes/0020-should-drop-line-with-attribute-unassignment-by-default",
 	},
-	"a fenced code block with a language is not recognized": {
-		"blocks/0176-should-support-fenced-code-blocks-with-languages",
-		"blocks/0177-should-support-fenced-code-blocks-with-languages-and-numberi",
-	},
 })
 
 func byCase(byCause map[string][]string) map[string]string {
