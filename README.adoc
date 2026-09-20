@@ -3,7 +3,7 @@
 An opinionated AsciiDoc formatter in Go.
 
 Early work in progress: no formatting rule is implemented yet.
-What exists is the link:docs/testing-strategy.adoc[testing strategy] every rule has to satisfy.
+What exists is the block scanner, the printer it feeds, and the link:docs/testing-strategy.adoc[testing strategy] every rule has to satisfy.
 
 == Development
 
