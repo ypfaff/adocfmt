@@ -81,6 +81,7 @@ type shape struct {
 	span    Span   // heading title, or list marker
 	marker  string // list marker key; items sharing it share a list
 	cond    int    // +1 opens a conditional region, -1 closes one
+	bad     bool   // a directive Asciidoctor rejects as malformed
 }
 
 // delimiters maps the four-char tip of a delimited block to what it holds,
@@ -100,8 +101,6 @@ var markdownQuote = []byte("> ")
 var tocMacro = []byte("toc::")
 
 var blockMacros = [][]byte{[]byte("image::"), []byte("video::"), []byte("audio::"), tocMacro}
-
-var conditionals = [][]byte{[]byte("ifdef::"), []byte("ifndef::"), []byte("ifeval::")}
 
 func classify(src []byte, l line) shape {
 	s := src[l.text.Start:l.text.End]
@@ -272,22 +271,44 @@ func isBlockMacro(s []byte) bool {
 
 func isSpaceByte(c byte) bool { return c == ' ' || c == '\t' }
 
+// directiveShape recognizes a preprocessor directive, name::target[text].
+// ifdef and ifndef with text in the brackets apply to that text alone and open
+// no region; ifeval carries its expression there and always opens one. What
+// Asciidoctor rejects as malformed is still a directive line, marked bad so
+// the scanner reports it.
 func directiveShape(s []byte) (shape, bool) {
-	if !bytes.HasSuffix(s, []byte("]")) {
+	name, rest, ok := bytes.Cut(s, []byte("::"))
+	if !ok || len(rest) == 0 || rest[len(rest)-1] != ']' {
 		return shape{}, false
 	}
-	for _, name := range conditionals {
-		if bytes.HasPrefix(s, name) {
-			return shape{kind: shapeDirective, cond: 1}, true
+	open := bytes.IndexByte(rest, '[')
+	if open < 0 {
+		return shape{}, false
+	}
+	target, text := rest[:open], rest[open+1:len(rest)-1]
+
+	sh := shape{kind: shapeDirective}
+	switch string(name) {
+	case "ifdef", "ifndef":
+		sh.bad = len(target) == 0
+		if !sh.bad && len(text) == 0 {
+			sh.cond = 1
 		}
+	case "ifeval":
+		sh.bad = len(target) > 0 || len(text) == 0
+		if !sh.bad {
+			sh.cond = 1
+		}
+	case "endif":
+		sh.cond = -1
+	case "include":
+		if len(target) == 0 {
+			return shape{}, false
+		}
+	default:
+		return shape{}, false
 	}
-	switch {
-	case bytes.HasPrefix(s, []byte("endif::")):
-		return shape{kind: shapeDirective, cond: -1}, true
-	case bytes.HasPrefix(s, []byte("include::")):
-		return shape{kind: shapeDirective}, true
-	}
-	return shape{}, false
+	return sh, true
 }
 
 // attrEntryShape recognizes :name: and :name: value, including the :!name:
