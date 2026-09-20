@@ -1,0 +1,257 @@
+package block
+
+import (
+	"strings"
+	"testing"
+)
+
+func TestScan(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "the document header stays one node",
+			src:  "= Title\nAuthor Name\n:toc:\n\nText.\n",
+			want: `
+Header "= Title\nAuthor Name\n:toc:\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "a title and its underline beat the listing delimiter",
+			src:  "Mein Titel\n----------\n\nText.\n",
+			want: `
+Setext "Mein Titel\n----------\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "the underline is measured in characters",
+			src:  "Größe\n-----\n",
+			want: `
+Setext "Größe\n-----\n"`,
+		},
+		{
+			name: "an underline two characters off is a delimiter",
+			src:  "Titel\n-------\n\nText.\n",
+			want: `
+Paragraph "Titel\n"
+Verbatim "-------\n\nText.\n"`,
+		},
+		{
+			name: "delimiters pair by exact width",
+			src:  "-----\ncode\n----\nstill code\n-----\n",
+			want: `
+Verbatim "-----\ncode\n----\nstill code\n-----\n"`,
+		},
+		{
+			name: "an example block holds nodes, a listing block does not",
+			src:  "====\nFirst.\n\nSecond.\n====\n",
+			want: `
+Container "====\n"
+  Paragraph "First.\n"
+  Paragraph "Second.\n"`,
+		},
+		{
+			name: "an attribute line turns prose into code",
+			src:  "[source,go]\nx := 1\n",
+			want: `
+Literal meta("[source,go]\n") "x := 1\n"`,
+		},
+		{
+			name: "metadata binds across a blank line",
+			src:  "[#id]\n\nText.\n",
+			want: `
+Paragraph meta("[#id]\n") "Text.\n"`,
+		},
+		{
+			name: "a table stays opaque",
+			src:  "|===\n| a | b\n|===\n",
+			want: `
+Table "|===\n| a | b\n|===\n"`,
+		},
+		{
+			name: "a change of marker nests, the old marker returns",
+			src:  "* a\n- b\n* c\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "-"
+      ListItem "- b\n"
+  ListItem "* c\n"`,
+		},
+		{
+			name: "a continuation carries the block that follows it",
+			src:  "* a\n+\n----\ncode\n----\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Verbatim "----\ncode\n----\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "an indented block after a blank line attaches to the item",
+			src:  "* a\n\n  code\n\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal "  code\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "a directive freezes its own gap and the next one",
+			src:  "Text.\n\ninclude::part.adoc[]\n\nMore.\n",
+			want: `
+Paragraph "Text.\n"
+Directive! gap! "include::part.adoc[]\n"
+Paragraph gap! "More.\n"`,
+		},
+		{
+			name: "a directive inside a paragraph freezes the paragraph",
+			src:  "First line.\ninclude::part.adoc[]\nThird line.\n",
+			want: `
+Paragraph! gap! "First line.\ninclude::part.adoc[]\nThird line.\n"`,
+		},
+		{
+			name: "a thematic break is not prose",
+			src:  "Text.\n\n---\n\nMore.\n",
+			want: `
+Paragraph "Text.\n"
+Opaque "---\n"
+Paragraph "More.\n"`,
+		},
+		{
+			name: "so is an evenly spaced one, and a page break",
+			src:  "* * *\n\n<<<\n",
+			want: `
+Opaque "* * *\n"
+Opaque "<<<\n"`,
+		},
+		{
+			name: "four of the same char is a delimiter, not a break",
+			src:  "****\nAside.\n****\n",
+			want: `
+Container "****\n"
+  Paragraph "Aside.\n"`,
+		},
+		{
+			name: "a break only counts on its own line",
+			src:  "Text.\n---\nMore.\n",
+			want: `
+Paragraph "Text.\n---\nMore.\n"`,
+		},
+		{
+			name: "Asciidoctor reads a Markdown heading as a section title",
+			src:  "## Section One\n\nText.\n",
+			want: `
+Heading "## Section One\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "the block macros that need no extension are not prose",
+			src:  "image::tiger.png[Tiger]\n\ntoc::[]\n\nfoo::bar[]\n",
+			want: `
+Opaque "image::tiger.png[Tiger]\n"
+Opaque "toc::[]\n"
+Paragraph "foo::bar[]\n"`,
+		},
+		{
+			name: "a Markdown quote is a quote block, not a paragraph",
+			src:  "> A famous quote.\n> -- Famous Person\n",
+			want: `
+Opaque "> A famous quote.\n> -- Famous Person\n"`,
+		},
+		{
+			name: "a term with no text of its own takes the lines below it",
+			src:  "term1::\n\n'''\ncontinued\n",
+			want: `
+List "::"
+  ListItem "term1::\n\n'''\ncontinued\n"`,
+		},
+		{
+			name: "inside a list a paragraph ends at the next item",
+			src:  "term1::\n\ndef1\nterm2::\n\ndef2\n",
+			want: `
+List "::"
+  ListItem "term1::\n\ndef1\n"
+  ListItem "term2::\n\ndef2\n"`,
+		},
+		{
+			name: "front matter is not AsciiDoc",
+			src:  "---\ntitle: x\n---\n\n= Title\n",
+			want: `
+FrontMatter "---\ntitle: x\n---\n"
+Header "= Title\n"`,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			doc, err := Scan([]byte(test.src))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got, want := dump(doc), strings.TrimPrefix(test.want, "\n")+"\n"; got != want {
+				t.Errorf("tree differs\ngot:\n%swant:\n%s", got, want)
+			}
+		})
+	}
+}
+
+func TestScanReports(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want Finding
+	}{
+		{
+			name: "a block that never closes",
+			src:  "----\ncode\n",
+			want: Finding{Line: 1, Severity: Warn, Message: "block has no closing delimiter"},
+		},
+		{
+			name: "a delimiter that closes outside the region it opened in",
+			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n----\n",
+			want: Finding{Line: 2, Severity: Skip, Message: "delimiter opens and closes in different conditional regions"},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			doc, err := Scan([]byte(test.src))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(doc.Findings) != 1 || doc.Findings[0] != test.want {
+				t.Errorf("got %+v, want exactly %+v", doc.Findings, test.want)
+			}
+		})
+	}
+}
+
+// TestScanRejects covers what the scanner must not repair silently.
+func TestScanRejects(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+	}{
+		{name: "mixed line endings", src: "a\r\nb\n"},
+		{name: "a carriage return ending no line", src: "a\rb\n"},
+		{name: "not UTF-8", src: "a\xffb\n"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			if _, err := Scan([]byte(test.src)); err == nil {
+				t.Error("got no error, want one")
+			}
+		})
+	}
+}

@@ -1,0 +1,213 @@
+// Package block cuts AsciiDoc source into the block tree the printer emits.
+//
+// The tree partitions the source: every byte belongs to exactly one node, and
+// emitting the tree in order reproduces the input byte for byte. That is what
+// makes a formatter with no rule enabled the identity function, and it holds
+// without asking Asciidoctor anything.
+//
+// The scanner never resolves an include or a conditional, and never guesses.
+// What it cannot decide it freezes and reports.
+package block
+
+// Span is a byte range in the source.
+type Span struct {
+	Start, End int
+}
+
+// Empty reports whether the span covers no bytes.
+func (s Span) Empty() bool { return s.Start == s.End }
+
+// Gap is the blank lines in front of a node.
+//
+// Frozen marks the ones that carry meaning: before a list continuation they
+// select the level the following block attaches to, after the first table row
+// they make it a header row, and around a directive they decide whether two
+// blocks merge when rendered.
+type Gap struct {
+	Span   Span
+	Frozen bool
+}
+
+// Delimiter is the pair of lines fencing a delimited block. Blocks pair by char
+// and exact width, so shortening one is only safe when its body holds no run of
+// the same char.
+type Delimiter struct {
+	Char  byte
+	Width int
+	Open  Span
+	Close Span
+}
+
+// Closed reports whether the block ended on a matching delimiter rather than at
+// the end of the source.
+func (d Delimiter) Closed() bool { return !d.Close.Empty() }
+
+// MetaKind tells apart the metadata lines rules address individually.
+type MetaKind int
+
+// The metadata line shapes that bind to the block below them.
+const (
+	MetaAttributes MetaKind = iota // [source,go]
+	MetaTitle                      // .Title
+	MetaAnchor                     // [[id]]
+	MetaComment                    // // comment
+)
+
+// Meta is a metadata line bound to the node below it. The binding survives
+// blank lines, which is why it carries its own gap.
+type Meta struct {
+	Kind  MetaKind
+	Gap   Gap
+	Lines Span
+}
+
+// Node is one piece of the document. The scanner produces the types below and
+// no others.
+type Node interface {
+	// Extent reports every byte the node owns, its gap and metadata included.
+	// Emitting it verbatim is what a print function does until a rule claims
+	// the node.
+	Extent() Span
+	node()
+}
+
+// base is what every node has.
+//
+// Frozen marks a node whose line structure the scanner could not determine. No
+// rule may add, remove, join or split lines there; line-local rewrites such as
+// trailing whitespace removal stay safe.
+type base struct {
+	Gap    Gap
+	Meta   []Meta
+	Lines  Span
+	Frozen bool
+}
+
+func (b *base) node() {}
+
+// Extent implements Node.
+func (b *base) Extent() Span {
+	if len(b.Meta) > 0 {
+		return Span{b.Meta[0].Gap.Span.Start, b.Lines.End}
+	}
+	return Span{b.Gap.Span.Start, b.Lines.End}
+}
+
+// Header is the document header: the level 0 title with the author, revision
+// and attribute lines that follow it without a blank line.
+type Header struct{ base }
+
+// Heading is a one-line section title. Marker is = or #, since Asciidoctor
+// reads a Markdown heading as a section title too.
+type Heading struct {
+	base
+	Marker byte
+	Level  int
+	Title  Span
+}
+
+// Setext is a two-line section title. Asciidoctor reads the pair before it
+// reads the underline as a delimiter, and so does the scanner.
+type Setext struct {
+	base
+	Level int
+	Title Span
+}
+
+// Paragraph holds prose, the only content a sentence rule may reflow.
+type Paragraph struct{ base }
+
+// Literal holds verbatim lines without a delimiter: an indented paragraph, or
+// one an attribute line turned into code.
+type Literal struct{ base }
+
+// Verbatim is a delimited block whose content must stay byte-identical:
+// listing, literal, passthrough and comment blocks, and fenced code.
+type Verbatim struct {
+	base
+	Delim Delimiter
+}
+
+// Container is a delimited block holding further nodes: example, sidebar,
+// quote and open blocks.
+type Container struct {
+	base
+	Delim    Delimiter
+	Children []Node
+	Tail     Gap
+}
+
+// Table stays opaque until a rule needs its cells.
+type Table struct {
+	base
+	Delim Delimiter
+}
+
+// List is a run of items sharing one marker. A different marker nests, which is
+// how AsciiDoc spells nesting.
+type List struct {
+	base
+	Marker string
+	Items  []*ListItem
+}
+
+// ListItem is one entry. Principal is its own text, Children are the blocks
+// attached to it.
+type ListItem struct {
+	base
+	Marker    Span
+	Principal Span
+	Children  []Node
+}
+
+// Continuation is a lone + line. The blank lines before it select the list
+// level the following block attaches to, so its gap is frozen.
+type Continuation struct{ base }
+
+// Attribute is an attribute entry (:name: value).
+type Attribute struct{ base }
+
+// Directive is an include, ifdef, ifndef, ifeval or endif line. What it brings
+// in decides the structure around it, so the scanner freezes rather than
+// resolves.
+type Directive struct{ base }
+
+// FrontMatter is the YAML block some static site generators put first. It is
+// not AsciiDoc and passes through untouched.
+type FrontMatter struct{ base }
+
+// Opaque is a block the scanner delimits but does not model: a block macro, a
+// thematic or page break, a Markdown quote, or metadata that never found its
+// block. It is neither prose nor verbatim content, so no rule reflows it, and
+// it passes through unchanged.
+//
+// A construct leaves this type when a rule needs it told apart from the rest.
+type Opaque struct{ base }
+
+// Severity says what a finding costs.
+type Severity int
+
+// The two costs a finding can carry.
+const (
+	// Warn leaves one node unformatted.
+	Warn Severity = iota
+	// Skip means the document cannot be formatted at all.
+	Skip
+)
+
+// Finding is what the scanner could not decide, where, and how bad it is. The
+// scanner only collects them; what follows is the formatter's decision.
+type Finding struct {
+	Line     int
+	Severity Severity
+	Message  string
+}
+
+// Document is a scanned source file.
+type Document struct {
+	Src      []byte
+	BOM      Span
+	Nodes    []Node
+	Tail     Gap
+	Findings []Finding
+}
