@@ -53,6 +53,35 @@ Container "====\n"
   Paragraph "Second.\n"`,
 		},
 		{
+			name: "below section level a heading line is prose",
+			src:  "====\n== H ==\nText.\n====\n\n* a\n+\n== H\n* b\n",
+			want: `
+Container "====\n"
+  Paragraph "== H ==\nText.\n"
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph "== H\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "and a title with an underline is prose above a delimiter",
+			src:  "====\nOuter.\n======\nInner.\n======\n====\n",
+			want: `
+Container "====\n"
+  Paragraph "Outer.\n"
+  Container "======\n"
+    Paragraph "Inner.\n"`,
+		},
+		{
+			name: "unless the heading is discrete",
+			src:  "====\n[discrete]\n== H\n\nText.\n====\n",
+			want: `
+Container "====\n"
+  Heading meta("[discrete]\n") "== H\n" title "H"
+  Paragraph "Text.\n"`,
+		},
+		{
 			name: "an attribute line turns prose into code",
 			src:  "[source,go]\nx := 1\n",
 			want: `

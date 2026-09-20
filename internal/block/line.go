@@ -320,6 +320,14 @@ func attrEntryShape(s []byte) (shape, bool) {
 
 const commentStyle = "comment"
 
+// discreteStyles make a heading line a heading below section level, where it
+// is otherwise prose.
+var discreteStyles = map[string]bool{"discrete": true, "float": true}
+
+func styledDiscrete(src []byte, meta []Meta) bool {
+	return discreteStyles[styleOf(src, meta)]
+}
+
 // verbatimStyles are the block styles that turn prose into content no rule may
 // reflow. An attribute line above a paragraph is enough to switch it.
 var verbatimStyles = map[string]bool{

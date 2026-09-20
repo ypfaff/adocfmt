@@ -198,10 +198,15 @@ func metaKind(kind shapeKind) (MetaKind, bool) {
 	}
 }
 
+// body reads the block itself. Section titles exist at section level only:
+// inside a delimited block or a list item, Asciidoctor reads a title line as
+// prose and a would-be underline as the delimiter it looks like. Only a
+// discrete style makes a heading out of the line anywhere.
 func (s *scanner) body(b base, atStart bool, closer []byte) Node {
 	sh := s.shape()
-	if startsTitle(sh.kind) {
-		if node, ok := s.setext(b, closer); ok {
+	sectionLevel := closer == nil && len(s.markers) == 0
+	if sectionLevel && startsTitle(sh.kind) {
+		if node, ok := s.setext(b); ok {
 			return node
 		}
 	}
@@ -211,6 +216,9 @@ func (s *scanner) body(b base, atStart bool, closer []byte) Node {
 	case shapeHeading:
 		if atStart && sh.level == 0 {
 			return s.header(b)
+		}
+		if !sectionLevel && !styledDiscrete(s.src, b.Meta) {
+			return s.paragraph(b, closer)
 		}
 		b.Lines = s.take()
 		return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
@@ -262,14 +270,9 @@ func (s *scanner) header(b base) Node {
 	return &Header{base: b}
 }
 
-// setext reads a two-line title. The line closing an enclosing block is never
-// an underline: Asciidoctor reads a delimited block up to its terminator before
-// it parses the content.
-func (s *scanner) setext(b base, closer []byte) (Node, bool) {
+// setext reads a two-line title.
+func (s *scanner) setext(b base) (Node, bool) {
 	if s.at+1 >= len(s.lines) {
-		return nil, false
-	}
-	if closer != nil && bytes.Equal(s.text(s.lines[s.at+1]), closer) {
 		return nil, false
 	}
 	level, ok := setextLevel(s.src, s.lines[s.at], s.lines[s.at+1])
