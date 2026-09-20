@@ -242,11 +242,6 @@ var stressQuarantine = byCase(map[string][]string{
 		"paragraphs/0015-should-add-a-hardbreak-at-end-of-each-line-when-hardbreaks-o",
 		"paragraphs/0016-should-be-able-to-toggle-hardbreaks-by-setting-hardbreaks-op",
 	},
-	"roman numeral list markers are not recognized": {
-		"lists/0064-should-allow-list-style-to-be-specified-explicitly-when-usin",
-		"lists/0075-should-warn-if-explicit-uppercase-roman-numerals-in-list-are",
-		"lists/0076-should-warn-if-explicit-lowercase-roman-numerals-in-list-are",
-	},
 	"an escaped directive is unescaped only at the start of a line": {
 		"reader/0046-escaped-include-directive-is-left-unprocessed",
 		"reader/0081-escaped-ifdef-is-unescaped-and-ignored",

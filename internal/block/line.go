@@ -429,22 +429,61 @@ func markerOf(s []byte) (int, string, bool) {
 			return end + 1, "<>", true
 		}
 	}
+	if bytes.HasPrefix(s, bullet) && followsSpace(s, len(bullet)) {
+		return len(bullet), string(bullet), true
+	}
 	if width, key, ok := numberedMarker(s); ok {
 		return width, key, true
 	}
 	return descriptionMarker(s)
 }
 
+// bullet is the one non-ASCII list marker Asciidoctor knows.
+var bullet = []byte("\u2022")
+
+// numberedMarker recognizes an ordered list marker. The key is the marker
+// Asciidoctor normalizes the item to, since that is what it compares to decide
+// whether the next item continues the list or nests: 1. and 2. share a list,
+// a. after 1. does not.
 func numberedMarker(s []byte) (int, string, bool) {
-	at := 0
-	for at < len(s) && s[at] >= '0' && s[at] <= '9' {
-		at++
+	run := 0
+	for run < len(s) && isDigit(s[run]) {
+		run++
 	}
-	if at == 0 || at >= len(s) || s[at] != '.' || !followsSpace(s, at+1) {
+	if run > 0 {
+		if run < len(s) && s[run] == '.' && followsSpace(s, run+1) {
+			return run + 1, "1.", true
+		}
 		return 0, "", false
 	}
-	return at + 1, "#.", true
+	for run < len(s) && bytes.IndexByte(romanDigits, s[run]) >= 0 {
+		run++
+	}
+	if run > 0 && run < len(s) && s[run] == ')' && followsSpace(s, run+1) {
+		// Asciidoctor styles a mixed-case run by the letter before the paren.
+		if isUpper(s[run-1]) {
+			return run + 1, "I)", true
+		}
+		return run + 1, "i)", true
+	}
+	if len(s) > 1 && s[1] == '.' && followsSpace(s, 2) {
+		switch {
+		case isUpper(s[0]):
+			return 2, "A.", true
+		case isLower(s[0]):
+			return 2, "a.", true
+		}
+	}
+	return 0, "", false
 }
+
+var romanDigits = []byte("IVXivx")
+
+func isDigit(c byte) bool { return c >= '0' && c <= '9' }
+
+func isUpper(c byte) bool { return c >= 'A' && c <= 'Z' }
+
+func isLower(c byte) bool { return c >= 'a' && c <= 'z' }
 
 // descriptionMarker finds the term separator of a description list. The term
 // itself is free text, so the separator is what identifies the list.
@@ -464,7 +503,7 @@ func descriptionMarker(s []byte) (int, string, bool) {
 		if s[at] == ':' && (width < 2 || width > 4) {
 			continue
 		}
-		if followsSpace(s, run) {
+		if run == len(s) || followsSpace(s, run) {
 			return run, string(s[at:run]), true
 		}
 	}
@@ -473,8 +512,10 @@ func descriptionMarker(s []byte) (int, string, bool) {
 
 // followsSpace reports whether a marker of the given width is followed by
 // space, which is what separates a list item from prose that starts the same.
+// The line ends before its trailing whitespace, so a marker alone on its line
+// is prose; only a description term may stand alone.
 func followsSpace(s []byte, at int) bool {
-	return at == len(s) || s[at] == ' ' || s[at] == '\t'
+	return at < len(s) && isSpaceByte(s[at])
 }
 
 func isCalloutNumber(s []byte) bool {
@@ -482,7 +523,7 @@ func isCalloutNumber(s []byte) bool {
 		return true
 	}
 	for _, c := range s {
-		if c < '0' || c > '9' {
+		if !isDigit(c) {
 			return false
 		}
 	}
@@ -490,7 +531,7 @@ func isCalloutNumber(s []byte) bool {
 }
 
 func isWordByte(c byte) bool {
-	return c == '_' || (c >= '0' && c <= '9') || (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+	return c == '_' || isDigit(c) || isLower(c) || isUpper(c)
 }
 
 func uniform(s []byte, c byte) bool {

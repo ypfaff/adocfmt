@@ -144,6 +144,81 @@ List "*"
   ListItem "* c\n"`,
 		},
 		{
+			name: "ordered items share a list by marker style",
+			src:  "1. a\n2. b\n",
+			want: `
+List "1."
+  ListItem "1. a\n"
+  ListItem "2. b\n"`,
+		},
+		{
+			name: "a letter and a dot is an ordered marker, upper and lower case apart",
+			src:  "a. a\nA. b\nb. c\n",
+			want: `
+List "a."
+  ListItem "a. a\n"
+    List "A."
+      ListItem "A. b\n"
+  ListItem "b. c\n"`,
+		},
+		{
+			name: "roman numerals with a parenthesis are one too",
+			src:  "i) a\nii) b\nIII) c\niv) d\n",
+			want: `
+List "i)"
+  ListItem "i) a\n"
+  ListItem "ii) b\n"
+    List "I)"
+      ListItem "III) c\n"
+  ListItem "iv) d\n"`,
+		},
+		{
+			name: "a change of ordered marker style nests, like any change of marker",
+			src:  "1. a\na. b\n2. c\n",
+			want: `
+List "1."
+  ListItem "1. a\n"
+    List "a."
+      ListItem "a. b\n"
+  ListItem "2. c\n"`,
+		},
+		{
+			name: "the bullet character is an unordered marker of its own",
+			src:  "• a\n* b\n• c\n",
+			want: `
+List "•"
+  ListItem "• a\n"
+    List "*"
+      ListItem "* b\n"
+  ListItem "• c\n"`,
+		},
+		{
+			name: "a marker with no text after it is prose",
+			src:  "*\nText.\n\n1.\nText.\n\n<1>\nText.\n\n•\nText.\n",
+			want: `
+Paragraph "*\nText.\n"
+Paragraph "1.\nText.\n"
+Paragraph "<1>\nText.\n"
+Paragraph "•\nText.\n"`,
+		},
+		{
+			name: "also inside a list, where it is text of the item above",
+			src:  "* a\n*\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n*\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "a tab after the marker counts as space",
+			src:  "*\ta\n1.\tb\n",
+			want: `
+List "*"
+  ListItem "*\ta\n"
+    List "1."
+      ListItem "1.\tb\n"`,
+		},
+		{
 			name: "a continuation carries the block that follows it",
 			src:  "* a\n+\n----\ncode\n----\n* b\n",
 			want: `

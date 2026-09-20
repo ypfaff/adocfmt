@@ -1,9 +1,6 @@
 package block
 
-import (
-	"slices"
-	"strings"
-)
+import "slices"
 
 // list reads a run of items sharing one marker. AsciiDoc nests on any change of
 // marker, not on indentation, so a different marker opens a nested list and a
@@ -35,7 +32,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	start := s.pos()
 	b := base{Gap: gap}
 	item := &ListItem{base: b, Marker: sh.span}
-	bare := isTerm(sh.marker) && sh.span.End == s.lines[s.at].text.End
+	bare := sh.span.End == s.lines[s.at].text.End
 
 	s.at++
 	for !s.done() && !s.closes(closer) {
@@ -84,10 +81,6 @@ func foldsOntoTerm(kind shapeKind) bool {
 	default:
 		return false
 	}
-}
-
-func isTerm(marker string) bool {
-	return strings.HasPrefix(marker, "::") || marker == ";;"
 }
 
 // attached reads what hangs off an item: a continuation and the block it
