@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ypfaff/adocfmt/internal/corpus"
 	"github.com/ypfaff/adocfmt/internal/repo"
 )
 
@@ -27,8 +28,6 @@ const (
 	// tracks the Asciidoctor release the checks render with.
 	asciidoctorTag = "v2.0.26"
 	asciidoctorURL = "https://github.com/asciidoctor/asciidoctor"
-
-	casesPath = "testdata/asciidoctor-cases"
 )
 
 func main() {
@@ -52,7 +51,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	casesDir := filepath.Join(root, casesPath)
+	casesDir := filepath.Join(root, corpus.Dir)
 
 	checkout, err := os.MkdirTemp("", "asciidoctor")
 	if err != nil {
@@ -93,7 +92,7 @@ func run() error {
 	if err := writeReadme(casesDir, total); err != nil {
 		return err
 	}
-	log.Printf("%d cases in %s", total, casesPath)
+	log.Printf("%d cases in %s", total, corpus.Dir)
 	return nil
 }
 
