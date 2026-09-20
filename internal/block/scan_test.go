@@ -194,6 +194,7 @@ Header "= Title\n"`,
 			if err != nil {
 				t.Fatal(err)
 			}
+			checkPartition(t, doc)
 			if got, want := dump(doc), strings.TrimPrefix(test.want, "\n")+"\n"; got != want {
 				t.Errorf("tree differs\ngot:\n%swant:\n%s", got, want)
 			}
