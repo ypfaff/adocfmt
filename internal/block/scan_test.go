@@ -122,6 +122,57 @@ Paragraph meta("[role=x]\n") "Text.\n"
 Literal meta("[\"source\"]\n") "code\n"`,
 		},
 		{
+			name: "the hardbreaks option makes the line breaks content",
+			src:  "[%hardbreaks]\nread\nmy\nlips\n\n[quote%hardbreaks]\na\nb\n\n[.lead]\n[opts=hardbreaks]\na\nb\n\n[hardbreaks]\na\nb\n",
+			want: `
+Literal meta("[%hardbreaks]\n") "read\nmy\nlips\n"
+Literal meta("[quote%hardbreaks]\n") "a\nb\n"
+Literal meta("[.lead]\n") meta("[opts=hardbreaks]\n") "a\nb\n"
+Paragraph meta("[hardbreaks]\n") "a\nb\n"`,
+		},
+		{
+			name: "the option on a container does not reach its paragraphs",
+			src:  "[%hardbreaks]\n--\na\nb\n--\n",
+			want: `
+Container meta("[%hardbreaks]\n") "--\n"
+  Paragraph "a\nb\n"`,
+		},
+		{
+			name: "hardbreaks-option in the header holds for the document",
+			src:  "= Title\n:hardbreaks-option:\n\na\nb\n\n* item\n+\nc\nd\n\n====\ne\nf\n====\n",
+			want: `
+Header "= Title\n:hardbreaks-option:\n"
+Literal "a\nb\n"
+List "*"
+  ListItem "* item\n"
+    Continuation gap! "+\n"
+    Literal "c\nd\n"
+Container "====\n"
+  Literal "e\nf\n"`,
+		},
+		{
+			name: "an entry binds lines from where it stands until one unsets it",
+			src:  "a\nb\n\n:hardbreaks:\n\nc\nd\n\n:!hardbreaks-option:\n\ne\nf\n",
+			want: `
+Paragraph "a\nb\n"
+Attribute ":hardbreaks:\n"
+Literal "c\nd\n"
+Attribute ":!hardbreaks-option:\n"
+Paragraph "e\nf\n"`,
+		},
+		{
+			name: "attribute-missing drop-line binds lines, any other value frees them",
+			src:  ":attribute-missing: drop-line\n\na {x}\nb\n\n:attribute-missing: skip\n\nc\nd\n\n:attribute-missing: drop-line\n\n:attribute-missing!:\n\ne\nf\n",
+			want: `
+Attribute ":attribute-missing: drop-line\n"
+Literal "a {x}\nb\n"
+Attribute ":attribute-missing: skip\n"
+Paragraph "c\nd\n"
+Attribute ":attribute-missing: drop-line\n"
+Attribute ":attribute-missing!:\n"
+Paragraph "e\nf\n"`,
+		},
+		{
 			name: "metadata binds across a blank line",
 			src:  "[#id]\n\nText.\n",
 			want: `

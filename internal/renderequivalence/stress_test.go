@@ -235,17 +235,11 @@ var stressQuarantine = byCase(map[string][]string{
 		"blocks/0032-quoted-paragraph-style-quote-block-with-attribution",
 		"blocks/0033-should-parse-credit-line-in-quoted-paragraph-style-quote-blo",
 	},
-	"hardbreaks make every line break content": {
-		"paragraphs/0015-should-add-a-hardbreak-at-end-of-each-line-when-hardbreaks-o",
-		"paragraphs/0016-should-be-able-to-toggle-hardbreaks-by-setting-hardbreaks-op",
-	},
 	"an escaped directive is unescaped only at the start of a line": {
 		"reader/0046-escaped-include-directive-is-left-unprocessed",
 		"reader/0081-escaped-ifdef-is-unescaped-and-ignored",
 	},
-	"attribute-missing drop-line and {set:} make the line the unit of meaning": {
-		"attributes/0017-ignores-lines-with-bad-attributes-if-attribute-missing-is-dr",
-		"attributes/0018-should-drop-line-with-reference-to-missing-attribute-if-attr",
+	"an inline {set:name!} drops its line, since attribute-undefined defaults to drop-line": {
 		"attributes/0020-should-drop-line-with-attribute-unassignment-by-default",
 	},
 })

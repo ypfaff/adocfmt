@@ -126,8 +126,9 @@ type Setext struct {
 // Paragraph holds prose, the only content a sentence rule may reflow.
 type Paragraph struct{ base }
 
-// Literal holds verbatim lines without a delimiter: an indented paragraph, or
-// one an attribute line turned into code.
+// Literal holds verbatim lines without a delimiter: an indented paragraph, one
+// an attribute line turned into code, or prose whose line breaks Asciidoctor
+// renders, because hardbreaks are on or a missing attribute drops its line.
 type Literal struct{ base }
 
 // Verbatim is a delimited block whose content must stay byte-identical:

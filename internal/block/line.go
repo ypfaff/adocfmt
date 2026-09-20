@@ -2,6 +2,8 @@ package block
 
 import (
 	"bytes"
+	"slices"
+	"strings"
 	"unicode"
 	"unicode/utf8"
 )
@@ -314,11 +316,28 @@ func directiveShape(s []byte) (shape, bool) {
 // attrEntryShape recognizes :name: and :name: value, including the :!name:
 // and :name!: unset forms.
 func attrEntryShape(s []byte) (shape, bool) {
-	if len(s) < 2 || s[0] != ':' {
+	if _, ok := parseAttrEntry(s); !ok {
 		return shape{}, false
 	}
+	return shape{kind: shapeAttrEntry}, true
+}
+
+// attrEntry is an attribute entry as Asciidoctor stores it: the name
+// lowercased, the value trimmed, and set false for the :!name: and :name!:
+// forms.
+type attrEntry struct {
+	name  string
+	value string
+	set   bool
+}
+
+func parseAttrEntry(s []byte) (attrEntry, bool) {
+	if len(s) < 2 || s[0] != ':' {
+		return attrEntry{}, false
+	}
 	at := 1
-	if s[at] == '!' {
+	unset := s[at] == '!'
+	if unset {
 		at++
 	}
 	name := at
@@ -326,18 +345,23 @@ func attrEntryShape(s []byte) (shape, bool) {
 		at++
 	}
 	if at == name {
-		return shape{}, false
+		return attrEntry{}, false
 	}
+	e := attrEntry{name: strings.ToLower(string(s[name:at]))}
 	if at < len(s) && s[at] == '!' {
+		unset = true
 		at++
 	}
 	if at >= len(s) || s[at] != ':' {
-		return shape{}, false
+		return attrEntry{}, false
 	}
-	if at+1 < len(s) && s[at+1] != ' ' && s[at+1] != '\t' {
-		return shape{}, false
+	at++
+	if at < len(s) && !isSpaceByte(s[at]) {
+		return attrEntry{}, false
 	}
-	return shape{kind: shapeAttrEntry}, true
+	e.value = string(bytes.TrimSpace(s[at:]))
+	e.set = !unset
+	return e, true
 }
 
 const commentStyle = "comment"
@@ -397,6 +421,135 @@ func blockStyle(s []byte) string {
 		s = s[1 : len(s)-1]
 	}
 	return string(bytes.ToLower(s))
+}
+
+// hardbreaksOption makes every line break of a paragraph a <br>, so its lines
+// are content the way the lines of a verse are.
+const hardbreaksOption = "hardbreaks"
+
+// hasOption reports whether an attribute line above the block sets the option.
+// Unlike a style, options accumulate across attribute lines.
+func hasOption(src []byte, meta []Meta, option string) bool {
+	for _, m := range meta {
+		if m.Kind == MetaAttributes && slices.Contains(blockOptions(src[m.Lines.Start:m.Lines.End]), option) {
+			return true
+		}
+	}
+	return false
+}
+
+// blockOptions lists the options an attribute line sets, in every spelling
+// Asciidoctor accepts: %opt in the shorthand of the first attribute, options=
+// or opts= holding one name or a comma-separated list, and opt-option=, the
+// key it stores every one of them under.
+func blockOptions(s []byte) []string {
+	s = bytes.TrimSpace(s)
+	if len(s) < 2 || s[0] != '[' || s[len(s)-1] != ']' {
+		return nil
+	}
+	var opts []string
+	for i, attr := range splitAttrList(s[1 : len(s)-1]) {
+		name, value, named := cutAttr(attr)
+		switch {
+		case !named && i == 0:
+			opts = append(opts, shorthandOptions(name)...)
+		case named && (name == "options" || name == "opts"):
+			opts = append(opts, splitOptions(value)...)
+		case named && strings.HasSuffix(name, "-option"):
+			opts = append(opts, strings.TrimSuffix(name, "-option"))
+		}
+	}
+	return opts
+}
+
+// splitAttrList cuts an attribute list at its commas. A quote shields a comma
+// only where Asciidoctor reads one as quoting: at the start of an attribute or
+// right after its =, and only when a closing quote follows.
+func splitAttrList(s []byte) [][]byte {
+	var attrs [][]byte
+	start := 0
+	for at := 0; at < len(s); at++ {
+		switch c := s[at]; {
+		case c == ',':
+			attrs = append(attrs, s[start:at])
+			start = at + 1
+		case (c == '"' || c == '\'') && opensQuote(s[start:at]):
+			if closing := closingQuote(s, at); closing > 0 {
+				at = closing
+			}
+		}
+	}
+	return append(attrs, s[start:])
+}
+
+func opensQuote(before []byte) bool {
+	before = bytes.TrimSpace(before)
+	return len(before) == 0 || before[len(before)-1] == '='
+}
+
+// closingQuote finds the quote that closes the one at open, skipping escaped
+// quotes, or -1 when none does and the opener is text.
+func closingQuote(s []byte, open int) int {
+	for at := open + 1; at < len(s); at++ {
+		switch s[at] {
+		case '\\':
+			at++
+		case s[open]:
+			return at
+		}
+	}
+	return -1
+}
+
+// cutAttr splits one attribute into name and value. A quoted attribute is
+// positional whatever it contains; anything else is named at its first =.
+func cutAttr(attr []byte) (name, value string, named bool) {
+	attr = bytes.TrimSpace(attr)
+	if len(attr) > 0 && (attr[0] == '"' || attr[0] == '\'') {
+		return unquote(attr), "", false
+	}
+	n, v, ok := bytes.Cut(attr, []byte{'='})
+	if !ok {
+		return string(attr), "", false
+	}
+	return string(bytes.TrimSpace(n)), unquote(bytes.TrimSpace(v)), true
+}
+
+func unquote(s []byte) string {
+	if len(s) >= 2 && (s[0] == '"' || s[0] == '\'') && s[len(s)-1] == s[0] {
+		s = s[1 : len(s)-1]
+	}
+	return string(s)
+}
+
+// shorthandOptions reads the %opt parts out of the style shorthand
+// [style#id.role%opt]. A space anywhere means the attribute is no shorthand.
+func shorthandOptions(style string) []string {
+	if strings.ContainsRune(style, ' ') {
+		return nil
+	}
+	var opts []string
+	for at := 0; at < len(style); {
+		end := len(style)
+		if next := strings.IndexAny(style[at+1:], ".#%"); next >= 0 {
+			end = at + 1 + next
+		}
+		if style[at] == '%' && end > at+1 {
+			opts = append(opts, style[at+1:end])
+		}
+		at = end
+	}
+	return opts
+}
+
+// splitOptions reads the value of options= the way Asciidoctor does: a list
+// loses its spaces before it is split, a single name keeps them and then
+// matches nothing.
+func splitOptions(value string) []string {
+	if strings.Contains(value, ",") {
+		value = strings.ReplaceAll(value, " ", "")
+	}
+	return strings.FieldsFunc(value, func(r rune) bool { return r == ',' })
 }
 
 // markerShape recognizes the start of a list item. The marker text is the key
