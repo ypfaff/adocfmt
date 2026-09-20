@@ -22,14 +22,14 @@ Paragraph "Text.\n"`,
 			name: "a title and its underline beat the listing delimiter",
 			src:  "Mein Titel\n----------\n\nText.\n",
 			want: `
-Setext "Mein Titel\n----------\n"
+Setext "Mein Titel\n----------\n" title "Mein Titel"
 Paragraph "Text.\n"`,
 		},
 		{
 			name: "the underline is measured in characters",
 			src:  "Größe\n-----\n",
 			want: `
-Setext "Größe\n-----\n"`,
+Setext "Größe\n-----\n" title "Größe"`,
 		},
 		{
 			name: "an underline two characters off is a delimiter",
@@ -153,7 +153,7 @@ Paragraph "Text.\n---\nMore.\n"`,
 			name: "Asciidoctor reads a Markdown heading as a section title",
 			src:  "## Section One\n\nText.\n",
 			want: `
-Heading "## Section One\n"
+Heading "## Section One\n" title "Section One"
 Paragraph "Text.\n"`,
 		},
 		{
@@ -184,6 +184,41 @@ List "::"
 List "::"
   ListItem "term1::\n\ndef1\n"
   ListItem "term2::\n\ndef2\n"`,
+		},
+		{
+			name: "trailing whitespace does not hide a delimiter",
+			src:  "----  \ncode\n----\n\nAfter.\n",
+			want: `
+Verbatim "----  \ncode\n----\n"
+Paragraph "After.\n"`,
+		},
+		{
+			name: "nor an attribute line or a directive",
+			src:  "[source]  \ncode\n\ninclude::part.adoc[]  \n",
+			want: `
+Literal meta("[source]  \n") "code\n"
+Directive! gap! "include::part.adoc[]  \n"`,
+		},
+		{
+			name: "nor a continuation",
+			src:  "* a\n+  \n----\ncode\n----\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+  \n"
+    Verbatim "----\ncode\n----\n"`,
+		},
+		{
+			name: "a heading title ends before trailing whitespace and the closing marker",
+			src:  "== Title ==  \n",
+			want: `
+Heading "== Title ==  \n" title "Title"`,
+		},
+		{
+			name: "a setext title is measured without trailing whitespace",
+			src:  "Title  \n-----\n",
+			want: `
+Setext "Title  \n-----\n" title "Title"`,
 		},
 		{
 			name: "front matter is not AsciiDoc",
