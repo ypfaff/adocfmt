@@ -29,7 +29,7 @@ func Scan(src []byte) (*Document, error) {
 		return nil, err
 	}
 
-	s := &scanner{src: src, lines: splitLines(src, start), atStart: true}
+	s := &scanner{src: src, lines: splitLines(src, start), atStart: true, lineBound: map[string]bool{}}
 	if matter := s.frontMatter(); matter != nil {
 		doc.Nodes = append(doc.Nodes, matter)
 	}
@@ -81,6 +81,10 @@ type scanner struct {
 	// line that opened it. A delimiter that opens in one and closes in another
 	// means two documents in one.
 	regions []int
+	// lineBound holds the document attributes in force that make every line of
+	// a paragraph significant. An entry counts from where it stands, inside a
+	// conditional too, because the scanner resolves none.
+	lineBound map[string]bool
 
 	findings []Finding
 }
@@ -240,6 +244,7 @@ func (s *scanner) body(b base, closer []byte) Node {
 		b.Lines = s.take()
 		return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
 	case shapeAttrEntry:
+		s.bind(s.lines[s.at])
 		b.Lines = s.take()
 		return &Attribute{base: b}
 	case shapeDirective:
@@ -281,10 +286,36 @@ func startsTitle(kind shapeKind) bool {
 func (s *scanner) header(b base) Node {
 	start := s.pos()
 	for !s.done() && s.shape().kind != shapeBlank {
+		s.bind(s.lines[s.at])
 		s.at++
 	}
 	b.Lines = Span{start, s.pos()}
 	return &Header{base: b}
+}
+
+// bind follows an attribute entry into or out of lineBound. hardbreaks-option
+// renders every line break, under its old name hardbreaks too; attribute-missing
+// drops a whole line with an unresolved reference, but only when set to
+// drop-line.
+func (s *scanner) bind(l line) {
+	e, ok := parseAttrEntry(s.text(l))
+	if !ok {
+		return
+	}
+	on := e.set
+	switch e.name {
+	case "hardbreaks", "hardbreaks-option":
+		e.name = "hardbreaks-option"
+	case "attribute-missing":
+		on = on && e.value == "drop-line"
+	default:
+		return
+	}
+	if on {
+		s.lineBound[e.name] = true
+	} else {
+		delete(s.lineBound, e.name)
+	}
 }
 
 // setextLevel reports whether the current line and the next form a two-line
@@ -304,9 +335,12 @@ func (s *scanner) setext(b base, level int) Node {
 	return &Setext{base: b, Level: level, Title: title}
 }
 
+// paragraph reads prose, unless its line breaks carry meaning: a verbatim
+// style, the hardbreaks option, or a document attribute in force that binds
+// lines makes it a Literal.
 func (s *scanner) paragraph(b base, closer []byte) Node {
 	s.textRun(&b, closer)
-	if styledVerbatim(s.src, b.Meta) {
+	if styledVerbatim(s.src, b.Meta) || hasOption(s.src, b.Meta, hardbreaksOption) || len(s.lineBound) > 0 {
 		return &Literal{base: b}
 	}
 	return &Paragraph{base: b}
