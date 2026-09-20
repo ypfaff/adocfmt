@@ -19,6 +19,24 @@ Header "= Title\nAuthor Name\n:toc:\n"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "attribute entries and conditionals before the title do not end the header",
+			src:  ":a: b\n\nifdef::x[]\n:c: d\nendif::[]\n= Title\nAuthor Name\n\nText.\n",
+			want: `
+Attribute ":a: b\n"
+Directive! gap! "ifdef::x[]\n"
+Attribute gap! ":c: d\n"
+Directive! gap! "endif::[]\n"
+Header gap! "= Title\nAuthor Name\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "a two-line document title is the header too",
+			src:  "Reference Guide\n===============\n:toc:\nDan Allen\n\npreamble\n",
+			want: `
+Header "Reference Guide\n===============\n:toc:\nDan Allen\n"
+Paragraph "preamble\n"`,
+		},
+		{
 			name: "a title and its underline beat the listing delimiter",
 			src:  "Mein Titel\n----------\n\nText.\n",
 			want: `

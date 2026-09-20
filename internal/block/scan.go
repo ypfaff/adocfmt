@@ -67,8 +67,8 @@ type scanner struct {
 	lines []line
 	at    int
 
-	// atStart keeps the document header from claiming a level 0 title further
-	// down, where it is an ordinary section.
+	// atStart is true until the first block that cannot precede the document
+	// header, so a level 0 title further down stays an ordinary section.
 	atStart bool
 	// freeze carries a directive's reach to the gap that follows it.
 	freeze bool
@@ -150,9 +150,6 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 }
 
 func (s *scanner) node(gap Gap, closer []byte) Node {
-	atStart := s.atStart
-	s.atStart = false
-
 	var meta []Meta
 	frozen := false
 	for !s.done() && !s.closes(closer) {
@@ -175,7 +172,7 @@ func (s *scanner) node(gap Gap, closer []byte) Node {
 	if s.done() || s.closes(closer) {
 		node = &Opaque{base: b}
 	} else {
-		node = s.body(b, atStart, closer)
+		node = s.body(b, closer)
 	}
 	if frozen {
 		s.freeze = true
@@ -202,12 +199,22 @@ func metaKind(kind shapeKind) (MetaKind, bool) {
 // inside a delimited block or a list item, Asciidoctor reads a title line as
 // prose and a would-be underline as the delimiter it looks like. Only a
 // discrete style makes a heading out of the line anywhere.
-func (s *scanner) body(b base, atStart bool, closer []byte) Node {
+//
+// A level 0 title in either form is the document header while nothing but
+// attribute entries and directives came before it; Asciidoctor allows both
+// above the title.
+func (s *scanner) body(b base, closer []byte) Node {
 	sh := s.shape()
+	atStart := s.atStart
+	s.atStart = atStart && (sh.kind == shapeAttrEntry || sh.kind == shapeDirective)
+
 	sectionLevel := closer == nil && len(s.markers) == 0
 	if sectionLevel && startsTitle(sh.kind) {
-		if node, ok := s.setext(b); ok {
-			return node
+		if level, ok := s.setextLevel(); ok {
+			if atStart && level == 0 {
+				return s.header(b)
+			}
+			return s.setext(b, level)
 		}
 	}
 	switch sh.kind {
@@ -270,20 +277,21 @@ func (s *scanner) header(b base) Node {
 	return &Header{base: b}
 }
 
-// setext reads a two-line title.
-func (s *scanner) setext(b base) (Node, bool) {
+// setextLevel reports whether the current line and the next form a two-line
+// title, and its level.
+func (s *scanner) setextLevel() (int, bool) {
 	if s.at+1 >= len(s.lines) {
-		return nil, false
+		return 0, false
 	}
-	level, ok := setextLevel(s.src, s.lines[s.at], s.lines[s.at+1])
-	if !ok {
-		return nil, false
-	}
+	return setextLevel(s.src, s.lines[s.at], s.lines[s.at+1])
+}
+
+func (s *scanner) setext(b base, level int) Node {
 	title := s.lines[s.at].text
 	start := s.pos()
 	s.at += 2
 	b.Lines = Span{start, s.pos()}
-	return &Setext{base: b, Level: level, Title: title}, true
+	return &Setext{base: b, Level: level, Title: title}
 }
 
 func (s *scanner) paragraph(b base, closer []byte) Node {
