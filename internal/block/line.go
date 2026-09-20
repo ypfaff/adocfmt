@@ -6,7 +6,10 @@ import (
 	"unicode/utf8"
 )
 
-// line is one source line, with and without its terminator.
+// line is one source line. full holds every byte, text stops before the
+// terminator and any trailing whitespace, because Asciidoctor strips both from
+// a line before reading it: a delimiter or directive followed by a space is
+// still one.
 type line struct {
 	text Span
 	full Span
@@ -15,20 +18,25 @@ type line struct {
 func splitLines(src []byte, from int) []line {
 	var lines []line
 	for at := from; at < len(src); {
-		next := bytes.IndexByte(src[at:], '\n')
-		if next < 0 {
-			lines = append(lines, line{Span{at, len(src)}, Span{at, len(src)}})
-			break
+		end, full := len(src), len(src)
+		if next := bytes.IndexByte(src[at:], '\n'); next >= 0 {
+			end = at + next
+			full = end + 1
 		}
-		end := at + next
-		text := end
-		if text > at && src[text-1] == '\r' {
-			text--
-		}
-		lines = append(lines, line{Span{at, text}, Span{at, end + 1}})
-		at = end + 1
+		lines = append(lines, line{Span{at, textEnd(src, at, end)}, Span{at, full}})
+		at = full
 	}
 	return lines
+}
+
+func textEnd(src []byte, start, end int) int {
+	if end > start && src[end-1] == '\r' {
+		end--
+	}
+	for end > start && isSpaceByte(src[end-1]) {
+		end--
+	}
+	return end
 }
 
 type shapeKind int

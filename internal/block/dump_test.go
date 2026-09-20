@@ -62,6 +62,10 @@ func (d *dumper) node(node Node, depth int) {
 	case *Container:
 		d.writef(" %s\n", d.quote(node.Delim.Open))
 		d.nodes(node.Children, depth+1)
+	case *Heading:
+		d.writef(" %s title %s\n", d.quote(common.Lines), d.quote(node.Title))
+	case *Setext:
+		d.writef(" %s title %s\n", d.quote(common.Lines), d.quote(node.Title))
 	default:
 		d.writef(" %s\n", d.quote(common.Lines))
 	}
