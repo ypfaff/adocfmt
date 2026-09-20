@@ -40,8 +40,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	s.at++
 	for !s.done() && !s.closes(closer) {
 		inner := s.shape()
-		if inner.kind == shapeBlank || inner.kind == shapeMarker || inner.kind == shapeDelimiter ||
-			inner.kind == shapeAttributes || inner.kind == shapeContinuation {
+		if endsText(inner.kind) || inner.kind == shapeMarker {
 			break
 		}
 		if inner.kind == shapeDirective {

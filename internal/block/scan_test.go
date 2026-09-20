@@ -186,6 +186,26 @@ List "*"
   ListItem gap! "* b\n"`,
 		},
 		{
+			name: "an anchor line and a lone + end a paragraph",
+			src:  "Text.\n[[id]]\nMore.\n\nnormal text\n+\n",
+			want: `
+Paragraph "Text.\n"
+Paragraph meta("[[id]]\n") "More.\n"
+Paragraph "normal text\n"
+Continuation gap! "+\n"`,
+		},
+		{
+			name: "a lone + ends the paragraph a continuation carries as well",
+			src:  "* a\n+\nparagraph two\n+\n----\ncode\n----\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph "paragraph two\n"
+    Continuation gap! "+\n"
+    Verbatim "----\ncode\n----\n"`,
+		},
+		{
 			name: "a thematic break is not prose",
 			src:  "Text.\n\n---\n\nMore.\n",
 			want: `

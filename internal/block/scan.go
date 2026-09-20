@@ -319,10 +319,7 @@ func (s *scanner) textRun(b *base, closer []byte) {
 	inList := len(s.markers) > 0
 	for !s.done() && !s.closes(closer) {
 		sh := s.shape()
-		if sh.kind == shapeBlank || sh.kind == shapeDelimiter || sh.kind == shapeAttributes {
-			break
-		}
-		if sh.kind == shapeMarker && inList {
+		if endsText(sh.kind) || (sh.kind == shapeMarker && inList) {
 			break
 		}
 		if sh.kind == shapeDirective {
@@ -335,6 +332,19 @@ func (s *scanner) textRun(b *base, closer []byte) {
 	if b.Frozen {
 		b.Gap.Frozen = true
 		s.freeze = true
+	}
+}
+
+// endsText reports whether a line of this shape ends the text of a paragraph
+// or a list item. Asciidoctor stops at a blank line, a delimiter, a block
+// attribute or anchor line and a lone +, and reads on past a heading line or a
+// comment.
+func endsText(kind shapeKind) bool {
+	switch kind {
+	case shapeBlank, shapeDelimiter, shapeAttributes, shapeAnchor, shapeContinuation:
+		return true
+	default:
+		return false
 	}
 }
 
