@@ -226,15 +226,6 @@ func common(node block.Node) fields {
 // stressQuarantine names the cases the scanner still reads differently from
 // Asciidoctor, by cause. Fixing the scanner shrinks it; see TestStressedCases.
 var stressQuarantine = byCase(map[string][]string{
-	"a lone + ends a paragraph in Asciidoctor, the scanner reads it as text": {
-		"lists/0014-should-continue-to-parse-blocks-attached-by-a-list-continuat",
-		"lists/0046-adjacent-list-continuation-line-attaches-following-paragraph",
-		"lists/0059-consecutive-list-continuation-lines-are-folded",
-		"lists/0095-paragraph-attached-by-a-list-continuation-on-either-side-in-",
-		"lists/0096-paragraph-attached-by-a-list-continuation-on-either-side-to-",
-		"paragraphs/0009-normal-paragraph-terminates-at-list-continuation",
-		"paragraphs/0023-quote-paragraph-terminates-at-list-continuation",
-	},
 	"a comment line inside a paragraph is read as text": {
 		"blocks/0002-adjacent-line-comment-between-paragraphs",
 		"manpage/0004-should-normalize-whitespace-and-skip-line-comments-before-an",
