@@ -99,8 +99,9 @@ func (b *base) Extent() Span {
 	return Span{b.Gap.Span.Start, b.Lines.End}
 }
 
-// Header is the document header: the level 0 title with the author, revision
-// and attribute lines that follow it without a blank line.
+// Header is the document header: the level 0 title, in one-line or two-line
+// form, with the author, revision and attribute lines that follow it without a
+// blank line.
 type Header struct{ base }
 
 // Heading is a one-line section title. Marker is = or #, since Asciidoctor

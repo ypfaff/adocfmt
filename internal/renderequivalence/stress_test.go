@@ -243,14 +243,6 @@ var stressQuarantine = byCase(map[string][]string{
 	"the comment check counts ///, which Asciidoctor reads as text": {
 		"parser/0018-break-header-at-line-with-three-forward-slashes",
 	},
-	"a two-line document title followed by an author line is not read as the header": {
-		"document/0074-attribute-entry-can-appear-before-author-line-under-document",
-		"sections/0015-document-title-with-multiline-syntax-and-unicode-characters",
-	},
-	"a two-line document title turns on compat mode, which the one-line form does not": {
-		"document/0004-should-enable-compat-mode-for-document-with-legacy-doctitle",
-		"document/0006-should-not-enable-compat-mode-for-document-with-legacy-docti",
-	},
 	"a quoted paragraph with an attribution line is a quote block": {
 		"blocks/0032-quoted-paragraph-style-quote-block-with-attribution",
 		"blocks/0033-should-parse-credit-line-in-quoted-paragraph-style-quote-blo",
