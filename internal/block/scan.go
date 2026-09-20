@@ -360,6 +360,9 @@ func (s *scanner) directive(b base, sh shape) Node {
 func (s *scanner) delimited(b base, sh shape) Node {
 	openAt := s.at
 	open := s.lines[s.at]
+	// A fence may carry a language after the backticks; only the bare fence
+	// closes it. Every other delimiter closes on a line equal to its opener.
+	closer := s.text(open)[:sh.width]
 	region := s.region()
 	start := s.pos()
 	delim := Delimiter{Char: sh.char, Width: sh.width, Open: open.full}
@@ -371,7 +374,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 
 	var node Node
 	if sh.content == contentCompound {
-		children, tail := s.nodes(s.text(open))
+		children, tail := s.nodes(closer)
 		delim.Close = s.closingLine()
 		b.Lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
@@ -379,7 +382,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		// Asciidoctor reads a comment block without preprocessing it, so a
 		// directive inside one opens no conditional region.
 		comment := sh.char == '/' || style == commentStyle
-		for !s.done() && !bytes.Equal(s.text(s.lines[s.at]), s.text(open)) {
+		for !s.done() && !bytes.Equal(s.text(s.lines[s.at]), closer) {
 			if inner := s.shape(); inner.kind == shapeDirective && !comment {
 				s.track(inner)
 			}
