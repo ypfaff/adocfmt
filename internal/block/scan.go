@@ -154,20 +154,33 @@ func (s *scanner) node(gap Gap, closer []byte) Node {
 	s.atStart = false
 
 	var meta []Meta
+	frozen := false
 	for !s.done() && !s.closes(closer) {
-		kind, ok := metaKind(s.shape().kind)
-		if !ok {
+		sh := s.shape()
+		kind, ok := metaKind(sh.kind)
+		if !ok && (sh.kind != shapeDirective || len(meta) == 0) {
 			break
+		}
+		if sh.kind == shapeDirective {
+			s.track(sh)
+			kind, frozen = MetaDirective, true
+			gap.Frozen, s.freeze = true, true
 		}
 		meta = append(meta, Meta{Kind: kind, Gap: gap, Lines: s.take()})
 		gap = s.gap()
 	}
 
-	b := base{Gap: gap, Meta: meta, Lines: Span{s.pos(), s.pos()}}
+	b := base{Gap: gap, Meta: meta, Lines: Span{s.pos(), s.pos()}, Frozen: frozen}
+	var node Node
 	if s.done() || s.closes(closer) {
-		return &Opaque{base: b}
+		node = &Opaque{base: b}
+	} else {
+		node = s.body(b, atStart, closer)
 	}
-	return s.body(b, atStart, closer)
+	if frozen {
+		s.freeze = true
+	}
+	return node
 }
 
 func metaKind(kind shapeKind) (MetaKind, bool) {

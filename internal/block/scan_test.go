@@ -122,6 +122,23 @@ Paragraph gap! "More.\n"`,
 Paragraph! gap! "First line.\ninclude::part.adoc[]\nThird line.\n"`,
 		},
 		{
+			name: "a directive between metadata and its block keeps them bound and freezes the block",
+			src:  "[source]\ninclude::part.adoc[]\ncode\n\nAfter.\n",
+			want: `
+Literal! gap! meta("[source]\n") meta("include::part.adoc[]\n") "code\n"
+Paragraph gap! "After.\n"`,
+		},
+		{
+			name: "also inside a list, where the block stays attached to the item",
+			src:  "* a\n+\n.Title\ninclude::part.adoc[]\nText.\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph! gap! meta(".Title\n") meta("include::part.adoc[]\n") "Text.\n"
+  ListItem gap! "* b\n"`,
+		},
+		{
 			name: "a thematic break is not prose",
 			src:  "Text.\n\n---\n\nMore.\n",
 			want: `
@@ -260,6 +277,11 @@ func TestScanReports(t *testing.T) {
 			name: "a delimiter that closes outside the region it opened in",
 			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n----\n",
 			want: Finding{Line: 2, Severity: Skip, Message: "delimiter opens and closes in different conditional regions"},
+		},
+		{
+			name: "also when the conditional sits among the metadata lines",
+			src:  "[source]\nifdef::extra[]\n----\nendif::[]\ncode\n----\n",
+			want: Finding{Line: 3, Severity: Skip, Message: "delimiter opens and closes in different conditional regions"},
 		},
 	}
 
