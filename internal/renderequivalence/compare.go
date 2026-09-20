@@ -6,6 +6,7 @@
 package renderequivalence
 
 import (
+	"bytes"
 	"fmt"
 	"html"
 	"regexp"
@@ -64,6 +65,12 @@ func comments(src []byte) []string {
 // Differences reports one finding per check that failed. An empty result means
 // formatting preserved everything a reader sees.
 func Differences(src, formatted []byte) ([]string, error) {
+	// Rendering is deterministic, so identical sources cannot differ in
+	// anything the checks look at, and each render is a process start.
+	if bytes.Equal(src, formatted) {
+		return nil, nil
+	}
+
 	before, err := render(src)
 	if err != nil {
 		return nil, fmt.Errorf("rendering the input: %w", err)
