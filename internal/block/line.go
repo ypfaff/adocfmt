@@ -357,7 +357,8 @@ func styleOf(src []byte, meta []Meta) string {
 }
 
 // blockStyle reads the style out of an attribute line, which is the first
-// positional value: [source,go] is source, [#id] is nothing.
+// positional value: [source,go] is source, ["source"] too, [#id] and
+// [role=x] are nothing.
 func blockStyle(s []byte) string {
 	s = bytes.TrimSpace(s)
 	if len(s) < 2 || s[0] != '[' {
@@ -367,7 +368,14 @@ func blockStyle(s []byte) string {
 	if end := bytes.IndexAny(s, ",%#.]"); end >= 0 {
 		s = s[:end]
 	}
-	return string(bytes.ToLower(bytes.TrimSpace(s)))
+	if bytes.IndexByte(s, '=') >= 0 {
+		return ""
+	}
+	s = bytes.TrimSpace(s)
+	if len(s) >= 2 && (s[0] == '"' || s[0] == '\'') && s[len(s)-1] == s[0] {
+		s = s[1 : len(s)-1]
+	}
+	return string(bytes.ToLower(s))
 }
 
 // markerShape recognizes the start of a list item. The marker text is the key
