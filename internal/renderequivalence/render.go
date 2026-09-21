@@ -10,8 +10,11 @@ import (
 //
 // Warnings go to stderr and are ignored: malformed input is a legitimate test
 // case, and the same warning appears on both sides of every comparison.
+//
+// showtitle is set because embedded output leaves the document title out, which
+// would hide every rule that rewrites it.
 func render(src []byte) (string, error) {
-	cmd := exec.Command("asciidoctor", "--embedded", "--safe-mode", "safe", "--out-file", "-", "-")
+	cmd := exec.Command("asciidoctor", "--embedded", "--attribute", "showtitle", "--safe-mode", "safe", "--out-file", "-", "-")
 	cmd.Stdin = bytes.NewReader(src)
 
 	var stdout, stderr bytes.Buffer
