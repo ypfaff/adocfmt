@@ -77,6 +77,9 @@ type scanner struct {
 	freeze bool
 	// markers are the list markers of the open lists, innermost last.
 	markers []string
+	// carrying is true while the scanner reads the block a continuation
+	// attaches to an item, see endsProse.
+	carrying bool
 	// regions are the open conditional regions, innermost last, each by the
 	// line that opened it. A delimiter that opens in one and closes in another
 	// means two documents in one.
@@ -455,22 +458,21 @@ func (s *scanner) literal(b base, closer []byte) Node {
 // textRun consumes the lines of an undelimited block up to the first line ends
 // says is no longer part of it. A directive line inside the block does not end
 // it: what the directive pulls in decides where the block really ends, so the
-// block and the gaps around it freeze instead. A comment line does not end it
-// either, nor does a line that has to stay a line of its own; the block
-// freezes to keep them where they are.
-func (s *scanner) textRun(b *base, closer []byte, ends func(shapeKind) bool) {
+// block and the gaps around it freeze instead. A line that has to stay a line
+// of its own freezes the block too, see pinsLine.
+func (s *scanner) textRun(b *base, closer []byte, ends func(shape) bool) {
 	start := s.pos()
 	directive := false
 	for !s.done() && !s.closes(closer) {
 		sh := s.shape()
-		if ends(sh.kind) {
+		if ends(sh) {
 			break
 		}
 		if sh.kind == shapeDirective {
 			s.track(sh)
 			directive = true
 		}
-		b.Frozen = b.Frozen || sh.kind == shapeDirective || sh.kind == shapeComment || pinsLine(s.text(s.lines[s.at]))
+		b.Frozen = b.Frozen || sh.kind == shapeDirective || pinsLine(sh, s.text(s.lines[s.at]))
 		s.at++
 	}
 	b.Lines = Span{start, s.pos()}
@@ -484,8 +486,8 @@ func (s *scanner) textRun(b *base, closer []byte, ends func(shapeKind) bool) {
 // or a list item. Asciidoctor stops at a blank line, a delimiter, a block
 // attribute or anchor line and a lone +, and reads on past a heading line or a
 // comment.
-func endsText(kind shapeKind) bool {
-	switch kind {
+func endsText(sh shape) bool {
+	switch sh.kind {
 	case shapeBlank, shapeDelimiter, shapeAttributes, shapeAnchor, shapeContinuation:
 		return true
 	default:
@@ -495,24 +497,35 @@ func endsText(kind shapeKind) bool {
 
 // endsItemText also stops at the next item, which keeps a term from being read
 // as the text of the item above it.
-func endsItemText(kind shapeKind) bool {
-	return endsText(kind) || kind == shapeMarker
+func endsItemText(sh shape) bool {
+	return endsText(sh) || sh.kind == shapeMarker
 }
 
 // endsVerbatim stops where Asciidoctor stops a verbatim-styled paragraph: at a
 // blank line or a lone +, whatever the lines in between look like.
-func endsVerbatim(kind shapeKind) bool {
-	return kind == shapeBlank || kind == shapeContinuation
+func endsVerbatim(sh shape) bool {
+	return sh.kind == shapeBlank || sh.kind == shapeContinuation
 }
 
-// endsProse is where a paragraph ends at the current position. A literal
-// paragraph does not use it: Asciidoctor reads that up to a blank line, an
-// item line included.
-func (s *scanner) endsProse() func(shapeKind) bool {
-	if s.inList() {
+// endsProse is where a paragraph ends at the current position. Inside an item
+// Asciidoctor breaks a paragraph at an item line only when no blank line came
+// before it, and a continuation counts as one: a paragraph right after the
+// item's text ends at any item line, a carried one at an item of an open list.
+// A literal paragraph does not use it: Asciidoctor reads that up to a blank
+// line, an item line included.
+func (s *scanner) endsProse() func(shape) bool {
+	switch {
+	case !s.inList():
+		return endsText
+	case s.carrying:
+		return s.endsCarriedText
+	default:
 		return endsItemText
 	}
-	return endsText
+}
+
+func (s *scanner) endsCarriedText(sh shape) bool {
+	return endsText(sh) || s.sibling()
 }
 
 func (s *scanner) directive(b base, sh shape) Node {

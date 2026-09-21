@@ -313,10 +313,15 @@ func directiveShape(s []byte) (shape, bool) {
 	return sh, true
 }
 
-// pinsLine reports whether a line of prose has to stay a line of its own. An
-// escaped directive loses its backslash only at the start of a line, and an
-// inline {set:} makes Asciidoctor drop the whole line it stands on.
-func pinsLine(s []byte) bool {
+// pinsLine reports whether a line inside a paragraph has to stay a line of its
+// own. A comment line joined into prose becomes prose; a description term
+// joined onto the line above makes a list of both; an escaped directive loses
+// its backslash only at the start of a line; and an inline {set:} makes
+// Asciidoctor drop the whole line it stands on.
+func pinsLine(sh shape, s []byte) bool {
+	if sh.kind == shapeComment || (sh.kind == shapeMarker && isTermMarker(sh.marker)) {
+		return true
+	}
 	if len(s) > 0 && s[0] == '\\' {
 		if _, ok := directiveShape(s[1:]); ok {
 			return true
@@ -713,6 +718,8 @@ func isDigit(c byte) bool { return c >= '0' && c <= '9' }
 func isUpper(c byte) bool { return c >= 'A' && c <= 'Z' }
 
 func isLower(c byte) bool { return c >= 'a' && c <= 'z' }
+
+func isTermMarker(marker string) bool { return marker[0] == ':' || marker[0] == ';' }
 
 // descriptionMarker finds the term separator of a description list. The term
 // itself is free text, so the separator is what identifies the list.

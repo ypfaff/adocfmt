@@ -85,7 +85,8 @@ type Node interface {
 
 // base is what every node has.
 //
-// Frozen marks a node whose line structure the scanner could not determine. No
+// Frozen marks a node whose lines have to stay as they are: the scanner could
+// not determine their structure, or one of them changes meaning when moved. No
 // rule may add, remove, join or split lines there; line-local rewrites such as
 // trailing whitespace removal stay safe.
 type base struct {
