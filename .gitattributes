@@ -1,0 +1,6 @@
+# Line endings are LF in the repository and in every working tree, whatever a
+# clone is configured to do.
+* text=auto eol=lf
+
+# Except where the line endings are what the case tests.
+testdata/golden/**/crlf/* -text
