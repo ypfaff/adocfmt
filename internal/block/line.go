@@ -19,25 +19,51 @@ type line struct {
 func splitLines(src []byte, from int) []line {
 	var lines []line
 	for at := from; at < len(src); {
-		end, full := len(src), len(src)
+		full := len(src)
 		if next := bytes.IndexByte(src[at:], '\n'); next >= 0 {
-			end = at + next
-			full = end + 1
+			full = at + next + 1
 		}
-		lines = append(lines, line{Span{at, textEnd(src, at, end)}, Span{at, full}})
+		span := Span{at, full}
+		lines = append(lines, line{Span{at, textEnd(src, at, terminator(src, span))}, span})
 		at = full
 	}
 	return lines
 }
 
 func textEnd(src []byte, start, end int) int {
-	if end > start && src[end-1] == '\r' {
-		end--
-	}
 	for end > start && isSpaceByte(src[end-1]) {
 		end--
 	}
 	return end
+}
+
+// terminator reports where the line's terminator begins: at the LF, or at the
+// CR of a CRLF. A last line that ends without one has none.
+func terminator(src []byte, full Span) int {
+	end := full.End
+	if end > full.Start && src[end-1] == '\n' {
+		end--
+		if end > full.Start && src[end-1] == '\r' {
+			end--
+		}
+	}
+	return end
+}
+
+// TrimTrailing returns src without the spaces and tabs at the end of its
+// lines. The terminators stay as they are, so a CRLF source keeps its CRLF and
+// a last line without one gains none.
+//
+// It lives beside the scanner because both ask the same question: the scanner
+// cuts a line's content here before it classifies the line, and where a line's
+// content ends is one fact with one place.
+func TrimTrailing(src []byte) []byte {
+	out := make([]byte, 0, len(src))
+	for _, l := range splitLines(src, 0) {
+		out = append(out, src[l.text.Start:l.text.End]...)
+		out = append(out, src[terminator(src, l.full):l.full.End]...)
+	}
+	return out
 }
 
 type shapeKind int
