@@ -54,7 +54,7 @@ func (p *printer) container(node *block.Container) {
 }
 
 func (p *printer) list(node *block.List) {
-	p.span(block.Span{Start: node.Extent().Start, End: node.Lines.Start})
+	p.span(block.Span{Start: node.Extent().Start, End: node.Lines().Start})
 	for _, item := range node.Items {
 		p.item(item)
 	}

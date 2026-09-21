@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-// common reaches the shared fields from the test, which the printer does not
-// need and the model therefore does not expose.
-func (b *base) common() *base { return b }
-
 // dump renders the tree as one line per node, so a test states the structure it
 // expects instead of reaching into fields.
 func dump(doc *Document) string {
@@ -37,16 +33,14 @@ func (d *dumper) nodes(nodes []Node, depth int) {
 }
 
 func (d *dumper) node(node Node, depth int) {
-	common := node.(interface{ common() *base }).common()
-
 	d.writef("%s%s", strings.Repeat("  ", depth), reflect.TypeOf(node).Elem().Name())
-	if common.Frozen {
+	if node.Frozen() {
 		d.writef("!")
 	}
-	if common.Gap.Frozen {
+	if node.Gap().Frozen {
 		d.writef(" gap!")
 	}
-	for _, meta := range common.Meta {
+	for _, meta := range node.Meta() {
 		d.writef(" meta(%s)", d.quote(meta.Lines))
 	}
 
@@ -63,11 +57,11 @@ func (d *dumper) node(node Node, depth int) {
 		d.writef(" %s\n", d.quote(node.Delim.Open))
 		d.nodes(node.Children, depth+1)
 	case *Heading:
-		d.writef(" %s title %s\n", d.quote(common.Lines), d.quote(node.Title))
+		d.writef(" %s title %s\n", d.quote(node.Lines()), d.quote(node.Title))
 	case *Setext:
-		d.writef(" %s title %s\n", d.quote(common.Lines), d.quote(node.Title))
+		d.writef(" %s title %s\n", d.quote(node.Lines()), d.quote(node.Title))
 	default:
-		d.writef(" %s\n", d.quote(common.Lines))
+		d.writef(" %s\n", d.quote(node.Lines()))
 	}
 }
 
