@@ -187,9 +187,10 @@ type Directive struct{ base }
 type FrontMatter struct{ base }
 
 // Opaque is a block the scanner delimits but does not model: a block macro, a
-// thematic or page break, a Markdown quote, or metadata that never found its
-// block. It is neither prose nor verbatim content, so no rule reflows it, and
-// it passes through unchanged.
+// thematic or page break, a Markdown quote, a quoted paragraph with its
+// attribution line, or metadata that never found its block. It is neither
+// prose nor verbatim content, so no rule reflows it, and it passes through
+// unchanged.
 //
 // A construct leaves this type when a rule needs it told apart from the rest.
 type Opaque struct{ base }

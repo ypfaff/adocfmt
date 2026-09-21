@@ -423,6 +423,36 @@ func blockStyle(s []byte) string {
 	return string(bytes.ToLower(s))
 }
 
+// paragraphStyles hand a paragraph to block parsing, where Asciidoctor never
+// looks for the quoted paragraph form: its PARAGRAPH_STYLES but normal, and the
+// admonition styles. Any other style it drops as unknown.
+var paragraphStyles = map[string]bool{
+	"comment": true, "example": true, "literal": true, "listing": true, "open": true,
+	"pass": true, "quote": true, "sidebar": true, "source": true, "verse": true,
+	"abstract": true, "partintro": true,
+	"note": true, "tip": true, "important": true, "warning": true, "caution": true,
+}
+
+var attribution = []byte("-- ")
+
+// quotedParagraph recognizes the paragraph Asciidoctor reads as a quote block
+// with an attribution: it opens with a straight double quote, its last line
+// starts with two dashes and a space, and the line before that closes the
+// quote. Comment lines do not count, since Asciidoctor drops them first.
+func quotedParagraph(src []byte, lines []line) bool {
+	var texts [][]byte
+	for _, l := range lines {
+		if classify(src, l).kind != shapeComment {
+			texts = append(texts, src[l.text.Start:l.text.End])
+		}
+	}
+	n := len(texts)
+	if n < 2 || len(texts[0]) == 0 {
+		return false
+	}
+	return texts[0][0] == '"' && bytes.HasSuffix(texts[n-2], []byte{'"'}) && bytes.HasPrefix(texts[n-1], attribution)
+}
+
 // hardbreaksOption makes every line break of a paragraph a <br>, so its lines
 // are content the way the lines of a verse are.
 const hardbreaksOption = "hardbreaks"
