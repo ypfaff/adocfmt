@@ -25,12 +25,15 @@ func headingLine(level int, title []byte) ([]byte, bool) {
 	return line, true
 }
 
-func (p *printer) heading(node *block.Heading) {
+// title emits a section title in its canonical one-line form, whether the
+// source wrote it on one line or two, and leaves the node as it stands where
+// that form would say something else.
+func (p *printer) title(node block.Node, level int, title block.Span) {
 	if p.raw || node.Frozen() {
 		p.span(node.Extent())
 		return
 	}
-	line, ok := headingLine(node.Level, p.src[node.Title.Start:node.Title.End])
+	line, ok := headingLine(level, p.src[title.Start:title.End])
 	if !ok {
 		p.span(node.Extent())
 		return
