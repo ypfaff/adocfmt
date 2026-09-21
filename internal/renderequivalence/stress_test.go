@@ -16,9 +16,6 @@ import (
 // misread block invisible to the render checks, so this test rewrites each
 // block as hard as any planned rule ever will, and the checks turn red wherever
 // the scanner read a block differently from Asciidoctor.
-//
-// Cases in stressQuarantine are known to fail. One of them passing fails the
-// test too, so the list tracks the scanner instead of drifting from it.
 func TestStressedCases(t *testing.T) {
 	if testing.Short() {
 		t.Skip("rendering every case takes about half a minute")
@@ -52,17 +49,8 @@ func TestStressedCases(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			_, quarantined := stressQuarantine[name]
-			switch {
-			case quarantined && len(findings) == 0:
-				t.Error("passes; remove it from stressQuarantine")
-			case quarantined:
-				t.Skip(stressQuarantine[name])
-			default:
-				for _, finding := range findings {
-					t.Error(finding)
-				}
+			for _, finding := range findings {
+				t.Error(finding)
 			}
 		})
 	}
@@ -225,26 +213,4 @@ func common(node block.Node) fields {
 	default:
 		panic("unknown node type")
 	}
-}
-
-// stressQuarantine names the cases the scanner still reads differently from
-// Asciidoctor, by cause. Fixing the scanner shrinks it; see TestStressedCases.
-var stressQuarantine = byCase(map[string][]string{
-	"an escaped directive is unescaped only at the start of a line": {
-		"reader/0046-escaped-include-directive-is-left-unprocessed",
-		"reader/0081-escaped-ifdef-is-unescaped-and-ignored",
-	},
-	"an inline {set:name!} drops its line, since attribute-undefined defaults to drop-line": {
-		"attributes/0020-should-drop-line-with-attribute-unassignment-by-default",
-	},
-})
-
-func byCase(byCause map[string][]string) map[string]string {
-	cases := map[string]string{}
-	for cause, names := range byCause {
-		for _, name := range names {
-			cases[name] = cause
-		}
-	}
-	return cases
 }

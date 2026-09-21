@@ -32,8 +32,7 @@ go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 
 While no rule exists, the printer emits every node unchanged, so a misread block never shows in the output.
 link:../internal/renderequivalence/stress_test.go[`TestStressedCases`] rewrites every corpus file as hard as any planned rule will and runs the <<render-equivalence,render equivalence>> checks on the result.
-Cases the scanner still misreads sit in `stressQuarantine`, by cause; a quarantined case that passes fails the test, so the list tracks the scanner.
-A fix that empties a cause also brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
+A fix for a misread it finds brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
 Tables and list items are not rewritten, so a rule for either extends the stress test first.
 
 [#render-equivalence]
