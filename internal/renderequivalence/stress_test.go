@@ -14,11 +14,11 @@ import (
 // TestStressedCases checks the scanner's classification against Asciidoctor
 // while no rule exists to do it. Printing the tree unchanged makes every
 // misread block invisible to the render checks, so this test rewrites each
-// block as hard as any planned rule ever will, and the checks turn red wherever
-// the scanner read a block differently from Asciidoctor.
+// block the way the planned rules will, and the checks turn red wherever the
+// scanner read a block differently from Asciidoctor.
 func TestStressedCases(t *testing.T) {
 	if testing.Short() {
-		t.Skip("rendering every case takes about half a minute")
+		t.Skip("renders every case with Asciidoctor")
 	}
 	if _, err := exec.LookPath("asciidoctor"); err != nil {
 		t.Fatal("asciidoctor is not on the PATH")
@@ -34,6 +34,10 @@ func TestStressedCases(t *testing.T) {
 			t.Parallel()
 
 			if reason, ok := notRenderable[name]; ok {
+				t.Skip(reason)
+			}
+			// The tree of a document the formatter refuses is not one to stress.
+			if reason, ok := refused[name]; ok {
 				t.Skip(reason)
 			}
 
@@ -150,10 +154,11 @@ func (s *stresser) node(node block.Node, aroundHeading bool) {
 
 // paragraph joins the lines of a paragraph into one, keeping a hard line break
 // where the source has one, since that is content rather than layout.
+// Asciidoctor strips trailing whitespace before it looks for the break.
 func (s *stresser) paragraph(lines block.Span) {
 	var joined []string
 	for _, line := range strings.Split(strings.TrimSuffix(s.text(lines), s.eol), s.eol) {
-		if n := len(joined); n > 0 && !strings.HasSuffix(joined[n-1], " +") {
+		if n := len(joined); n > 0 && !strings.HasSuffix(strings.TrimRight(joined[n-1], " \t"), " +") {
 			joined[n-1] += " " + line
 		} else {
 			joined = append(joined, line)

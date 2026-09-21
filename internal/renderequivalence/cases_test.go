@@ -68,7 +68,7 @@ func byCase(byCause map[string][]string) map[string]string {
 
 func TestAsciidoctorCases(t *testing.T) {
 	if testing.Short() {
-		t.Skip("rendering every case takes about half a minute")
+		t.Skip("renders every case with Asciidoctor")
 	}
 	if _, err := exec.LookPath("asciidoctor"); err != nil {
 		t.Fatal("asciidoctor is not on the PATH")
