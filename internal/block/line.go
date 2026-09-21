@@ -323,14 +323,25 @@ func attrEntryShape(s []byte) (shape, bool) {
 }
 
 // attrEntry is an attribute entry as Asciidoctor stores it: the name
-// lowercased, the value trimmed, and set false for the :!name: and :name!:
-// forms.
+// sanitized, the value trimmed, and set false for the :!name: and :name!:
+// forms. wrap is the marker that continues the value on the next line; value
+// is the first line's share of it, which is all bind needs.
 type attrEntry struct {
 	name  string
 	value string
 	set   bool
+	wrap  string
 }
 
+// wraps are the line endings that continue an attribute value on the next
+// line. Asciidoctor joins with a space either way; only a value that ends in
+// " +" before the backslash keeps its line break.
+var wraps = []string{" \\", " +"}
+
+// parseAttrEntry mirrors Asciidoctor's AttributeEntryRx: the name starts with
+// a word character and then runs to the next colon, spaces and dots included,
+// and the value is separated by whitespace or absent, so :name:value is prose
+// and :name:: a term.
 func parseAttrEntry(s []byte) (attrEntry, bool) {
 	if len(s) < 2 || s[0] != ':' {
 		return attrEntry{}, false
@@ -340,28 +351,46 @@ func parseAttrEntry(s []byte) (attrEntry, bool) {
 	if unset {
 		at++
 	}
-	name := at
-	for at < len(s) && (isWordByte(s[at]) || s[at] == '-') {
-		at++
-	}
-	if at == name {
+	if first, _ := utf8.DecodeRune(s[at:]); !isWordRune(first) {
 		return attrEntry{}, false
 	}
-	e := attrEntry{name: strings.ToLower(string(s[name:at]))}
-	if at < len(s) && s[at] == '!' {
+	end := bytes.IndexByte(s[at:], ':')
+	if end < 0 {
+		return attrEntry{}, false
+	}
+	name := s[at : at+end]
+	at += end + 1
+	if name[len(name)-1] == '!' {
 		unset = true
-		at++
+		name = name[:len(name)-1]
 	}
-	if at >= len(s) || s[at] != ':' {
-		return attrEntry{}, false
-	}
-	at++
 	if at < len(s) && !isSpaceByte(s[at]) {
 		return attrEntry{}, false
 	}
-	e.value = string(bytes.TrimSpace(s[at:]))
-	e.set = !unset
+	e := attrEntry{name: sanitizeAttrName(name), set: !unset}
+	value := bytes.TrimSpace(s[at:])
+	for _, wrap := range wraps {
+		if bytes.HasSuffix(value, []byte(wrap)) {
+			e.wrap = wrap
+			value = bytes.TrimRight(value[:len(value)-len(wrap)], " \t")
+			break
+		}
+	}
+	e.value = string(value)
 	return e, true
+}
+
+// sanitizeAttrName stores the name the way Asciidoctor does, everything but
+// word characters and dashes dropped and the rest lowercased, so :Hard Breaks:
+// sets hardbreaks.
+func sanitizeAttrName(name []byte) string {
+	kept := strings.Map(func(r rune) rune {
+		if isWordRune(r) || r == '-' {
+			return r
+		}
+		return -1
+	}, string(name))
+	return strings.ToLower(kept)
 }
 
 const commentStyle = "comment"
@@ -713,8 +742,10 @@ func isCalloutNumber(s []byte) bool {
 	return len(s) > 0
 }
 
-func isWordByte(c byte) bool {
-	return c == '_' || isDigit(c) || isLower(c) || isUpper(c)
+// isWordRune is Ruby's \p{Word}, which is what Asciidoctor asks of the first
+// character of an attribute name and keeps of the rest.
+func isWordRune(r rune) bool {
+	return unicode.IsLetter(r) || unicode.IsMark(r) || unicode.IsDigit(r) || unicode.Is(unicode.Pc, r)
 }
 
 func uniform(s []byte, c byte) bool {

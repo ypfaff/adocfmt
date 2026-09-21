@@ -174,7 +174,8 @@ type ListItem struct {
 // level the following block attaches to, so its gap is frozen.
 type Continuation struct{ base }
 
-// Attribute is an attribute entry (:name: value).
+// Attribute is an attribute entry (:name: value) with the lines that continue
+// its value.
 type Attribute struct{ base }
 
 // Directive is an include, ifdef, ifndef, ifeval or endif line. What it brings

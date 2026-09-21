@@ -31,6 +31,69 @@ Header gap! "= Title\nAuthor Name\n"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "a backslash after a space continues the value on the next line",
+			src:  ":a: one \\\ntwo\n\nText.\n",
+			want: `
+Attribute ":a: one \\\ntwo\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "a plus after a space continues the value too",
+			src:  ":a: one +\ntwo\n\nText.\n",
+			want: `
+Attribute ":a: one +\ntwo\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "the value runs while lines end in its own marker, and a blank line ends it",
+			src:  ":a: one \\\ntwo \\\nthree +\nfour\n\n:b: one \\\n\ntwo\n",
+			want: `
+Attribute ":a: one \\\ntwo \\\nthree +\n"
+Paragraph "four\n"
+Attribute ":b: one \\\n"
+Paragraph "two\n"`,
+		},
+		{
+			name: "a continuation line is the value whatever it looks like",
+			src:  ":a: one \\\n* item\n:b: c\n",
+			want: `
+Attribute ":a: one \\\n* item\n"
+Attribute ":b: c\n"`,
+		},
+		{
+			name: "a directive among the continuation lines freezes the entry",
+			src:  ":a: one \\\nifdef::x[]\ntwo\nendif::[]\n\nText.\n",
+			want: `
+Attribute! gap! ":a: one \\\nifdef::x[]\ntwo\n"
+Directive! gap! "endif::[]\n"
+Paragraph gap! "Text.\n"`,
+		},
+		{
+			name: "in the header a continuation line is no entry of its own",
+			src:  "= Title\n:a: one \\\n:hardbreaks:\n\na\nb\n",
+			want: `
+Header "= Title\n:a: one \\\n:hardbreaks:\n"
+Paragraph "a\nb\n"`,
+		},
+		{
+			name: "a name may hold spaces, dots and slashes, and is sanitized before it binds",
+			src:  ":a b: v\n:a.b: v\n:a/b: v\n:Hard Breaks:\n\na\nb\n",
+			want: `
+Attribute ":a b: v\n"
+Attribute ":a.b: v\n"
+Attribute ":a/b: v\n"
+Attribute ":Hard Breaks:\n"
+Literal "a\nb\n"`,
+		},
+		{
+			name: "a colon glued to the value is prose, a doubled one a term",
+			src:  ":name:value\nText.\n\n:a:: b\nText.\n",
+			want: `
+Paragraph ":name:value\nText.\n"
+List "::"
+  ListItem ":a:: b\nText.\n"`,
+		},
+		{
 			name: "a two-line document title is the header too",
 			src:  "Reference Guide\n===============\n:toc:\nDan Allen\n\npreamble\n",
 			want: `
