@@ -313,6 +313,18 @@ func directiveShape(s []byte) (shape, bool) {
 	return sh, true
 }
 
+// pinsLine reports whether a line of prose has to stay a line of its own. An
+// escaped directive loses its backslash only at the start of a line, and an
+// inline {set:} makes Asciidoctor drop the whole line it stands on.
+func pinsLine(s []byte) bool {
+	if len(s) > 0 && s[0] == '\\' {
+		if _, ok := directiveShape(s[1:]); ok {
+			return true
+		}
+	}
+	return bytes.Contains(s, []byte("{set:"))
+}
+
 // attrEntryShape recognizes :name: and :name: value, including the :!name:
 // and :name!: unset forms.
 func attrEntryShape(s []byte) (shape, bool) {
