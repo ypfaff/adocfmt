@@ -17,11 +17,11 @@ func (s *scanner) list(b base, sh shape, closer []byte) Node {
 	for {
 		list.Items = append(list.Items, s.listItem(gap, sh, closer))
 
-		at, freeze := s.at, s.freeze
+		m := s.mark()
 		gap = s.gap()
 		next, ok := s.marker()
 		if !ok || next.marker != list.Marker || s.closes(closer) {
-			s.at, s.freeze = at, freeze
+			s.rewind(m)
 			break
 		}
 		sh = next
@@ -63,10 +63,10 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 // term. Asciidoctor reads them as the term's text whatever they look like, so
 // a break or a heading among them is text, not a block of its own.
 func (s *scanner) fold(item *ListItem, start int, closer []byte) {
-	at, freeze := s.at, s.freeze
+	m := s.mark()
 	s.gap()
 	if s.done() || s.closes(closer) || !foldsOntoTerm(s.shape().kind) {
-		s.at, s.freeze = at, freeze
+		s.rewind(m)
 		return
 	}
 
@@ -92,10 +92,10 @@ func foldsOntoTerm(kind shapeKind) bool {
 func (s *scanner) attached(closer []byte) []Node {
 	var children []Node
 	for {
-		at, freeze := s.at, s.freeze
+		m := s.mark()
 		gap := s.gap()
 		if s.done() || s.closes(closer) {
-			s.at, s.freeze = at, freeze
+			s.rewind(m)
 			return children
 		}
 
@@ -113,7 +113,7 @@ func (s *scanner) attached(closer []byte) []Node {
 		case gap.Span.Empty() && sh.kind != shapeMarker && sh.kind != shapeDelimiter:
 			children = append(children, s.adjacent(gap, closer))
 		default:
-			s.at, s.freeze = at, freeze
+			s.rewind(m)
 			return children
 		}
 	}
@@ -127,12 +127,12 @@ func (s *scanner) attached(closer []byte) []Node {
 func (s *scanner) adjacent(gap Gap, closer []byte) Node {
 	b := base{Gap: gap}
 	for s.metaLine(&b, closer) {
-		at, freeze := s.at, s.freeze
+		m := s.mark()
 		if b.Gap = s.gap(); b.Gap.Span.Empty() || s.nests() {
 			continue
 		}
 		// The blank lines belong to whatever comes after the item.
-		s.at, s.freeze = at, freeze
+		s.rewind(m)
 		b.Gap = Gap{Span: Span{s.pos(), s.pos()}}
 		return s.block(b, closer, true)
 	}
@@ -154,10 +154,10 @@ func (s *scanner) nests() bool {
 // gap of the next item or the tail of the enclosing block rather than in no
 // node at all.
 func (s *scanner) carried(closer []byte) Node {
-	at, freeze := s.at, s.freeze
+	m := s.mark()
 	gap := s.gap()
 	if s.done() || s.closes(closer) || s.sibling() {
-		s.at, s.freeze = at, freeze
+		s.rewind(m)
 		return nil
 	}
 	s.carrying = true
