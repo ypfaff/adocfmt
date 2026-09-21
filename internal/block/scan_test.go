@@ -543,6 +543,13 @@ Paragraph! "First line.\n// a comment\nSecond line.\n"
 Paragraph "More.\n"`,
 		},
 		{
+			name: "so does a line that must stay a line of its own",
+			src:  "Text.\n\\include::x.adoc[]\nMore.\n\nOne.\nTwo {set:a!} gone.\nThree.\n",
+			want: `
+Paragraph! "Text.\n\\include::x.adoc[]\nMore.\n"
+Paragraph! "One.\nTwo {set:a!} gone.\nThree.\n"`,
+		},
+		{
 			name: "a thematic break is not prose",
 			src:  "Text.\n\n---\n\nMore.\n",
 			want: `
