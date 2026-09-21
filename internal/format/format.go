@@ -13,10 +13,6 @@ import (
 // A document the scanner reported findings on is refused with all of them,
 // because formatting the part it did understand would report success on a
 // document it barely touched.
-//
-// No formatting rule exists yet, so the document is scanned and printed back
-// unchanged. Every rule added later opts one construct out of that; anything a
-// rule does not claim keeps passing through byte-identical.
 func Format(src []byte) ([]byte, error) {
 	doc, err := block.Scan(src)
 	if err != nil {

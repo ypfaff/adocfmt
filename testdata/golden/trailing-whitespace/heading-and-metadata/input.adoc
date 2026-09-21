@@ -1,0 +1,11 @@
+= Document Title  
+Author Name  
+:toc:  
+
+== Section  
+
+.Listing title  
+[source,go]  
+----
+code
+----

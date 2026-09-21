@@ -1,0 +1,9 @@
+----
+func main() {  
+	fmt.Println("x")	
+}
+----
+
+++++
+<b>raw</b>  
+++++

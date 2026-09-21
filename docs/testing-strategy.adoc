@@ -2,7 +2,7 @@
 
 Beyond the unit tests of each package, the formatter is covered by checks that each guard one property.
 
-<<identity,Identity>>:: Whatever no rule claims comes back byte for byte.
+<<identity,Identity>>:: With every rule off, the tree gives the source back byte for byte.
 <<classification,Classification>>:: The scanner reads blocks the way Asciidoctor does.
 <<render-equivalence,Render equivalence>>:: No rule changes what the rendered document shows.
 <<golden-files,Golden files>>:: A rule does what its cases say.
@@ -14,8 +14,11 @@ The other checks run over the corpus, the test inputs of the Asciidoctor test su
 [#identity]
 == Identity
 
-With no rule claiming a node, printing the block tree reproduces the source byte for byte.
+Printing the block tree with every rule off reproduces the source byte for byte.
 Render equivalence cannot stand in for this check: a lost blank line renders the same.
+
+The printer has a raw mode for this, which walks the tree the way the formatting one does and emits every node as it stands.
+`Format` never offers it, because turning the rules off is a test instrument rather than a mode of the formatter.
 
 link:../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every corpus file and every golden file back and compares bytes.
 link:../internal/block/partition_test.go[`TestScanPartitions`] checks the same property span by span, so a failure names the node rather than the byte.
@@ -30,7 +33,7 @@ go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 [#classification]
 == Classification
 
-While no rule exists, the printer emits every node unchanged, so a misread block never shows in the output.
+While no rule moves a line, the printer emits every node where it stood, so a misread block never shows in the output.
 link:../internal/renderequivalence/stress_test.go[`TestStressedCases`] rewrites every corpus file as hard as any planned rule will and runs the <<render-equivalence,render equivalence>> checks on the result.
 A fix for a misread it finds brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
 Tables and list items are not rewritten, so a rule for either extends the stress test first.
@@ -55,7 +58,7 @@ Comments::
 The comment lines of both sources, in order, because Asciidoctor drops them before they reach the HTML.
 The check reads raw lines rather than the block tree, so a comment the scanner filed as prose still counts.
 
-While no rule exists, every case compares a document against itself, so link:../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] hands each check a document broken in the way it exists to catch.
+While the rules change no corpus case, every case compares a document against itself, so link:../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] hands each check a document broken in the way it exists to catch.
 
 === Where the checks run
 

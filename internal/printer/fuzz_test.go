@@ -52,6 +52,7 @@ func FuzzPrintIsIdentity(f *testing.F) {
 		"no newline at the end",
 		"a\r\nb\r\n",
 		"  indented\n\ttabbed\n",
+		"trailing.  \nbreak +  \n \t\n",
 	} {
 		f.Add([]byte(seed))
 	}
@@ -61,7 +62,7 @@ func FuzzPrintIsIdentity(f *testing.F) {
 		if err != nil {
 			return
 		}
-		if got := Print(doc); !bytes.Equal(got, src) {
+		if got := PrintRaw(doc); !bytes.Equal(got, src) {
 			t.Errorf("output differs from the source at byte %d", firstDifference(got, src))
 		}
 	})

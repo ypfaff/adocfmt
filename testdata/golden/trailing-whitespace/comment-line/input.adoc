@@ -1,0 +1,8 @@
+// A comment.  
+Text.
+
+////
+Comment block.  
+////
+
+More.

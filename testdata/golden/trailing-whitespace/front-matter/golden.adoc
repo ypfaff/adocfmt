@@ -1,0 +1,9 @@
+---
+title: Example  
+summary: |
+  keeps its whitespace  
+---
+
+= Title
+
+Text.
