@@ -69,7 +69,7 @@ func (s *scanner) fold(item *ListItem, start int, closer []byte) {
 	}
 
 	var folded base
-	s.textRun(&folded, closer, true)
+	s.textRun(&folded, closer, endsItemText)
 	item.Frozen = item.Frozen || folded.Frozen
 	item.Principal = Span{start, s.pos()}
 }

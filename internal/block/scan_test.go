@@ -185,6 +185,32 @@ Paragraph meta("[role=x]\n") "Text.\n"
 Literal meta("[\"source\"]\n") "code\n"`,
 		},
 		{
+			name: "a verbatim style reads an item line, an indent and a delimiter as code",
+			src:  "[source]\n* a\n* b\n\n[listing]\n  indented\n----\nmore\n----\n\n[verse]\n> quoted\n'''\n\nText.\n",
+			want: `
+Literal meta("[source]\n") "* a\n* b\n"
+Literal meta("[listing]\n") "  indented\n----\nmore\n----\n"
+Literal meta("[verse]\n") "> quoted\n'''\n"
+Paragraph "Text.\n"`,
+		},
+		{
+			name: "a verbatim style ends at a lone plus, and a delimiter below it still opens a block",
+			src:  "[source]\ncode\n+\nText.\n\n[source]\n----\n* a\n----\n",
+			want: `
+Literal meta("[source]\n") "code\n"
+Continuation gap! "+\n"
+Paragraph "Text.\n"
+Verbatim meta("[source]\n") "----\n* a\n----\n"`,
+		},
+		{
+			name: "a pass style still lets the line decide",
+			src:  "[pass]\n* a\n* b\n",
+			want: `
+List meta("[pass]\n") "*"
+  ListItem "* a\n"
+  ListItem "* b\n"`,
+		},
+		{
 			name: "the hardbreaks option makes the line breaks content",
 			src:  "[%hardbreaks]\nread\nmy\nlips\n\n[quote%hardbreaks]\na\nb\n\n[.lead]\n[opts=hardbreaks]\na\nb\n\n[hardbreaks]\na\nb\n",
 			want: `
