@@ -119,10 +119,14 @@ func (s *stresser) gap(g block.Gap, aroundHeading bool) {
 	}
 }
 
+// node emits one node. The blank line a heading gets goes above its metadata
+// stack, where the blank line rule puts it, not between the stack and the
+// title.
 func (s *stresser) node(node block.Node, aroundHeading bool) {
 	c := common(node)
 	for _, meta := range c.meta {
-		s.gap(meta.Gap, false)
+		s.gap(meta.Gap, aroundHeading)
+		aroundHeading = false
 		s.span(meta.Lines)
 	}
 	s.gap(c.gap, aroundHeading)
@@ -226,11 +230,6 @@ func common(node block.Node) fields {
 // stressQuarantine names the cases the scanner still reads differently from
 // Asciidoctor, by cause. Fixing the scanner shrinks it; see TestStressedCases.
 var stressQuarantine = byCase(map[string][]string{
-	"a comment line inside a paragraph is read as text": {
-		"blocks/0002-adjacent-line-comment-between-paragraphs",
-		"manpage/0004-should-normalize-whitespace-and-skip-line-comments-before-an",
-		"sections/0054-should-add-level-offset-to-section-level",
-	},
 	"a quoted paragraph with an attribution line is a quote block": {
 		"blocks/0032-quoted-paragraph-style-quote-block-with-attribution",
 		"blocks/0033-should-parse-credit-line-in-quoted-paragraph-style-quote-blo",
