@@ -163,32 +163,50 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 	}
 }
 
+// node reads the metadata lines at the current position and the block they
+// bind to.
 func (s *scanner) node(gap Gap, closer []byte) Node {
-	var meta []Meta
-	frozen := false
-	for !s.done() && !s.closes(closer) {
-		sh := s.shape()
-		kind, ok := metaKind(sh.kind)
-		if !ok && (sh.kind != shapeDirective || len(meta) == 0) {
-			break
-		}
-		if sh.kind == shapeDirective {
-			s.track(sh)
-			kind, frozen = MetaDirective, true
-			gap.Frozen, s.freeze = true, true
-		}
-		meta = append(meta, Meta{Kind: kind, Gap: gap, Lines: s.take()})
-		gap = s.gap()
+	b := base{Gap: gap}
+	for s.metaLine(&b, closer) {
+		b.Gap = s.gap()
 	}
+	return s.block(b, closer, false)
+}
 
-	b := base{Gap: gap, Meta: meta, Lines: Span{s.pos(), s.pos()}, Frozen: frozen}
-	var node Node
+// metaLine reads the metadata line at the current position into b and reports
+// whether there was one. A directive counts once metadata lines stand above
+// it, see MetaDirective.
+func (s *scanner) metaLine(b *base, closer []byte) bool {
 	if s.done() || s.closes(closer) {
+		return false
+	}
+	sh := s.shape()
+	kind, ok := metaKind(sh.kind)
+	if !ok && (sh.kind != shapeDirective || len(b.Meta) == 0) {
+		return false
+	}
+	if sh.kind == shapeDirective {
+		s.track(sh)
+		kind, b.Frozen = MetaDirective, true
+		b.Gap.Frozen, s.freeze = true, true
+	}
+	b.Meta = append(b.Meta, Meta{Kind: kind, Gap: b.Gap, Lines: s.take()})
+	return true
+}
+
+// block is the node the metadata lines in b bind to, or an Opaque one holding
+// only them when no block follows: where the caller says the item being read
+// ends, at the end of the source or the enclosing block, or at an item of an
+// open list, which ends the item whatever came before it.
+func (s *scanner) block(b base, closer []byte, orphan bool) Node {
+	b.Lines = Span{s.pos(), s.pos()}
+	var node Node
+	if orphan || s.done() || s.closes(closer) || (len(b.Meta) > 0 && s.sibling()) {
 		node = &Opaque{base: b}
 	} else {
 		node = s.body(b, closer)
 	}
-	if frozen {
+	if b.Frozen {
 		s.freeze = true
 	}
 	return node
@@ -455,7 +473,11 @@ func (s *scanner) delimited(b base, sh shape) Node {
 
 	var node Node
 	if sh.content == contentCompound {
+		// The block confines the reader: no list open outside it is open inside.
+		markers := s.markers
+		s.markers = nil
 		children, tail := s.nodes(closer)
+		s.markers = markers
 		delim.Close = s.closingLine()
 		b.Lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}

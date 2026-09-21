@@ -411,6 +411,131 @@ List "*"
     Verbatim "----\ncode\n----\n"`,
 		},
 		{
+			name: "an attribute line right after an item binds to a block inside the item",
+			src:  "* a\n[x]\ntext\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Paragraph meta("[x]\n") "text\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "and to no block when the next item follows it",
+			src:  "* a\n[x]\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque meta("[x]\n") ""
+  ListItem "* b\n"`,
+		},
+		{
+			name: "also across a blank line, which then belongs to the next item",
+			src:  "* a\n[x]\n\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque meta("[x]\n") ""
+  ListItem "* b\n"`,
+		},
+		{
+			name: "a blank line after the attribute line ends the item, and the next item line is prose outside",
+			src:  "* a\n[x]\n\ntext\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque meta("[x]\n") ""
+Paragraph "text\n* b\n"`,
+		},
+		{
+			name: "unless a nested list follows the blank line",
+			src:  "* a\n[x]\n\n** b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List meta("[x]\n") "**"
+      ListItem "** b\n"`,
+		},
+		{
+			name: "a delimiter after the attribute line breaks the list and leaves the line behind",
+			src:  "* a\n[x]\n----\ncode\n----\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque meta("[x]\n") ""
+Verbatim "----\ncode\n----\n"
+List "*"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "an attribute line after a blank line starts a new list",
+			src:  "* a\n\n[x]\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+List meta("[x]\n") "*"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "prose right after a carried block stays in the item",
+			src:  "* a\n+\n----\ncode\n----\ntext\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Verbatim "----\ncode\n----\n"
+    Paragraph "text\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "an item of the list ends a continuation, which then carries nothing",
+			src:  "* a\n+\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "also across a blank line",
+			src:  "* a\n+\n\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+  ListItem "* b\n"`,
+		},
+		{
+			name: "and when the item belongs to an enclosing list",
+			src:  "* a\n** b\n+\n\n* c\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "**"
+      ListItem "** b\n"
+        Continuation gap! "+\n"
+  ListItem "* c\n"`,
+		},
+		{
+			name: "metadata after the continuation binds to no block then either",
+			src:  "* a\n+\n[x]\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Opaque meta("[x]\n") ""
+  ListItem "* b\n"`,
+		},
+		{
+			name: "a delimited block in an item confines the list, so an item line inside it is prose",
+			src:  "* a\n+\n====\ntext\n* b\n====\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Container "====\n"
+      Paragraph "text\n* b\n"`,
+		},
+		{
 			name: "a comment line inside a paragraph freezes it, but not its gaps",
 			src:  "First line.\n// a comment\nSecond line.\n\nMore.\n",
 			want: `
