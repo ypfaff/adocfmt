@@ -69,7 +69,7 @@ func (s *scanner) fold(item *ListItem, start int, closer []byte) {
 	}
 
 	var folded base
-	s.textRun(&folded, closer)
+	s.textRun(&folded, closer, true)
 	item.Frozen = item.Frozen || folded.Frozen
 	item.Principal = Span{start, s.pos()}
 }
@@ -174,6 +174,8 @@ func (s *scanner) marker() (shape, bool) {
 func (s *scanner) open(marker string) bool {
 	return slices.Contains(s.markers, marker)
 }
+
+func (s *scanner) inList() bool { return len(s.markers) > 0 }
 
 // sibling reports whether the current line is an item of an open list. It ends
 // the item being read whatever came before it, a continuation included.

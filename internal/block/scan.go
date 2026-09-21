@@ -277,7 +277,7 @@ func (s *scanner) body(b base, closer []byte) Node {
 		b.Lines = s.take()
 		return &Opaque{base: b}
 	case shapeQuote:
-		s.textRun(&b, closer)
+		s.textRun(&b, closer, s.inList())
 		return &Opaque{base: b}
 	default:
 		return s.paragraph(b, closer)
@@ -386,7 +386,7 @@ func (s *scanner) setext(b base, level int) Node {
 // quote, since Asciidoctor lifts its last line out as the attribution.
 func (s *scanner) paragraph(b base, closer []byte) Node {
 	first := s.at
-	s.textRun(&b, closer)
+	s.textRun(&b, closer, s.inList())
 	switch {
 	case !paragraphStyles[styleOf(s.src, b.Meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
 		return &Opaque{base: b}
@@ -399,7 +399,7 @@ func (s *scanner) paragraph(b base, closer []byte) Node {
 
 // literal is an indented paragraph, which AsciiDoc reads as verbatim content.
 func (s *scanner) literal(b base, closer []byte) Node {
-	s.textRun(&b, closer)
+	s.textRun(&b, closer, false)
 	return &Literal{base: b}
 }
 
@@ -409,15 +409,16 @@ func (s *scanner) literal(b base, closer []byte) Node {
 // line does not end it either, nor does a line that has to stay a line of its
 // own; the block freezes to keep them where they are.
 //
-// Inside a list the run also ends at the next item, which is what keeps a term
-// from being read as the text of the item above it.
-func (s *scanner) textRun(b *base, closer []byte) {
+// Inside a list the run of a paragraph also ends at the next item, which is
+// what keeps a term from being read as the text of the item above it. A
+// literal paragraph does not: Asciidoctor reads it up to a blank line whatever
+// its lines look like, an item line included.
+func (s *scanner) textRun(b *base, closer []byte, endsAtItem bool) {
 	start := s.pos()
-	inList := len(s.markers) > 0
 	directive := false
 	for !s.done() && !s.closes(closer) {
 		sh := s.shape()
-		if endsText(sh.kind) || (sh.kind == shapeMarker && inList) {
+		if endsText(sh.kind) || (endsAtItem && sh.kind == shapeMarker) {
 			break
 		}
 		if sh.kind == shapeDirective {

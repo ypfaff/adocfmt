@@ -360,6 +360,17 @@ List "*"
   ListItem "* b\n"`,
 		},
 		{
+			name: "a literal paragraph runs to the blank line, an item line included",
+			src:  "* a\n\n  code\n* b\n\n* c\n\nText.\n\n  more\n* d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal "  code\n* b\n"
+  ListItem "* c\n"
+Paragraph "Text.\n"
+Literal "  more\n* d\n"`,
+		},
+		{
 			name: "a directive freezes its own gap and the next one",
 			src:  "Text.\n\ninclude::part.adoc[]\n\nMore.\n",
 			want: `
