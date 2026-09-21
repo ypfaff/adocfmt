@@ -337,13 +337,19 @@ func (s *scanner) setext(b base, level int) Node {
 
 // paragraph reads prose, unless its line breaks carry meaning: a verbatim
 // style, the hardbreaks option, or a document attribute in force that binds
-// lines makes it a Literal.
+// lines makes it a Literal. A quoted paragraph is Opaque like the Markdown
+// quote, since Asciidoctor lifts its last line out as the attribution.
 func (s *scanner) paragraph(b base, closer []byte) Node {
+	first := s.at
 	s.textRun(&b, closer)
-	if styledVerbatim(s.src, b.Meta) || hasOption(s.src, b.Meta, hardbreaksOption) || len(s.lineBound) > 0 {
+	switch {
+	case !paragraphStyles[styleOf(s.src, b.Meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
+		return &Opaque{base: b}
+	case styledVerbatim(s.src, b.Meta) || hasOption(s.src, b.Meta, hardbreaksOption) || len(s.lineBound) > 0:
 		return &Literal{base: b}
+	default:
+		return &Paragraph{base: b}
 	}
-	return &Paragraph{base: b}
 }
 
 // literal is an indented paragraph, which AsciiDoc reads as verbatim content.

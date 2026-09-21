@@ -405,6 +405,29 @@ Paragraph "include::[]\n"`,
 Opaque "> A famous quote.\n> -- Famous Person\n"`,
 		},
 		{
+			name: "so is a quoted paragraph with an attribution as its last line",
+			src:  "\"A famous quote.\nSome more inspiring words.\"\n-- Famous Person, Famous Source\n",
+			want: `
+Opaque "\"A famous quote.\nSome more inspiring words.\"\n-- Famous Person, Famous Source\n"`,
+		},
+		{
+			name: "without the attribution as its last line the quotes are prose",
+			src:  "\"A quote.\"\nMore text.\n\n\"A quote.\"\n-- Author\nMore.\n\n\"A quote.\"\nmore\n-- Author\n",
+			want: `
+Paragraph "\"A quote.\"\nMore text.\n"
+Paragraph "\"A quote.\"\n-- Author\nMore.\n"
+Paragraph "\"A quote.\"\nmore\n-- Author\n"`,
+		},
+		{
+			name: "only straight quotes and exactly two dashes and a space count, and a quote style reads the attribution as text",
+			src:  "“A quote.”\n-- Author\n\n\"A quote.\"\n--Author\n\n[quote]\n\"A quote.\"\n-- Author\n\n[.lead]\n\"A quote.\"\n// a comment\n-- Author\n",
+			want: `
+Paragraph "“A quote.”\n-- Author\n"
+Paragraph "\"A quote.\"\n--Author\n"
+Paragraph meta("[quote]\n") "\"A quote.\"\n-- Author\n"
+Opaque! meta("[.lead]\n") "\"A quote.\"\n// a comment\n-- Author\n"`,
+		},
+		{
 			name: "a term with no text of its own takes the lines below it",
 			src:  "term1::\n\n'''\ncontinued\n",
 			want: `

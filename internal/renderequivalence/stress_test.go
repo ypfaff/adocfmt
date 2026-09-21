@@ -230,10 +230,6 @@ func common(node block.Node) fields {
 // stressQuarantine names the cases the scanner still reads differently from
 // Asciidoctor, by cause. Fixing the scanner shrinks it; see TestStressedCases.
 var stressQuarantine = byCase(map[string][]string{
-	"a quoted paragraph with an attribution line is a quote block": {
-		"blocks/0032-quoted-paragraph-style-quote-block-with-attribution",
-		"blocks/0033-should-parse-credit-line-in-quoted-paragraph-style-quote-blo",
-	},
 	"an escaped directive is unescaped only at the start of a line": {
 		"reader/0046-escaped-include-directive-is-left-unprocessed",
 		"reader/0081-escaped-ifdef-is-unescaped-and-ignored",
