@@ -304,7 +304,7 @@ func (s *scanner) body(b base, closer []byte) Node {
 	if sectionLevel && startsTitle(sh.kind) {
 		if level, ok := s.setextLevel(); ok {
 			if atStart && level == 0 {
-				return s.header(b)
+				return s.header(b, s.lines[s.at].text, true)
 			}
 			return s.setext(b, level)
 		}
@@ -314,7 +314,7 @@ func (s *scanner) body(b base, closer []byte) Node {
 		return s.delimited(b, sh)
 	case shapeHeading:
 		if atStart && sh.level == 0 {
-			return s.header(b)
+			return s.header(b, sh.span, false)
 		}
 		if sectionLevel || styledDiscrete(s.src, b.meta) {
 			b.lines = s.take()
@@ -372,9 +372,15 @@ func startsTitle(kind shapeKind) bool {
 }
 
 // header is the document header, which stays compact: it runs to the first
-// blank line, author, revision and attribute lines included.
-func (s *scanner) header(b base) Node {
+// blank line, author, revision and attribute lines included. twoLine says the
+// title is written as a title and an underline.
+func (s *scanner) header(b base, title Span, twoLine bool) Node {
 	start := s.pos()
+	s.at++
+	if twoLine {
+		s.at++
+	}
+	titleLines := Span{start, s.pos()}
 	for !s.done() && s.shape().kind != shapeBlank {
 		if s.shape().kind == shapeAttrEntry {
 			s.entry(&b)
@@ -383,7 +389,7 @@ func (s *scanner) header(b base) Node {
 		s.at++
 	}
 	b.lines = Span{start, s.pos()}
-	return &Header{base: b}
+	return &Header{base: b, Title: title, TitleLines: titleLines, TwoLine: twoLine}
 }
 
 func (s *scanner) attribute(b base) Node {

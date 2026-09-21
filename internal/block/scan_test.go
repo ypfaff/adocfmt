@@ -16,7 +16,7 @@ func TestScan(t *testing.T) {
 			name: "the document header stays one node",
 			src:  "= Title\nAuthor Name\n:toc:\n\nText.\n",
 			want: `
-Header "= Title\nAuthor Name\n:toc:\n"
+Header "= Title\nAuthor Name\n:toc:\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
@@ -27,7 +27,7 @@ Attribute ":a: b\n"
 Directive! gap! "ifdef::x[]\n"
 Attribute gap! ":c: d\n"
 Directive! gap! "endif::[]\n"
-Header gap! "= Title\nAuthor Name\n"
+Header gap! "= Title\nAuthor Name\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
@@ -72,7 +72,7 @@ Paragraph gap! "Text.\n"`,
 			name: "in the header a continuation line is no entry of its own",
 			src:  "= Title\n:a: one \\\n:hardbreaks:\n\na\nb\n",
 			want: `
-Header "= Title\n:a: one \\\n:hardbreaks:\n"
+Header "= Title\n:a: one \\\n:hardbreaks:\n" title "Title"
 Paragraph "a\nb\n"`,
 		},
 		{
@@ -97,7 +97,7 @@ List "::"
 			name: "a two-line document title is the header too",
 			src:  "Reference Guide\n===============\n:toc:\nDan Allen\n\npreamble\n",
 			want: `
-Header "Reference Guide\n===============\n:toc:\nDan Allen\n"
+Header "Reference Guide\n===============\n:toc:\nDan Allen\n" title "Reference Guide"
 Paragraph "preamble\n"`,
 		},
 		{
@@ -230,7 +230,7 @@ Container meta("[%hardbreaks]\n") "--\n"
 			name: "hardbreaks-option in the header holds for the document",
 			src:  "= Title\n:hardbreaks-option:\n\na\nb\n\n* item\n+\nc\nd\n\n====\ne\nf\n====\n",
 			want: `
-Header "= Title\n:hardbreaks-option:\n"
+Header "= Title\n:hardbreaks-option:\n" title "Title"
 Literal "a\nb\n"
 List "*"
   ListItem "* item\n"
@@ -776,7 +776,7 @@ Setext "Title  \n-----\n" title "Title"`,
 			src:  "---\ntitle: x\n---\n\n= Title\n",
 			want: `
 FrontMatter "---\ntitle: x\n---\n"
-Header "= Title\n"`,
+Header "= Title\n" title "Title"`,
 		},
 	}
 

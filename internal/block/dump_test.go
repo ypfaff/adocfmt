@@ -56,6 +56,8 @@ func (d *dumper) node(node Node, depth int) {
 	case *Container:
 		d.writef(" %s\n", d.quote(node.Delim.Open))
 		d.nodes(node.Children, depth+1)
+	case *Header:
+		d.writef(" %s title %s\n", d.quote(node.Lines()), d.quote(node.Title))
 	case *Heading:
 		d.writef(" %s title %s\n", d.quote(node.Lines()), d.quote(node.Title))
 	case *Setext:

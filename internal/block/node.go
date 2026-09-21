@@ -117,7 +117,16 @@ func (b *base) Frozen() bool { return b.frozen }
 // Header is the document header: the level 0 title, in one-line or two-line
 // form, with the author, revision and attribute lines that follow it without a
 // blank line.
-type Header struct{ base }
+//
+// TitleLines covers the title alone, so a rule that rewrites it leaves what
+// follows as it is. TwoLine is the title written over two lines, which turns on
+// compat-mode and therefore may not be collapsed.
+type Header struct {
+	base
+	Title      Span
+	TitleLines Span
+	TwoLine    bool
+}
 
 // Heading is a one-line section title. Marker is = or #, since Asciidoctor
 // reads a Markdown heading as a section title too.
