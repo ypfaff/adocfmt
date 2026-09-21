@@ -17,10 +17,10 @@ const (
 	goldenDir = "../../" + golden.Dir
 )
 
-// TestPrintIsIdentity pins the one guarantee the tree gives: while no rule
-// claims a node, printing reproduces the source byte for byte. The render
-// equivalence checks cannot stand in for this, because they collapse the
-// whitespace a lost blank line would show up in.
+// TestPrintIsIdentity pins the one guarantee the tree gives: with every rule
+// off, printing reproduces the source byte for byte. The render equivalence
+// checks cannot stand in for this, because they collapse the whitespace a lost
+// blank line would show up in.
 func TestPrintIsIdentity(t *testing.T) {
 	for name, path := range documents(t) {
 		t.Run(name, func(t *testing.T) {
@@ -34,7 +34,7 @@ func TestPrintIsIdentity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := Print(doc); !bytes.Equal(got, src) {
+			if got := PrintRaw(doc); !bytes.Equal(got, src) {
 				t.Errorf("output differs from the source at byte %d", firstDifference(got, src))
 			}
 		})

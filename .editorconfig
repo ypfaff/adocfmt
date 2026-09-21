@@ -1,0 +1,5 @@
+root = true
+
+# The inputs of these cases carry trailing whitespace on purpose.
+[testdata/golden/trailing-whitespace/**]
+trim_trailing_whitespace = false

@@ -1,0 +1,4 @@
+Text with trailing spaces.
+Text with a trailing tab.
+
+After a blank line made of spaces.
