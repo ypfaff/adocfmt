@@ -244,9 +244,7 @@ func (s *scanner) body(b base, closer []byte) Node {
 		b.Lines = s.take()
 		return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
 	case shapeAttrEntry:
-		s.bind(s.lines[s.at])
-		b.Lines = s.take()
-		return &Attribute{base: b}
+		return s.attribute(b)
 	case shapeDirective:
 		return s.directive(b, sh)
 	case shapeMarker:
@@ -286,22 +284,51 @@ func startsTitle(kind shapeKind) bool {
 func (s *scanner) header(b base) Node {
 	start := s.pos()
 	for !s.done() && s.shape().kind != shapeBlank {
-		s.bind(s.lines[s.at])
+		if s.shape().kind == shapeAttrEntry {
+			s.entry(&b)
+			continue
+		}
 		s.at++
 	}
 	b.Lines = Span{start, s.pos()}
 	return &Header{base: b}
 }
 
+func (s *scanner) attribute(b base) Node {
+	start := s.pos()
+	s.entry(&b)
+	b.Lines = Span{start, s.pos()}
+	return &Attribute{base: b}
+}
+
+// entry reads the attribute entry on the current line with the lines that
+// continue its value. Asciidoctor takes every line up to a blank one for as
+// long as the line before ends in the entry's own wrap marker, whatever the
+// line looks like. A directive among them it resolves first, so the entry
+// freezes the way a paragraph around a directive does.
+func (s *scanner) entry(b *base) {
+	e, _ := parseAttrEntry(s.text(s.lines[s.at]))
+	s.bind(e)
+	s.at++
+	for open := e.wrap != ""; open && !s.done(); s.at++ {
+		sh := s.shape()
+		if sh.kind == shapeBlank {
+			return
+		}
+		if sh.kind == shapeDirective {
+			s.track(sh)
+			b.Frozen, b.Gap.Frozen, s.freeze = true, true, true
+			continue
+		}
+		open = bytes.HasSuffix(bytes.TrimLeft(s.text(s.lines[s.at]), " \t"), []byte(e.wrap))
+	}
+}
+
 // bind follows an attribute entry into or out of lineBound. hardbreaks-option
 // renders every line break, under its old name hardbreaks too; attribute-missing
 // drops a whole line with an unresolved reference, but only when set to
 // drop-line.
-func (s *scanner) bind(l line) {
-	e, ok := parseAttrEntry(s.text(l))
-	if !ok {
-		return
-	}
+func (s *scanner) bind(e attrEntry) {
 	on := e.set
 	switch e.name {
 	case "hardbreaks", "hardbreaks-option":
