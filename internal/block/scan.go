@@ -101,6 +101,19 @@ func (s *scanner) pos() int {
 	return s.lines[s.at].full.Start
 }
 
+// mark lets the scanner look past blank lines and come back when what follows
+// them belongs to the next block. Reading the gap consumes the pending freeze,
+// so a rewind restores it along with the line. Nothing else changes over blank
+// lines, so nothing else is saved.
+type mark struct {
+	at     int
+	freeze bool
+}
+
+func (s *scanner) mark() mark { return mark{s.at, s.freeze} }
+
+func (s *scanner) rewind(m mark) { s.at, s.freeze = m.at, m.freeze }
+
 func (s *scanner) shape() shape { return classify(s.src, s.lines[s.at]) }
 
 func (s *scanner) text(l line) []byte { return s.src[l.text.Start:l.text.End] }
