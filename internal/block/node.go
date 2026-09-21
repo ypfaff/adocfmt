@@ -54,10 +54,14 @@ const (
 	MetaAnchor                     // [[id]]
 	MetaComment                    // // comment
 
-	// MetaDirective is a directive among the metadata lines. Asciidoctor
-	// resolves it first and binds the lines above to whatever block follows,
-	// so the scanner keeps them bound too and freezes the block, whose real
-	// content it cannot know.
+	// MetaCommentBlock and MetaAttrEntry are blocks of their own until metadata
+	// lines stand above them. Asciidoctor reads them as metadata there and keeps
+	// the lines above bound to the block that follows, so the scanner does too.
+	MetaCommentBlock // //// to ////
+	MetaAttrEntry    // :name: value, with the lines that continue it
+
+	// MetaDirective also freezes the block, whose real content the scanner
+	// cannot know once Asciidoctor has resolved the directive.
 	MetaDirective
 )
 
