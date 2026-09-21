@@ -1,0 +1,5 @@
+= My Document
+Author Name
+:toc:
+
+Text.
