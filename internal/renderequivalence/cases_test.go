@@ -56,6 +56,16 @@ var refused = byCase(map[string][]string{
 	},
 })
 
+func byCase(byCause map[string][]string) map[string]string {
+	cases := map[string]string{}
+	for cause, names := range byCause {
+		for _, name := range names {
+			cases[name] = cause
+		}
+	}
+	return cases
+}
+
 func TestAsciidoctorCases(t *testing.T) {
 	if testing.Short() {
 		t.Skip("rendering every case takes about half a minute")
