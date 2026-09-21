@@ -120,23 +120,26 @@ func (s *scanner) attached(closer []byte) []Node {
 }
 
 // adjacent reads the line that follows an item's content with no blank line
-// between. Metadata there binds to a block inside the item, or to none when
-// the item ends first: at a delimiter, which enters an item only behind a
-// continuation, or at a blank line, unless a nested list or a literal block
-// follows it.
+// between. Metadata there binds to a block inside the item, unless the item
+// ends first. A delimiter ends it, since a delimited block enters an item only
+// behind a continuation. A blank line ends it too, unless a nested list or a
+// literal block follows.
 func (s *scanner) adjacent(gap Gap, closer []byte) Node {
 	b := base{Gap: gap}
 	for s.metaLine(&b, closer) {
 		m := s.mark()
-		if b.Gap = s.gap(); b.Gap.Span.Empty() || s.nests() {
-			continue
+		b.Gap = s.gap()
+		if !b.Gap.Span.Empty() && !s.nests() {
+			// The blank lines belong to whatever comes after the item.
+			s.rewind(m)
+			b.Gap = Gap{Span: Span{s.pos(), s.pos()}}
+			return s.orphan(b)
 		}
-		// The blank lines belong to whatever comes after the item.
-		s.rewind(m)
-		b.Gap = Gap{Span: Span{s.pos(), s.pos()}}
-		return s.block(b, closer, true)
 	}
-	return s.block(b, closer, !s.done() && s.shape().kind == shapeDelimiter)
+	if !s.done() && s.shape().kind == shapeDelimiter {
+		return s.orphan(b)
+	}
+	return s.block(b, closer)
 }
 
 // nests reports whether the current line is a nested list item or a literal

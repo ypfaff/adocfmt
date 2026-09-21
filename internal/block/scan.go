@@ -186,7 +186,7 @@ func (s *scanner) node(gap Gap, closer []byte) Node {
 	for s.metaLine(&b, closer) {
 		b.Gap = s.gap()
 	}
-	return s.block(b, closer, false)
+	return s.block(b, closer)
 }
 
 // metaLine reads the metadata line at the current position into b and reports
@@ -239,22 +239,31 @@ func (s *scanner) commentBlock() {
 	}
 }
 
-// block is the node the metadata lines in b bind to, or an Opaque one holding
-// only them when no block follows: where the caller says the item being read
-// ends, at the end of the source or the enclosing block, or at an item of an
-// open list, which ends the item whatever came before it.
-func (s *scanner) block(b base, closer []byte, orphan bool) Node {
-	b.Lines = Span{s.pos(), s.pos()}
-	var node Node
-	if orphan || s.done() || s.closes(closer) || (len(b.Meta) > 0 && s.sibling()) {
-		node = &Opaque{base: b}
-	} else {
-		node = s.body(b, closer)
+// block is the node the metadata lines in b bind to. None follows at the end
+// of the source or the enclosing block, or at an item of an open list, which
+// ends the item being read whatever came before it.
+func (s *scanner) block(b base, closer []byte) Node {
+	if s.done() || s.closes(closer) || (len(b.Meta) > 0 && s.sibling()) {
+		return s.orphan(b)
 	}
+	node := s.body(b, closer)
+	s.freezeAfter(b)
+	return node
+}
+
+// orphan holds metadata lines that found no block.
+func (s *scanner) orphan(b base) Node {
+	b.Lines = Span{s.pos(), s.pos()}
+	s.freezeAfter(b)
+	return &Opaque{base: b}
+}
+
+// freezeAfter carries a directive among the metadata lines to the gap after the
+// block, past whatever the block itself read.
+func (s *scanner) freezeAfter(b base) {
 	if b.Frozen {
 		s.freeze = true
 	}
-	return node
 }
 
 func metaKind(sh shape) (MetaKind, bool) {
