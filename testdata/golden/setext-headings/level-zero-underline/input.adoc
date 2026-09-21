@@ -1,0 +1,7 @@
+= Book Title
+:doctype: book
+
+Part One
+========
+
+Text.

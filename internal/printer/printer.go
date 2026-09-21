@@ -66,7 +66,9 @@ func (p *printer) node(node block.Node) {
 	case *block.Header:
 		p.header(node)
 	case *block.Heading:
-		p.heading(node)
+		p.title(node, node.Level, node.Title)
+	case *block.Setext:
+		p.title(node, node.Level, node.Title)
 	case *block.FrontMatter:
 		// YAML, not AsciiDoc: trailing whitespace inside a block scalar is
 		// content there.
