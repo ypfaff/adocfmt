@@ -174,24 +174,53 @@ func (s *scanner) node(gap Gap, closer []byte) Node {
 }
 
 // metaLine reads the metadata line at the current position into b and reports
-// whether there was one. A directive counts once metadata lines stand above
-// it, see MetaDirective.
+// whether there was one.
 func (s *scanner) metaLine(b *base, closer []byte) bool {
 	if s.done() || s.closes(closer) {
 		return false
 	}
 	sh := s.shape()
-	kind, ok := metaKind(sh.kind)
-	if !ok && (sh.kind != shapeDirective || len(b.Meta) == 0) {
+	kind, ok := metaKind(sh)
+	if !ok || (len(b.Meta) == 0 && !opensMeta(kind)) {
 		return false
 	}
-	if sh.kind == shapeDirective {
+	start := s.pos()
+	switch kind {
+	case MetaDirective:
 		s.track(sh)
-		kind, b.Frozen = MetaDirective, true
-		b.Gap.Frozen, s.freeze = true, true
+		b.Frozen, b.Gap.Frozen, s.freeze = true, true, true
+		s.at++
+	case MetaAttrEntry:
+		s.entry(b)
+	case MetaCommentBlock:
+		s.commentBlock()
+	default:
+		s.at++
 	}
-	b.Meta = append(b.Meta, Meta{Kind: kind, Gap: b.Gap, Lines: s.take()})
+	b.Meta = append(b.Meta, Meta{Kind: kind, Gap: b.Gap, Lines: Span{start, s.pos()}})
 	return true
+}
+
+// opensMeta reports whether a line of this kind starts the metadata of a
+// block. The other kinds only continue it, see MetaCommentBlock.
+func opensMeta(kind MetaKind) bool {
+	switch kind {
+	case MetaAttributes, MetaTitle, MetaAnchor, MetaComment:
+		return true
+	default:
+		return false
+	}
+}
+
+// commentBlock skips the comment block opening on the current line.
+func (s *scanner) commentBlock() {
+	openAt := s.at
+	closer := s.text(s.lines[s.at])
+	s.at++
+	s.skipVerbatim(closer, true)
+	if s.closingLine().Empty() {
+		s.report(openAt, "block has no closing delimiter")
+	}
 }
 
 // block is the node the metadata lines in b bind to, or an Opaque one holding
@@ -212,8 +241,8 @@ func (s *scanner) block(b base, closer []byte, orphan bool) Node {
 	return node
 }
 
-func metaKind(kind shapeKind) (MetaKind, bool) {
-	switch kind {
+func metaKind(sh shape) (MetaKind, bool) {
+	switch sh.kind {
 	case shapeAttributes:
 		return MetaAttributes, true
 	case shapeTitle:
@@ -222,6 +251,12 @@ func metaKind(kind shapeKind) (MetaKind, bool) {
 		return MetaAnchor, true
 	case shapeComment:
 		return MetaComment, true
+	case shapeAttrEntry:
+		return MetaAttrEntry, true
+	case shapeDirective:
+		return MetaDirective, true
+	case shapeDelimiter:
+		return MetaCommentBlock, sh.char == '/'
 	default:
 		return 0, false
 	}
@@ -515,15 +550,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		b.Lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
 	} else {
-		// Asciidoctor reads a comment block without preprocessing it, so a
-		// directive inside one opens no conditional region.
-		comment := sh.char == '/' || style == commentStyle
-		for !s.done() && !bytes.Equal(s.text(s.lines[s.at]), closer) {
-			if inner := s.shape(); inner.kind == shapeDirective && !comment {
-				s.track(inner)
-			}
-			s.at++
-		}
+		s.skipVerbatim(closer, sh.char == '/' || style == commentStyle)
 		delim.Close = s.closingLine()
 		b.Lines = Span{start, s.pos()}
 		if sh.content == contentTable {
@@ -540,6 +567,18 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		s.report(openAt, "delimiter opens and closes in different conditional regions")
 	}
 	return node
+}
+
+// skipVerbatim advances to the line closing a verbatim block. Asciidoctor reads
+// a comment block without preprocessing it, so a directive inside one opens no
+// conditional region.
+func (s *scanner) skipVerbatim(closer []byte, comment bool) {
+	for !s.done() && !bytes.Equal(s.text(s.lines[s.at]), closer) {
+		if inner := s.shape(); inner.kind == shapeDirective && !comment {
+			s.track(inner)
+		}
+		s.at++
+	}
 }
 
 func (s *scanner) closingLine() Span {

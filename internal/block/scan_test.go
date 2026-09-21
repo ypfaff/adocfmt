@@ -418,6 +418,30 @@ Literal! gap! meta("[source]\n") meta("include::part.adoc[]\n") "code\n"
 Paragraph gap! "After.\n"`,
 		},
 		{
+			name: "a comment block between metadata and its block keeps them bound",
+			src:  "[source]\n////\nc\n////\nx = 1\ny = 2\n\n.Title\n// note\n////\nc\n////\n\nText.\n",
+			want: `
+Literal meta("[source]\n") meta("////\nc\n////\n") "x = 1\ny = 2\n"
+Paragraph meta(".Title\n") meta("// note\n") meta("////\nc\n////\n") "Text.\n"`,
+		},
+		{
+			name: "an attribute entry between metadata and its block keeps them bound, and still binds",
+			src:  "[source]\n:x: y\ntext\nmore\n\n.Title\n:a: one \\\ntwo\n\nText.\n\n[.lead]\n:hardbreaks:\na\nb\n",
+			want: `
+Literal meta("[source]\n") meta(":x: y\n") "text\nmore\n"
+Paragraph meta(".Title\n") meta(":a: one \\\ntwo\n") "Text.\n"
+Literal meta("[.lead]\n") meta(":hardbreaks:\n") "a\nb\n"`,
+		},
+		{
+			name: "a comment block or an attribute entry with no metadata above is a block of its own",
+			src:  "////\nc\n////\n.Title\nText.\n\n:x: y\n[source]\ncode\n",
+			want: `
+Verbatim "////\nc\n////\n"
+Paragraph meta(".Title\n") "Text.\n"
+Attribute ":x: y\n"
+Literal meta("[source]\n") "code\n"`,
+		},
+		{
 			name: "also inside a list, where the block stays attached to the item",
 			src:  "* a\n+\n.Title\ninclude::part.adoc[]\nText.\n* b\n",
 			want: `
@@ -744,6 +768,11 @@ func TestScanReports(t *testing.T) {
 			name: "a block that never closes",
 			src:  "----\ncode\n",
 			want: []Finding{{Line: 1, Message: "block has no closing delimiter"}},
+		},
+		{
+			name: "a comment block among the metadata lines that never closes",
+			src:  "[source]\n////\nc\n",
+			want: []Finding{{Line: 2, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a delimiter that closes outside the region it opened in",
