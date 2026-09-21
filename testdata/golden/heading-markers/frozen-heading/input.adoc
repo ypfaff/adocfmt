@@ -1,0 +1,5 @@
+[[id]]
+include::part.adoc[]
+## Section
+
+Text.

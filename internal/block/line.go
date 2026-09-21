@@ -66,6 +66,22 @@ func TrimTrailing(src []byte) []byte {
 	return out
 }
 
+// HeadingTitle reports the title a one-line section title carries, read the way
+// the scanner reads it, and whether the line is one at all.
+func HeadingTitle(line []byte) ([]byte, bool) {
+	sh, ok := headingShape(line, 0)
+	if !ok {
+		return nil, false
+	}
+	return line[sh.span.Start:sh.span.End], true
+}
+
+// Terminator returns the line ending src ends with: LF, CRLF, or nothing where
+// src ends without one.
+func Terminator(src []byte) []byte {
+	return src[terminator(src, Span{0, len(src)}):]
+}
+
 type shapeKind int
 
 // The line shapes the scanner tells apart. This is the one place that answers

@@ -2,8 +2,8 @@
 //
 // Printing is one recursive traversal, with one function per node type. Every
 // formatting opinion becomes a branch in the function for the node it applies
-// to, or, where the opinion is line-local, in span, the one place every
-// emitted byte passes through.
+// to, or, where the opinion is line-local, in span, the one place every byte of
+// source passes through.
 package printer
 
 import (
@@ -63,6 +63,10 @@ func (p *printer) node(node block.Node) {
 		p.container(node)
 	case *block.List:
 		p.list(node)
+	case *block.Header:
+		p.header(node)
+	case *block.Heading:
+		p.heading(node)
 	case *block.FrontMatter:
 		// YAML, not AsciiDoc: trailing whitespace inside a block scalar is
 		// content there.
