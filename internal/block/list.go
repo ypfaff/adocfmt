@@ -9,7 +9,9 @@ func (s *scanner) list(b base, sh shape, closer []byte) Node {
 	start := s.pos()
 	list := &List{base: b, Marker: sh.marker}
 	s.markers = append(s.markers, sh.marker)
-	defer func() { s.markers = s.markers[:len(s.markers)-1] }()
+	carrying := s.carrying
+	s.carrying = false
+	defer func() { s.markers, s.carrying = s.markers[:len(s.markers)-1], carrying }()
 
 	gap := Gap{Span: Span{start, start}}
 	for {
@@ -37,7 +39,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	s.at++
 	for !s.done() && !s.closes(closer) {
 		inner := s.shape()
-		if endsText(inner.kind) || inner.kind == shapeMarker {
+		if endsItemText(inner) {
 			break
 		}
 		if inner.kind == shapeDirective {
@@ -158,6 +160,8 @@ func (s *scanner) carried(closer []byte) Node {
 		s.at, s.freeze = at, freeze
 		return nil
 	}
+	s.carrying = true
+	defer func() { s.carrying = false }()
 	return s.node(gap, closer)
 }
 

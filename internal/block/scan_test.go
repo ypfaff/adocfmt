@@ -548,6 +548,44 @@ List "*"
   ListItem "* b\n"`,
 		},
 		{
+			name: "a carried paragraph reads on past a nested item line, but ends at an item of an open list",
+			src:  "* a\n+\npara\n- dash\n* b\n** c\n+\n\nmore\n* d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph "para\n- dash\n"
+  ListItem "* b\n"
+    List "**"
+      ListItem "** c\n"
+        Continuation gap! "+\n"
+        Paragraph "more\n"
+  ListItem "* d\n"`,
+		},
+		{
+			name: "a description term inside a paragraph freezes it, joined onto the line above it would make a list",
+			src:  "* a\n+\npara\nterm:: x\n\nText.\nfoo:: bar\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph! "para\nterm:: x\n"
+Paragraph! "Text.\nfoo:: bar\n"`,
+		},
+		{
+			name: "inside a carried list, a paragraph right after the item text ends at any item line again",
+			src:  "* a\n+\n- b\n[x]\npara\n. c\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    List "-"
+      ListItem "- b\n"
+        Paragraph meta("[x]\n") "para\n"
+        List "."
+          ListItem ". c\n"`,
+		},
+		{
 			name: "an item of the list ends a continuation, which then carries nothing",
 			src:  "* a\n+\n* b\n",
 			want: `
