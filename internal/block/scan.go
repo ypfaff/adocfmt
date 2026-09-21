@@ -256,28 +256,42 @@ func (s *scanner) body(b base, closer []byte) Node {
 		if atStart && sh.level == 0 {
 			return s.header(b)
 		}
-		if !sectionLevel && !styledDiscrete(s.src, b.Meta) {
-			return s.paragraph(b, closer)
+		if sectionLevel || styledDiscrete(s.src, b.Meta) {
+			b.Lines = s.take()
+			return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
 		}
-		b.Lines = s.take()
-		return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
+		return s.contentBlock(b, sh, closer)
 	case shapeAttrEntry:
 		return s.attribute(b)
 	case shapeDirective:
 		return s.directive(b, sh)
-	case shapeMarker:
-		return s.list(b, sh, closer)
 	case shapeContinuation:
 		b.Gap.Frozen = true
 		b.Lines = s.take()
 		return &Continuation{base: b}
+	default:
+		return s.contentBlock(b, sh, closer)
+	}
+}
+
+// contentBlock reads a block whose kind a verbatim style above it overrides:
+// Asciidoctor checks the style before it looks at the line, and then reads to
+// the next blank line whatever the lines look like.
+func (s *scanner) contentBlock(b base, sh shape, closer []byte) Node {
+	if strictVerbatimStyles[styleOf(s.src, b.Meta)] {
+		s.textRun(&b, closer, endsVerbatim)
+		return &Literal{base: b}
+	}
+	switch sh.kind {
+	case shapeMarker:
+		return s.list(b, sh, closer)
 	case shapeIndented:
 		return s.literal(b, closer)
 	case shapeBreak, shapeMacro:
 		b.Lines = s.take()
 		return &Opaque{base: b}
 	case shapeQuote:
-		s.textRun(&b, closer, s.inList())
+		s.textRun(&b, closer, s.endsProse())
 		return &Opaque{base: b}
 	default:
 		return s.paragraph(b, closer)
@@ -386,7 +400,7 @@ func (s *scanner) setext(b base, level int) Node {
 // quote, since Asciidoctor lifts its last line out as the attribution.
 func (s *scanner) paragraph(b base, closer []byte) Node {
 	first := s.at
-	s.textRun(&b, closer, s.inList())
+	s.textRun(&b, closer, s.endsProse())
 	switch {
 	case !paragraphStyles[styleOf(s.src, b.Meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
 		return &Opaque{base: b}
@@ -399,26 +413,22 @@ func (s *scanner) paragraph(b base, closer []byte) Node {
 
 // literal is an indented paragraph, which AsciiDoc reads as verbatim content.
 func (s *scanner) literal(b base, closer []byte) Node {
-	s.textRun(&b, closer, false)
+	s.textRun(&b, closer, endsText)
 	return &Literal{base: b}
 }
 
-// textRun consumes the lines of an undelimited block. A directive line inside
-// one does not end it: what the directive pulls in decides where the block
-// really ends, so the block and the gaps around it freeze instead. A comment
-// line does not end it either, nor does a line that has to stay a line of its
-// own; the block freezes to keep them where they are.
-//
-// Inside a list the run of a paragraph also ends at the next item, which is
-// what keeps a term from being read as the text of the item above it. A
-// literal paragraph does not: Asciidoctor reads it up to a blank line whatever
-// its lines look like, an item line included.
-func (s *scanner) textRun(b *base, closer []byte, endsAtItem bool) {
+// textRun consumes the lines of an undelimited block up to the first line ends
+// says is no longer part of it. A directive line inside the block does not end
+// it: what the directive pulls in decides where the block really ends, so the
+// block and the gaps around it freeze instead. A comment line does not end it
+// either, nor does a line that has to stay a line of its own; the block
+// freezes to keep them where they are.
+func (s *scanner) textRun(b *base, closer []byte, ends func(shapeKind) bool) {
 	start := s.pos()
 	directive := false
 	for !s.done() && !s.closes(closer) {
 		sh := s.shape()
-		if endsText(sh.kind) || (endsAtItem && sh.kind == shapeMarker) {
+		if ends(sh.kind) {
 			break
 		}
 		if sh.kind == shapeDirective {
@@ -446,6 +456,28 @@ func endsText(kind shapeKind) bool {
 	default:
 		return false
 	}
+}
+
+// endsItemText also stops at the next item, which keeps a term from being read
+// as the text of the item above it.
+func endsItemText(kind shapeKind) bool {
+	return endsText(kind) || kind == shapeMarker
+}
+
+// endsVerbatim stops where Asciidoctor stops a verbatim-styled paragraph: at a
+// blank line or a lone +, whatever the lines in between look like.
+func endsVerbatim(kind shapeKind) bool {
+	return kind == shapeBlank || kind == shapeContinuation
+}
+
+// endsProse is where a paragraph ends at the current position. A literal
+// paragraph does not use it: Asciidoctor reads that up to a blank line, an
+// item line included.
+func (s *scanner) endsProse() func(shapeKind) bool {
+	if s.inList() {
+		return endsItemText
+	}
+	return endsText
 }
 
 func (s *scanner) directive(b base, sh shape) Node {

@@ -427,6 +427,11 @@ func styledVerbatim(src []byte, meta []Meta) bool {
 	return verbatimStyles[style] || style == commentStyle
 }
 
+// strictVerbatimStyles are the styles Asciidoctor checks before it looks at the
+// line below them, its VERBATIM_STYLES: a marker, an indent or a delimiter
+// there is content, and the paragraph runs to the next blank line.
+var strictVerbatimStyles = map[string]bool{"literal": true, "listing": true, "source": true, "verse": true}
+
 // styleOf is the block style an attribute line assigns. It overrides what the
 // delimiter says: [source] on an open block makes it code, [comment] makes it a
 // comment block.
