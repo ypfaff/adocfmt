@@ -80,6 +80,10 @@ type Node interface {
 	// Emitting it verbatim is what a print function does until a rule claims
 	// the node.
 	Extent() Span
+	Gap() Gap
+	Meta() []Meta
+	Lines() Span
+	Frozen() bool
 	node()
 }
 
@@ -90,21 +94,26 @@ type Node interface {
 // rule may add, remove, join or split lines there; line-local rewrites such as
 // trailing whitespace removal stay safe.
 type base struct {
-	Gap    Gap
-	Meta   []Meta
-	Lines  Span
-	Frozen bool
+	gap    Gap
+	meta   []Meta
+	lines  Span
+	frozen bool
 }
 
 func (b *base) node() {}
 
 // Extent implements Node.
 func (b *base) Extent() Span {
-	if len(b.Meta) > 0 {
-		return Span{b.Meta[0].Gap.Span.Start, b.Lines.End}
+	if len(b.meta) > 0 {
+		return Span{b.meta[0].Gap.Span.Start, b.lines.End}
 	}
-	return Span{b.Gap.Span.Start, b.Lines.End}
+	return Span{b.gap.Span.Start, b.lines.End}
 }
+
+func (b *base) Gap() Gap     { return b.gap }
+func (b *base) Meta() []Meta { return b.meta }
+func (b *base) Lines() Span  { return b.lines }
+func (b *base) Frozen() bool { return b.frozen }
 
 // Header is the document header: the level 0 title, in one-line or two-line
 // form, with the author, revision and attribute lines that follow it without a

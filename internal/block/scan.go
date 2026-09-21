@@ -182,9 +182,9 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 // node reads the metadata lines at the current position and the block they
 // bind to.
 func (s *scanner) node(gap Gap, closer []byte) Node {
-	b := base{Gap: gap}
+	b := base{gap: gap}
 	for s.metaLine(&b, closer) {
-		b.Gap = s.gap()
+		b.gap = s.gap()
 	}
 	return s.block(b, closer)
 }
@@ -197,14 +197,14 @@ func (s *scanner) metaLine(b *base, closer []byte) bool {
 	}
 	sh := s.shape()
 	kind, ok := metaKind(sh)
-	if !ok || (len(b.Meta) == 0 && !opensMeta(kind)) {
+	if !ok || (len(b.meta) == 0 && !opensMeta(kind)) {
 		return false
 	}
 	start := s.pos()
 	switch kind {
 	case MetaDirective:
 		s.track(sh)
-		b.Frozen, b.Gap.Frozen, s.freeze = true, true, true
+		b.frozen, b.gap.Frozen, s.freeze = true, true, true
 		s.at++
 	case MetaAttrEntry:
 		s.entry(b)
@@ -213,7 +213,7 @@ func (s *scanner) metaLine(b *base, closer []byte) bool {
 	default:
 		s.at++
 	}
-	b.Meta = append(b.Meta, Meta{Kind: kind, Gap: b.Gap, Lines: Span{start, s.pos()}})
+	b.meta = append(b.meta, Meta{Kind: kind, Gap: b.gap, Lines: Span{start, s.pos()}})
 	return true
 }
 
@@ -243,7 +243,7 @@ func (s *scanner) commentBlock() {
 // of the source or the enclosing block, or at an item of an open list, which
 // ends the item being read whatever came before it.
 func (s *scanner) block(b base, closer []byte) Node {
-	if s.done() || s.closes(closer) || (len(b.Meta) > 0 && s.sibling()) {
+	if s.done() || s.closes(closer) || (len(b.meta) > 0 && s.sibling()) {
 		return s.orphan(b)
 	}
 	node := s.body(b, closer)
@@ -253,7 +253,7 @@ func (s *scanner) block(b base, closer []byte) Node {
 
 // orphan holds metadata lines that found no block.
 func (s *scanner) orphan(b base) Node {
-	b.Lines = Span{s.pos(), s.pos()}
+	b.lines = Span{s.pos(), s.pos()}
 	s.freezeAfter(b)
 	return &Opaque{base: b}
 }
@@ -261,7 +261,7 @@ func (s *scanner) orphan(b base) Node {
 // freezeAfter carries a directive among the metadata lines to the gap after the
 // block, past whatever the block itself read.
 func (s *scanner) freezeAfter(b base) {
-	if b.Frozen {
+	if b.frozen {
 		s.freeze = true
 	}
 }
@@ -316,8 +316,8 @@ func (s *scanner) body(b base, closer []byte) Node {
 		if atStart && sh.level == 0 {
 			return s.header(b)
 		}
-		if sectionLevel || styledDiscrete(s.src, b.Meta) {
-			b.Lines = s.take()
+		if sectionLevel || styledDiscrete(s.src, b.meta) {
+			b.lines = s.take()
 			return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
 		}
 		return s.contentBlock(b, sh, closer)
@@ -326,8 +326,8 @@ func (s *scanner) body(b base, closer []byte) Node {
 	case shapeDirective:
 		return s.directive(b, sh)
 	case shapeContinuation:
-		b.Gap.Frozen = true
-		b.Lines = s.take()
+		b.gap.Frozen = true
+		b.lines = s.take()
 		return &Continuation{base: b}
 	default:
 		return s.contentBlock(b, sh, closer)
@@ -338,7 +338,7 @@ func (s *scanner) body(b base, closer []byte) Node {
 // Asciidoctor checks the style before it looks at the line, and then reads to
 // the next blank line whatever the lines look like.
 func (s *scanner) contentBlock(b base, sh shape, closer []byte) Node {
-	if strictVerbatimStyles[styleOf(s.src, b.Meta)] {
+	if strictVerbatimStyles[styleOf(s.src, b.meta)] {
 		s.textRun(&b, closer, endsVerbatim)
 		return &Literal{base: b}
 	}
@@ -348,7 +348,7 @@ func (s *scanner) contentBlock(b base, sh shape, closer []byte) Node {
 	case shapeIndented:
 		return s.literal(b, closer)
 	case shapeBreak, shapeMacro:
-		b.Lines = s.take()
+		b.lines = s.take()
 		return &Opaque{base: b}
 	case shapeQuote:
 		s.textRun(&b, closer, s.endsProse())
@@ -382,14 +382,14 @@ func (s *scanner) header(b base) Node {
 		}
 		s.at++
 	}
-	b.Lines = Span{start, s.pos()}
+	b.lines = Span{start, s.pos()}
 	return &Header{base: b}
 }
 
 func (s *scanner) attribute(b base) Node {
 	start := s.pos()
 	s.entry(&b)
-	b.Lines = Span{start, s.pos()}
+	b.lines = Span{start, s.pos()}
 	return &Attribute{base: b}
 }
 
@@ -409,7 +409,7 @@ func (s *scanner) entry(b *base) {
 		}
 		if sh.kind == shapeDirective {
 			s.track(sh)
-			b.Frozen, b.Gap.Frozen, s.freeze = true, true, true
+			b.frozen, b.gap.Frozen, s.freeze = true, true, true
 			continue
 		}
 		open = bytes.HasSuffix(bytes.TrimLeft(s.text(s.lines[s.at]), " \t"), []byte(e.wrap))
@@ -450,7 +450,7 @@ func (s *scanner) setext(b base, level int) Node {
 	title := s.lines[s.at].text
 	start := s.pos()
 	s.at += 2
-	b.Lines = Span{start, s.pos()}
+	b.lines = Span{start, s.pos()}
 	return &Setext{base: b, Level: level, Title: title}
 }
 
@@ -462,9 +462,9 @@ func (s *scanner) paragraph(b base, closer []byte) Node {
 	first := s.at
 	s.textRun(&b, closer, s.endsProse())
 	switch {
-	case !paragraphStyles[styleOf(s.src, b.Meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
+	case !paragraphStyles[styleOf(s.src, b.meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
 		return &Opaque{base: b}
-	case styledVerbatim(s.src, b.Meta) || hasOption(s.src, b.Meta, hardbreaksOption) || len(s.lineBound) > 0:
+	case styledVerbatim(s.src, b.meta) || hasOption(s.src, b.meta, hardbreaksOption) || len(s.lineBound) > 0:
 		return &Literal{base: b}
 	default:
 		return &Paragraph{base: b}
@@ -494,12 +494,12 @@ func (s *scanner) textRun(b *base, closer []byte, ends func(shape) bool) {
 			s.track(sh)
 			directive = true
 		}
-		b.Frozen = b.Frozen || sh.kind == shapeDirective || pinsLine(sh, s.text(s.lines[s.at]))
+		b.frozen = b.frozen || sh.kind == shapeDirective || pinsLine(sh, s.text(s.lines[s.at]))
 		s.at++
 	}
-	b.Lines = Span{start, s.pos()}
+	b.lines = Span{start, s.pos()}
 	if directive {
-		b.Gap.Frozen = true
+		b.gap.Frozen = true
 		s.freeze = true
 	}
 }
@@ -552,9 +552,9 @@ func (s *scanner) endsCarriedText(sh shape) bool {
 
 func (s *scanner) directive(b base, sh shape) Node {
 	s.track(sh)
-	b.Gap.Frozen = true
-	b.Frozen = true
-	b.Lines = s.take()
+	b.gap.Frozen = true
+	b.frozen = true
+	b.lines = s.take()
 	s.freeze = true
 	return &Directive{base: b}
 }
@@ -568,7 +568,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 	region := s.region()
 	start := s.pos()
 	delim := Delimiter{Char: sh.char, Width: sh.width, Open: open.full}
-	style := styleOf(s.src, b.Meta)
+	style := styleOf(s.src, b.meta)
 	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle) {
 		sh.content = contentVerbatim
 	}
@@ -582,12 +582,12 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		children, tail := s.nodes(closer)
 		s.markers = markers
 		delim.Close = s.closingLine()
-		b.Lines = Span{start, s.pos()}
+		b.lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
 	} else {
 		s.skipVerbatim(closer, sh.char == '/' || style == commentStyle)
 		delim.Close = s.closingLine()
-		b.Lines = Span{start, s.pos()}
+		b.lines = Span{start, s.pos()}
 		if sh.content == contentTable {
 			node = &Table{base: b, Delim: delim}
 		} else {
@@ -640,6 +640,6 @@ func (s *scanner) frontMatter() Node {
 		return nil
 	}
 	s.at++
-	b := base{Gap: Gap{Span: Span{start, start}}, Lines: Span{start, s.pos()}}
+	b := base{gap: Gap{Span: Span{start, start}}, lines: Span{start, s.pos()}}
 	return &FrontMatter{base: b}
 }

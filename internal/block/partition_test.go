@@ -81,12 +81,11 @@ func (w *walker) nodes(nodes []Node, tail Gap, end int) {
 
 func (w *walker) node(node Node) {
 	w.t.Helper()
-	common := node.(interface{ common() *base }).common()
-	for _, meta := range common.Meta {
+	for _, meta := range node.Meta() {
 		w.span("metadata gap", meta.Gap.Span)
 		w.span("metadata", meta.Lines)
 	}
-	w.span("gap", common.Gap.Span)
+	w.span("gap", node.Gap().Span)
 
 	switch node := node.(type) {
 	case *Container:
@@ -95,7 +94,7 @@ func (w *walker) node(node Node) {
 			w.nodes(node.Children, node.Tail, node.Delim.Close.Start)
 			w.span("closing delimiter", node.Delim.Close)
 		} else {
-			w.nodes(node.Children, node.Tail, node.Lines.End)
+			w.nodes(node.Children, node.Tail, node.Lines().End)
 		}
 	case *List:
 		for _, item := range node.Items {
@@ -110,8 +109,8 @@ func (w *walker) node(node Node) {
 			w.node(child)
 		}
 	default:
-		w.span("lines", common.Lines)
+		w.span("lines", node.Lines())
 	}
-	w.reached("lines", common.Lines.End)
+	w.reached("lines", node.Lines().End)
 	w.reached("extent", node.Extent().End)
 }

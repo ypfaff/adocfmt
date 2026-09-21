@@ -115,25 +115,24 @@ func (s *stresser) gap(g block.Gap, aroundHeading bool) {
 // stack, where the blank line rule puts it, not between the stack and the
 // title.
 func (s *stresser) node(node block.Node, aroundHeading bool) {
-	c := common(node)
-	for _, meta := range c.meta {
+	for _, meta := range node.Meta() {
 		s.gap(meta.Gap, aroundHeading)
 		aroundHeading = false
 		s.span(meta.Lines)
 	}
-	s.gap(c.gap, aroundHeading)
+	s.gap(node.Gap(), aroundHeading)
 
 	switch node := node.(type) {
 	case *block.Paragraph:
-		if node.Frozen {
-			s.span(node.Lines)
+		if node.Frozen() {
+			s.span(node.Lines())
 			return
 		}
-		s.paragraph(node.Lines)
+		s.paragraph(node.Lines())
 	case *block.Heading:
-		s.heading(node.Frozen, node.Level, node.Title, node.Lines)
+		s.heading(node.Frozen(), node.Level, node.Title, node.Lines())
 	case *block.Setext:
-		s.heading(node.Frozen, node.Level, node.Title, node.Lines)
+		s.heading(node.Frozen(), node.Level, node.Title, node.Lines())
 	case *block.Container:
 		s.span(node.Delim.Open)
 		s.nodes(node.Children, node.Tail)
@@ -148,7 +147,7 @@ func (s *stresser) node(node block.Node, aroundHeading bool) {
 			s.node(child, false)
 		}
 	default:
-		s.span(c.lines)
+		s.span(node.Lines())
 	}
 }
 
@@ -173,49 +172,4 @@ func (s *stresser) heading(frozen bool, level int, title, lines block.Span) {
 		return
 	}
 	s.out.WriteString(strings.Repeat("=", level+1) + " " + s.text(title) + s.eol)
-}
-
-// fields is what every node carries; the block package does not export the
-// embedded struct, so the test reads it through a type switch.
-type fields struct {
-	gap   block.Gap
-	meta  []block.Meta
-	lines block.Span
-}
-
-func common(node block.Node) fields {
-	switch n := node.(type) {
-	case *block.Header:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Heading:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Setext:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Paragraph:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Literal:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Verbatim:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Container:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Table:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.List:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.ListItem:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Continuation:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Attribute:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Directive:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.FrontMatter:
-		return fields{n.Gap, n.Meta, n.Lines}
-	case *block.Opaque:
-		return fields{n.Gap, n.Meta, n.Lines}
-	default:
-		panic("unknown node type")
-	}
 }

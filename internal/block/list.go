@@ -26,13 +26,13 @@ func (s *scanner) list(b base, sh shape, closer []byte) Node {
 		}
 		sh = next
 	}
-	list.Lines = Span{start, s.pos()}
+	list.lines = Span{start, s.pos()}
 	return list
 }
 
 func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	start := s.pos()
-	b := base{Gap: gap}
+	b := base{gap: gap}
 	item := &ListItem{base: b, Marker: sh.span}
 	bare := sh.span.End == s.lines[s.at].text.End
 
@@ -44,7 +44,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 		}
 		if inner.kind == shapeDirective {
 			s.track(inner)
-			item.Frozen = true
+			item.frozen = true
 			s.freeze = true
 		}
 		s.at++
@@ -55,7 +55,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	}
 
 	item.Children = s.attached(closer)
-	item.Lines = Span{start, s.pos()}
+	item.lines = Span{start, s.pos()}
 	return item
 }
 
@@ -72,7 +72,7 @@ func (s *scanner) fold(item *ListItem, start int, closer []byte) {
 
 	var folded base
 	s.textRun(&folded, closer, endsItemText)
-	item.Frozen = item.Frozen || folded.Frozen
+	item.frozen = item.frozen || folded.frozen
 	item.Principal = Span{start, s.pos()}
 }
 
@@ -107,9 +107,9 @@ func (s *scanner) attached(closer []byte) []Node {
 				children = append(children, carried)
 			}
 		case sh.kind == shapeMarker && !s.open(sh.marker):
-			children = append(children, s.list(base{Gap: gap}, sh, closer))
+			children = append(children, s.list(base{gap: gap}, sh, closer))
 		case sh.kind == shapeIndented && !gap.Span.Empty():
-			children = append(children, s.literal(base{Gap: gap}, closer))
+			children = append(children, s.literal(base{gap: gap}, closer))
 		case gap.Span.Empty() && sh.kind != shapeMarker && sh.kind != shapeDelimiter:
 			children = append(children, s.adjacent(gap, closer))
 		default:
@@ -125,14 +125,14 @@ func (s *scanner) attached(closer []byte) []Node {
 // behind a continuation. A blank line ends it too, unless a nested list or a
 // literal block follows.
 func (s *scanner) adjacent(gap Gap, closer []byte) Node {
-	b := base{Gap: gap}
+	b := base{gap: gap}
 	for s.metaLine(&b, closer) {
 		m := s.mark()
-		b.Gap = s.gap()
-		if !b.Gap.Span.Empty() && !s.nests() {
+		b.gap = s.gap()
+		if !b.gap.Span.Empty() && !s.nests() {
 			// The blank lines belong to whatever comes after the item.
 			s.rewind(m)
-			b.Gap = Gap{Span: Span{s.pos(), s.pos()}}
+			b.gap = Gap{Span: Span{s.pos(), s.pos()}}
 			return s.orphan(b)
 		}
 	}
