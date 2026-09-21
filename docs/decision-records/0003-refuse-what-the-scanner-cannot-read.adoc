@@ -1,0 +1,35 @@
+= 0003: Refuse what the scanner cannot read
+
+*Status:* accepted +
+*Date:* 2026-09-21
+
+== Context
+
+The scanner from xref:0002-block-tree-and-canonical-printer.adoc[decision record 0002] meets structure it cannot trust: a block that never closes, a conditional region that never closes or that closes nothing, a delimiter that opens inside a conditional and closes outside it, a malformed directive.
+It reports each as a finding with a line, and what the formatter does with a finding is open.
+
+== Decision
+
+A document with findings is refused whole: `Format` returns every finding as an error and no output, and the file stays as it is.
+
+== Consequences
+
+* A user sees one clear message per document, with the line to fix, instead of a file that was formatted in parts without saying which.
+* A block that never closes runs to the end of the file, so refusing costs no formatting a partial run would have delivered.
+* Asciidoctor warns about every case the scanner refuses, so a refused document is one its author has to fix anyway.
+* A delimiter that opens inside a conditional and closes outside it is a code block with the attribute set and a heading without it.
+Formatting either reading breaks the other, so refusing is the only answer that is right for both.
+
+== Alternatives
+
+Format the part the scanner understood::
+A block that never closes swallows the rest of the file, so such a run formats next to nothing and reports success.
+The output is quiet where the user needs to hear that the document is broken.
+
+Warnings beside the output::
+The document is written anyway, and a warning on stderr is what a commit hook or a CI run scrolls past.
+Formatters that took this route later added a flag to fail on warnings; starting with the failure skips that step.
+
+Report how much of the document stayed unformatted::
+A percentage still needs the user to work out where and why, and no formatter this project looked at reports one.
+The findings name the line, which is what the user needs to fix the document.
