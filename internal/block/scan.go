@@ -354,13 +354,16 @@ func (s *scanner) literal(b base, closer []byte) Node {
 
 // textRun consumes the lines of an undelimited block. A directive line inside
 // one does not end it: what the directive pulls in decides where the block
-// really ends, so the block and the gaps around it freeze instead.
+// really ends, so the block and the gaps around it freeze instead. A comment
+// line does not end it either; Asciidoctor drops the line and joins the text
+// around it, so the block freezes to keep the comment where it is.
 //
 // Inside a list the run also ends at the next item, which is what keeps a term
 // from being read as the text of the item above it.
 func (s *scanner) textRun(b *base, closer []byte) {
 	start := s.pos()
 	inList := len(s.markers) > 0
+	directive := false
 	for !s.done() && !s.closes(closer) {
 		sh := s.shape()
 		if endsText(sh.kind) || (sh.kind == shapeMarker && inList) {
@@ -368,12 +371,13 @@ func (s *scanner) textRun(b *base, closer []byte) {
 		}
 		if sh.kind == shapeDirective {
 			s.track(sh)
-			b.Frozen = true
+			directive = true
 		}
+		b.Frozen = b.Frozen || sh.kind == shapeDirective || sh.kind == shapeComment
 		s.at++
 	}
 	b.Lines = Span{start, s.pos()}
-	if b.Frozen {
+	if directive {
 		b.Gap.Frozen = true
 		s.freeze = true
 	}

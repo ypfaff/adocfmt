@@ -348,6 +348,13 @@ List "*"
     Verbatim "----\ncode\n----\n"`,
 		},
 		{
+			name: "a comment line inside a paragraph freezes it, but not its gaps",
+			src:  "First line.\n// a comment\nSecond line.\n\nMore.\n",
+			want: `
+Paragraph! "First line.\n// a comment\nSecond line.\n"
+Paragraph "More.\n"`,
+		},
+		{
 			name: "a thematic break is not prose",
 			src:  "Text.\n\n---\n\nMore.\n",
 			want: `
