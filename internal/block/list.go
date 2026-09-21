@@ -84,7 +84,9 @@ func foldsOntoTerm(kind shapeKind) bool {
 }
 
 // attached reads what hangs off an item: a continuation and the block it
-// carries, a nested list, or an indented literal block.
+// carries, a nested list, an indented literal block, or whatever follows the
+// item's content with no blank line between, which Asciidoctor keeps in the
+// item.
 func (s *scanner) attached(closer []byte) []Node {
 	var children []Node
 	for {
@@ -106,6 +108,8 @@ func (s *scanner) attached(closer []byte) []Node {
 			children = append(children, s.list(base{Gap: gap}, sh, closer))
 		case sh.kind == shapeIndented && !gap.Span.Empty():
 			children = append(children, s.literal(base{Gap: gap}, closer))
+		case gap.Span.Empty() && sh.kind != shapeMarker && sh.kind != shapeDelimiter:
+			children = append(children, s.adjacent(gap, closer))
 		default:
 			s.at, s.freeze = at, freeze
 			return children
@@ -113,13 +117,44 @@ func (s *scanner) attached(closer []byte) []Node {
 	}
 }
 
+// adjacent reads the line that follows an item's content with no blank line
+// between. Metadata there binds to a block inside the item, or to none when
+// the item ends first: at a delimiter, which enters an item only behind a
+// continuation, or at a blank line, unless a nested list or a literal block
+// follows it.
+func (s *scanner) adjacent(gap Gap, closer []byte) Node {
+	b := base{Gap: gap}
+	for s.metaLine(&b, closer) {
+		at, freeze := s.at, s.freeze
+		if b.Gap = s.gap(); b.Gap.Span.Empty() || s.nests() {
+			continue
+		}
+		// The blank lines belong to whatever comes after the item.
+		s.at, s.freeze = at, freeze
+		b.Gap = Gap{Span: Span{s.pos(), s.pos()}}
+		return s.block(b, closer, true)
+	}
+	return s.block(b, closer, !s.done() && s.shape().kind == shapeDelimiter)
+}
+
+// nests reports whether the current line is a nested list item or a literal
+// line, the two blocks a blank line does not cut off from the item above.
+func (s *scanner) nests() bool {
+	if s.done() {
+		return false
+	}
+	sh := s.shape()
+	return (sh.kind == shapeMarker && !s.open(sh.marker)) || sh.kind == shapeIndented
+}
+
 // carried is the block a continuation line attaches to the item. A continuation
 // with nothing left to carry gives the blank lines back, so they end up in the
-// tail of the enclosing block rather than in no node at all.
+// gap of the next item or the tail of the enclosing block rather than in no
+// node at all.
 func (s *scanner) carried(closer []byte) Node {
 	at, freeze := s.at, s.freeze
 	gap := s.gap()
-	if s.done() || s.closes(closer) {
+	if s.done() || s.closes(closer) || s.sibling() {
 		s.at, s.freeze = at, freeze
 		return nil
 	}
@@ -138,4 +173,11 @@ func (s *scanner) marker() (shape, bool) {
 // which case that list continues rather than a new one nesting.
 func (s *scanner) open(marker string) bool {
 	return slices.Contains(s.markers, marker)
+}
+
+// sibling reports whether the current line is an item of an open list. It ends
+// the item being read whatever came before it, a continuation included.
+func (s *scanner) sibling() bool {
+	sh, ok := s.marker()
+	return ok && s.open(sh.marker)
 }
