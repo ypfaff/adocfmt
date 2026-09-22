@@ -609,6 +609,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 	start := s.pos()
 	delim := Delimiter{Char: sh.char, Fill: sh.fill, Width: sh.width, Open: open.full}
 	style := styleOf(s.src, b.meta)
+	comment := sh.char == '/' || style == commentStyle
 	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle) {
 		sh.content = contentVerbatim
 	}
@@ -621,11 +622,13 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		s.markers = nil
 		children, tail := s.nodes(closer)
 		s.markers = markers
+		delim.Extensible = s.extensible(comment, openAt+1)
 		delim.Close = s.closingLine()
 		b.lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
 	} else {
-		s.skipVerbatim(closer, sh.char == '/' || style == commentStyle)
+		s.skipVerbatim(closer, comment)
+		delim.Extensible = s.extensible(comment, openAt+1)
 		delim.Close = s.closingLine()
 		b.lines = Span{start, s.pos()}
 		if sh.content == contentTable {
@@ -642,6 +645,23 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		s.report(openAt, "delimiter opens and closes in different conditional regions")
 	}
 	return node
+}
+
+// extensible reports whether a directive stands between from and the line the
+// block closes on. What one brings in is known only once Asciidoctor has
+// resolved it, so the body may hold lines the scanner never sees, a line
+// closing the block among them. A comment block is never extensible, because
+// Asciidoctor reads one without preprocessing it.
+func (s *scanner) extensible(comment bool, from int) bool {
+	if comment {
+		return false
+	}
+	for at := from; at < s.at; at++ {
+		if classify(s.src, s.lines[at]).kind == shapeDirective {
+			return true
+		}
+	}
+	return false
 }
 
 // skipVerbatim advances to the line closing a verbatim block. Asciidoctor reads

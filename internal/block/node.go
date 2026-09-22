@@ -35,13 +35,16 @@ type Gap struct {
 // one of | , : ! opens a run of = signs.
 //
 // A block closes only on a line equal to the one that opened it, which is what
-// makes Width part of its identity.
+// makes Width part of its identity. Extensible marks a body an include or a
+// conditional may extend, whose lines the scanner therefore does not see in
+// full.
 type Delimiter struct {
-	Char  byte
-	Fill  byte
-	Width int
-	Open  Span
-	Close Span
+	Char       byte
+	Fill       byte
+	Width      int
+	Open       Span
+	Close      Span
+	Extensible bool
 }
 
 // Closed reports whether the block ended on a matching delimiter rather than at
