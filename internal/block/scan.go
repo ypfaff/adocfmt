@@ -25,9 +25,11 @@ func Scan(src []byte) (*Document, error) {
 	if !utf8.Valid(src[start:]) {
 		return nil, errors.New("source is not valid UTF-8")
 	}
-	if err := checkLineEndings(src[start:]); err != nil {
+	ending, err := lineEnding(src[start:])
+	if err != nil {
 		return nil, err
 	}
+	doc.LineEnding = ending
 
 	s := &scanner{src: src, lines: splitLines(src, start), atStart: true, lineBound: map[string]bool{}}
 	if matter := s.frontMatter(); matter != nil {
@@ -43,7 +45,10 @@ func Scan(src []byte) (*Document, error) {
 	return doc, nil
 }
 
-func checkLineEndings(src []byte) error {
+// lineEnding reports what ends a line in src, and fails on the endings the
+// scanner must not repair silently. A source without any answers LF, because a
+// rule writing the first line ending has to pick one.
+func lineEnding(src []byte) (LineEnding, error) {
 	crlf, lf := 0, 0
 	for at := 0; at < len(src); at++ {
 		switch src[at] {
@@ -55,14 +60,17 @@ func checkLineEndings(src []byte) error {
 			}
 		case '\r':
 			if at+1 == len(src) || src[at+1] != '\n' {
-				return errors.New("source has carriage returns that end no line")
+				return "", errors.New("source has carriage returns that end no line")
 			}
 		}
 	}
 	if crlf > 0 && lf > 0 {
-		return fmt.Errorf("source has mixed line endings: %d CRLF, %d LF", crlf, lf)
+		return "", fmt.Errorf("source has mixed line endings: %d CRLF, %d LF", crlf, lf)
 	}
-	return nil
+	if crlf > 0 {
+		return CRLF, nil
+	}
+	return LF, nil
 }
 
 type scanner struct {

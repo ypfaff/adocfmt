@@ -896,3 +896,30 @@ func TestScanRejects(t *testing.T) {
 		})
 	}
 }
+
+// TestScanLineEnding covers the answer a rule writing a line of its own reads.
+func TestScanLineEnding(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want LineEnding
+	}{
+		{name: "line feeds", src: "a\nb\n", want: LF},
+		{name: "carriage return line feeds", src: "a\r\nb\r\n", want: CRLF},
+		{name: "no line ending at all", src: "a", want: LF},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			doc, err := Scan([]byte(test.src))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if doc.LineEnding != test.want {
+				t.Errorf("got %q, want %q", doc.LineEnding, test.want)
+			}
+		})
+	}
+}

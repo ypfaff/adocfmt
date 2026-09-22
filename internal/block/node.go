@@ -226,11 +226,24 @@ type Finding struct {
 
 func (f Finding) Error() string { return fmt.Sprintf("line %d: %s", f.Line, f.Message) }
 
-// Document is a scanned source file.
+// LineEnding is what ends a line. Terminator answers the same question for one
+// line, and may answer that it ends without one; a document always has an
+// answer, because a rule writing a line of its own needs one to write.
+type LineEnding string
+
+// The two forms a source may end a line with.
+const (
+	LF   LineEnding = "\n"
+	CRLF LineEnding = "\r\n"
+)
+
+// Document is a scanned source file. The scanner refuses a source that mixes
+// the two line endings, so LineEnding holds for the whole of it.
 type Document struct {
-	Src      []byte
-	BOM      Span
-	Nodes    []Node
-	Tail     Gap
-	Findings []Finding
+	Src        []byte
+	BOM        Span
+	LineEnding LineEnding
+	Nodes      []Node
+	Tail       Gap
+	Findings   []Finding
 }
