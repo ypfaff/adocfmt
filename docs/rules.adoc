@@ -103,7 +103,8 @@ Left alone:
 [#blank-lines]
 == Blank lines
 
-One blank line separates two blocks, none binds a metadata line to its block or one list item to the next, and the file ends with a single line ending.
+One blank line separates two blocks, and none binds a metadata line to its block or one list item to the next.
+The file starts with no blank line and ends with a single line ending.
 
 [cols="1,1"]
 |===
@@ -152,8 +153,8 @@ In a few places a blank line is syntax rather than spacing, and there adocfmt ke
 
 Left alone:
 
-* Blank lines in a list.
-  One there decides what still belongs to the item above it, so adocfmt neither adds nor removes one inside an item; several in a row still become one.
+* Blank lines inside a list item.
+  One there decides what still belongs to the item, so adocfmt neither adds nor removes one.
 +
 .Where the note ends up
 [%collapsible]
@@ -211,7 +212,8 @@ a|
 |===
 ====
 * The blank lines around a lone `+`.
-  They pick which list level the block below attaches to, and outside a list Asciidoctor reads the `+` and the line under it as one paragraph.
+  The run above it picks which list level the block below attaches to, the run under it whether that block attaches at all: at most one blank line attaches it, two or more end the list.
+  Outside a list the `+` attaches nothing, and Asciidoctor reads it and everything under it down to the next blank line as one paragraph.
 +
 .What a lone `+` joins
 [%collapsible]
@@ -241,8 +243,8 @@ More text.
   Asciidoctor throws comments away before it renders, so nothing ties a comment to the block beneath it, and pulling it down would only change how the source reads.
 * The blank line under an attribute entry whose last line still ends in `{backslash}` or `{plus}`.
   The value reads on to the next blank line, so removing that line would feed the block below into the attribute instead of rendering it.
-* Whatever stands under front matter.
-  Asciidoctor does not skip front matter unless it is told to, and a blank line there changes what the document title below it becomes.
+* Whatever stands under front matter, down to the first blank line.
+  Asciidoctor does not skip front matter unless it is told to, and reads everything from the opening fence to that blank line as one paragraph, so a blank line there changes what the document title below it becomes.
 +
 .What the title below front matter becomes
 [%collapsible]
