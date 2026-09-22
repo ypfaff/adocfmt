@@ -19,7 +19,7 @@ const (
 // would cost: adjacency is what binds a block to the item, and a blank line can
 // push a later block out of it, so the rule only collapses a run there.
 func (p *printer) gap(g block.Gap, prev block.Node, w where) {
-	if p.raw || g.Frozen || keepsGap(prev) {
+	if p.raw || g.Frozen || isContinuation(prev) {
 		p.span(g.Span)
 		return
 	}
@@ -27,10 +27,10 @@ func (p *printer) gap(g block.Gap, prev block.Node, w where) {
 		// A document and a container open on their first node.
 		return
 	}
-	switch {
-	case w == insideItem || isContinuation(prev):
+	switch w {
+	case insideItem:
 		p.collapse(g)
-	case w == betweenItems:
+	case betweenItems:
 		if endsInLiteral(prev) {
 			p.blank()
 		}
@@ -40,9 +40,11 @@ func (p *printer) gap(g block.Gap, prev block.Node, w where) {
 }
 
 // tail emits the blank lines at the end of a document or a container, where no
-// node follows that could own them.
+// node follows that could own them. Nothing there can merge with or split from
+// what precedes it, so even a frozen gap has nothing left to protect and the
+// file keeps ending on a single line ending.
 func (p *printer) tail(g block.Gap) {
-	if p.raw || g.Frozen {
+	if p.raw {
 		p.span(g.Span)
 	}
 }
@@ -80,18 +82,10 @@ func (p *printer) collapse(g block.Gap) {
 
 func (p *printer) blank() { p.out.WriteString(p.eol) }
 
-// keepsGap reports whether the gap below a node has to stay as it stands.
-// Asciidoctor does not skip front matter by default: it reads the opening ---
-// as a thematic break and everything under it as one paragraph, which a blank
-// line would end, turning the document title below it into a section.
-func keepsGap(prev block.Node) bool {
-	_, ok := prev.(*block.FrontMatter)
-	return ok
-}
-
-// isContinuation reports whether a lone + stands above the gap. Outside a list
-// Asciidoctor reads the + and the line under it as one paragraph, and a blank
-// line would make two paragraphs of them.
+// isContinuation reports whether a lone + stands above the gap. In a list the
+// size of that run is the decision itself: at most one blank line attaches the
+// block below to the item, two or more end the list. Outside a list the + is
+// prose, and the scanner freezes what follows it instead.
 func isContinuation(prev block.Node) bool {
 	_, ok := prev.(*block.Continuation)
 	return ok

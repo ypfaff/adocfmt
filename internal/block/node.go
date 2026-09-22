@@ -22,8 +22,9 @@ func (s Span) Empty() bool { return s.Start == s.End }
 // Gap is the blank lines in front of a node.
 //
 // Frozen marks the ones that carry meaning: before a list continuation they
-// select the level the following block attaches to, and around a directive
-// they decide whether two blocks merge when rendered.
+// select the level the following block attaches to, and under front matter, a
+// directive or a lone + outside a list they decide whether two blocks merge
+// when rendered.
 type Gap struct {
 	Span   Span
 	Frozen bool
