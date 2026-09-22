@@ -9,7 +9,10 @@
 // Content it cannot know it freezes; structure it cannot trust it reports.
 package block
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Span is a byte range in the source.
 type Span struct {
@@ -50,6 +53,24 @@ type Delimiter struct {
 // Closed reports whether the block ended on a matching delimiter rather than at
 // the end of the source.
 func (d Delimiter) Closed() bool { return !d.Close.Empty() }
+
+// Line returns the fence written width chars wide.
+func (d Delimiter) Line(width int) []byte {
+	line := bytes.Repeat([]byte{d.Fill}, width)
+	line[0] = d.Char
+	return line
+}
+
+// Fences reports the width at which this block would close on line, and whether
+// any width would. It asks about the shape of the line rather than about a
+// fence that is legal at that width: a line shaped like the opener is one the
+// opener may not be shortened to.
+func (d Delimiter) Fences(line []byte) (int, bool) {
+	if len(line) == 0 || line[0] != d.Char || !uniform(line[1:], d.Fill) {
+		return 0, false
+	}
+	return len(line), true
+}
 
 // MetaKind tells apart the metadata lines rules address individually.
 type MetaKind int
