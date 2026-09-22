@@ -274,3 +274,90 @@ layout: post
 Front matter counts only when the fence is the very first line, so removing that blank line would make front matter out of lines that are none.
 * Blank lines next to an include or a conditional, and the ones inside a block whose content one of them decides.
 * Blank lines inside a listing, a literal block or a table, which count as one block each.
+
+[#block-delimiters]
+== Block delimiters
+
+The two lines fencing a https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/[delimited block] are written as short as the block allows, which is four characters wherever no line inside asks for more.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+--------
+code
+--------
+....
+a|
+....
+----
+code
+----
+....
+|===
+
+A table is fenced the same way, except that its first character picks https://docs.asciidoctor.org/asciidoc/latest/tables/data-format/[how the rows are read] and therefore stays: `{vbar}=======` becomes `{vbar}===`, and `,=======` becomes `,===`.
+
+A block closes on a line equal to the one that opened it, so a fence may only shrink to a width no line inside the block ends up with.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+--------
+----
+code
+--------
+....
+a|
+....
+-----
+----
+code
+-----
+....
+|===
+
+A line counts however deep inside the block it sits, because Asciidoctor carries the closing line of a block into the blocks nested in it.
+
+.Where a line inside a nested block ends the block around it
+[%collapsible]
+=======
+The `====` sits in a listing, and closes the example block around it all the same.
+The fence of that example block therefore stops at five characters rather than four.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+======
+----
+====
+----
+======
+....
+a|
+....
+=====
+----
+====
+----
+=====
+....
+|===
+=======
+
+Left alone:
+
+* An https://docs.asciidoctor.org/asciidoc/latest/blocks/open-blocks/[open block] and a Markdown fence.
+Each has one legal width, two dashes and three backticks, so there is nothing to shorten.
+* A https://docs.asciidoctor.org/asciidoc/latest/comments/[comment block].
+It is a block of its own only where it stands alone, and part of the metadata of the block below it otherwise, so rewriting it would turn on where it sits rather than on what it holds.
+* A block an include or a conditional reaches, inside its body or on the line above it.
+What the directive brings in may hold the very line a shorter fence would close on.
