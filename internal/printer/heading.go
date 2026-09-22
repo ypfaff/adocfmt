@@ -30,15 +30,14 @@ func headingLine(level int, title []byte) ([]byte, bool) {
 // that form would say something else.
 func (p *printer) title(node block.Node, level int, title block.Span) {
 	if p.raw || node.Frozen() {
-		p.span(node.Extent())
+		p.span(node.Lines())
 		return
 	}
 	line, ok := headingLine(level, p.src[title.Start:title.End])
 	if !ok {
-		p.span(node.Extent())
+		p.span(node.Lines())
 		return
 	}
-	p.span(block.Span{Start: node.Extent().Start, End: node.Lines().Start})
 	p.out.Write(line)
 	p.out.Write(block.Terminator(p.src[node.Lines().Start:node.Lines().End]))
 }
@@ -48,15 +47,14 @@ func (p *printer) title(node block.Node, level int, title block.Span) {
 // it turns on compat-mode, which changes how inline markup renders.
 func (p *printer) header(node *block.Header) {
 	if p.raw || node.Frozen() || node.TwoLine {
-		p.span(node.Extent())
+		p.span(node.Lines())
 		return
 	}
 	line, ok := headingLine(0, p.src[node.Title.Start:node.Title.End])
 	if !ok {
-		p.span(node.Extent())
+		p.span(node.Lines())
 		return
 	}
-	p.span(block.Span{Start: node.Extent().Start, End: node.TitleLines.Start})
 	p.out.Write(line)
 	p.out.Write(block.Terminator(p.src[node.TitleLines.Start:node.TitleLines.End]))
 	p.span(block.Span{Start: node.TitleLines.End, End: node.Lines().End})
