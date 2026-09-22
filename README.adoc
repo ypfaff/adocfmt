@@ -2,8 +2,9 @@
 
 An opinionated AsciiDoc formatter in Go.
 
-Early work in progress: one formatting rule so far, which removes the trailing whitespace of every line.
-What carries it is the block scanner, the printer it feeds, and the link:docs/testing-strategy.adoc[testing strategy] every rule has to satisfy.
+Early work in progress.
+See link:docs/rules.adoc[the formatting rules] for what it changes today.
+It is built from a block scanner, the printer it feeds, and a link:docs/testing-strategy.adoc[testing strategy] that every rule has to satisfy.
 
 == Development
 
