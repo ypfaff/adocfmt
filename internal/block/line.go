@@ -66,6 +66,19 @@ func TrimTrailing(src []byte) []byte {
 	return out
 }
 
+// Lines returns the content of each line in src, its terminator and its
+// trailing whitespace already off. A rule asking what a line holds has to ask
+// it the way the scanner does, because that is what decides whether the line
+// closes a block.
+func Lines(src []byte) [][]byte {
+	split := splitLines(src, 0)
+	lines := make([][]byte, 0, len(split))
+	for _, l := range split {
+		lines = append(lines, src[l.text.Start:l.text.End])
+	}
+	return lines
+}
+
 // HeadingTitle reports the title a one-line section title carries, read the way
 // the scanner reads it, and whether the line is one at all.
 func HeadingTitle(line []byte) ([]byte, bool) {
