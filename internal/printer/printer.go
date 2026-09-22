@@ -24,6 +24,9 @@ func PrintRaw(doc *block.Document) []byte { return emit(doc, true) }
 
 func emit(doc *block.Document, raw bool) []byte {
 	p := printer{src: doc.Src, raw: raw, eol: string(doc.LineEnding)}
+	if !raw {
+		p.widths = fenceWidths(doc)
+	}
 	p.span(doc.BOM)
 	p.start = p.out.Len()
 	p.nodes(doc.Nodes, doc.Tail, betweenSiblings)
@@ -39,7 +42,10 @@ type printer struct {
 	// document holding no line at all is told from one whose last line is left
 	// open.
 	start int
-	out   bytes.Buffer
+	// widths holds the width every fence is written at, decided before printing
+	// because a container's opening line is emitted before its children are.
+	widths map[block.Node]int
+	out    bytes.Buffer
 }
 
 // span emits the source it covers, minus the trailing whitespace of each of
@@ -95,6 +101,10 @@ func (p *printer) body(node block.Node) {
 	switch node := node.(type) {
 	case *block.Container:
 		p.container(node)
+	case *block.Verbatim:
+		p.delimited(node, node.Delim)
+	case *block.Table:
+		p.delimited(node, node.Delim)
 	case *block.List:
 		p.list(node)
 	case *block.ListItem:
@@ -132,9 +142,9 @@ func (p *printer) container(node *block.Container) {
 	if p.frozen(node) {
 		return
 	}
-	p.span(node.Delim.Open)
+	p.fence(node, node.Delim, node.Delim.Open)
 	p.nodes(node.Children, node.Tail, betweenSiblings)
-	p.span(node.Delim.Close)
+	p.fence(node, node.Delim, node.Delim.Close)
 }
 
 func (p *printer) list(node *block.List) {
