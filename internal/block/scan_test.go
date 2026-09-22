@@ -31,6 +31,14 @@ Header gap! "= Title\nAuthor Name\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "a comment block before the title does not end the header either",
+			src:  "////\nlicense\n////\n= Title\nAuthor Name\n\nText.\n",
+			want: `
+Verbatim "////\nlicense\n////\n"
+Header "= Title\nAuthor Name\n" title "Title"
+Paragraph "Text.\n"`,
+		},
+		{
 			name: "a backslash after a space continues the value on the next line",
 			src:  ":a: one \\\ntwo\n\nText.\n",
 			want: `

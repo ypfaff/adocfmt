@@ -300,13 +300,12 @@ func metaKind(sh shape) (MetaKind, bool) {
 // prose and a would-be underline as the delimiter it looks like. Only a
 // discrete style makes a heading out of the line anywhere.
 //
-// A level 0 title in either form is the document header while nothing but
-// attribute entries and directives came before it; Asciidoctor allows both
-// above the title.
+// A level 0 title in either form is the document header while nothing but the
+// blocks precedesTitle names came before it.
 func (s *scanner) body(b base, closer []byte) Node {
 	sh := s.shape()
 	atStart := s.atStart
-	s.atStart = atStart && (sh.kind == shapeAttrEntry || sh.kind == shapeDirective)
+	s.atStart = atStart && precedesTitle(sh)
 
 	sectionLevel := closer == nil && len(s.markers) == 0
 	if sectionLevel && startsTitle(sh.kind) {
@@ -374,6 +373,21 @@ func startsTitle(kind shapeKind) bool {
 	switch kind {
 	case shapeText, shapeMarker, shapeMacro, shapeQuote, shapeIndented:
 		return true
+	default:
+		return false
+	}
+}
+
+// precedesTitle reports whether a block of this shape may stand above the
+// document title. Asciidoctor reads past an attribute entry, a directive and a
+// comment block while it looks for the title; a comment line reaches the title
+// as metadata instead, since it binds to the block below it.
+func precedesTitle(sh shape) bool {
+	switch sh.kind {
+	case shapeAttrEntry, shapeDirective:
+		return true
+	case shapeDelimiter:
+		return sh.char == '/'
 	default:
 		return false
 	}
