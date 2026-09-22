@@ -1,0 +1,4 @@
+[.lead]
+:name: value \
+
+Text {name}.

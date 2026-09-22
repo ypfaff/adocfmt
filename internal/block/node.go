@@ -66,10 +66,15 @@ const (
 
 // Meta is a metadata line bound to the node below it. The binding survives
 // blank lines, which is why it carries its own gap.
+//
+// Open marks an attribute entry whose value ends only at the blank line below
+// it, because its last line still carries the wrap marker. That blank line is
+// syntax: without it the value reads on and swallows the block beneath.
 type Meta struct {
 	Kind  MetaKind
 	Gap   Gap
 	Lines Span
+	Open  bool
 }
 
 // Node is one piece of the document. The scanner produces the types below and

@@ -49,15 +49,16 @@ func (p *printer) tail(g block.Gap) {
 
 // bound emits the gap between a metadata line and the line or block it binds
 // to. The binding survives blank lines, so dropping them changes nothing, with
-// one exception: a comment binds to nothing at all, because Asciidoctor drops
-// it before it renders. Pulling a freestanding comment down onto the block
-// below is a change the reader sees while the rendering does not.
-func (p *printer) bound(g block.Gap, above block.MetaKind) {
+// two exceptions. A comment binds to nothing at all, because Asciidoctor drops
+// it before it renders, and pulling a freestanding comment down onto the block
+// below is a change the reader sees while the rendering does not. An attribute
+// entry marked open needs the blank line to end its value, see block.Meta.Open.
+func (p *printer) bound(g block.Gap, above block.Meta) {
 	if p.raw || g.Frozen {
 		p.span(g.Span)
 		return
 	}
-	if above == block.MetaComment || above == block.MetaCommentBlock {
+	if above.Open || above.Kind == block.MetaComment || above.Kind == block.MetaCommentBlock {
 		p.collapse(g)
 	}
 }

@@ -78,11 +78,11 @@ func (p *printer) node(node block.Node, prev block.Node, w where) {
 
 	p.gap(meta[0].Gap, prev, w)
 	p.span(meta[0].Lines)
-	above := meta[0].Kind
+	above := meta[0]
 	for _, m := range meta[1:] {
 		p.bound(m.Gap, above)
 		p.span(m.Lines)
-		above = m.Kind
+		above = m
 	}
 	p.bound(node.Gap(), above)
 	p.body(node)
