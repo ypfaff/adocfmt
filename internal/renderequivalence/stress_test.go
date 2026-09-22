@@ -61,8 +61,8 @@ func TestStressedCases(t *testing.T) {
 }
 
 // stress prints the tree the way the harshest rules would: every paragraph on
-// one line, every heading in canonical form, every gap a rule may touch at one
-// blank line. Whatever a rule must not touch stays as it is.
+// one line and every heading in canonical form. Whatever a rule must not touch
+// stays as it is.
 func stress(doc *block.Document) []byte {
 	s := stresser{src: doc.Src, eol: "\n"}
 	if bytes.Contains(doc.Src, []byte("\r\n")) {
@@ -84,43 +84,18 @@ func (s *stresser) span(sp block.Span) { s.out.Write(s.src[sp.Start:sp.End]) }
 func (s *stresser) text(sp block.Span) string { return string(s.src[sp.Start:sp.End]) }
 
 func (s *stresser) nodes(nodes []block.Node, tail block.Gap) {
-	for i, node := range nodes {
-		aroundHeading := isHeading(node) || (i > 0 && isHeading(nodes[i-1]))
-		s.node(node, aroundHeading)
+	for _, node := range nodes {
+		s.node(node)
 	}
-	s.gap(tail, false)
+	s.span(tail.Span)
 }
 
-func isHeading(node block.Node) bool {
-	switch node.(type) {
-	case *block.Heading, *block.Setext:
-		return true
-	default:
-		return false
-	}
-}
-
-// gap emits a gap the way the blank line rules would: a run of blank lines
-// collapses to one, and a heading gets one on each side. A frozen gap stays.
-func (s *stresser) gap(g block.Gap, aroundHeading bool) {
-	switch {
-	case g.Frozen:
-		s.span(g.Span)
-	case aroundHeading || !g.Span.Empty():
-		s.out.WriteString(s.eol)
-	}
-}
-
-// node emits one node. The blank line a heading gets goes above its metadata
-// stack, where the blank line rule puts it, not between the stack and the
-// title.
-func (s *stresser) node(node block.Node, aroundHeading bool) {
+func (s *stresser) node(node block.Node) {
 	for _, meta := range node.Meta() {
-		s.gap(meta.Gap, aroundHeading)
-		aroundHeading = false
+		s.span(meta.Gap.Span)
 		s.span(meta.Lines)
 	}
-	s.gap(node.Gap(), aroundHeading)
+	s.span(node.Gap().Span)
 
 	switch node := node.(type) {
 	case *block.Paragraph:
@@ -139,12 +114,12 @@ func (s *stresser) node(node block.Node, aroundHeading bool) {
 		s.span(node.Delim.Close)
 	case *block.List:
 		for _, item := range node.Items {
-			s.node(item, false)
+			s.node(item)
 		}
 	case *block.ListItem:
 		s.span(node.Principal)
 		for _, child := range node.Children {
-			s.node(child, false)
+			s.node(child)
 		}
 	default:
 		s.span(node.Lines())

@@ -36,7 +36,8 @@ go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 While no rule moves a line, the printer emits every node where it stood, so a misread block never shows in the output.
 link:../internal/renderequivalence/stress_test.go[`TestStressedCases`] rewrites every corpus file as hard as any planned rule will and runs the <<render-equivalence,render equivalence>> checks on the result.
 A fix for a misread it finds brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
-Tables and list items are not rewritten, so a rule for either extends the stress test first.
+A rule that moves more than the stresser does extends it first, and one that moves what the stresser moves takes that part out again, since `TestAsciidoctorCases` then does the same work for real.
+The text of a table cell and of a list item is not rewritten, so a rule for either extends it.
 
 [#render-equivalence]
 == Render equivalence
