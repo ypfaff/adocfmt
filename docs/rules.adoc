@@ -11,7 +11,7 @@ adocfmt applies the rules on this page and leaves the rest of the document as it
 * Lines whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional] are left alone, because what they hold is known only once Asciidoctor has resolved the directive.
 * A document that cannot be read reliably is refused: adocfmt reports what it found and writes nothing.
 * No rule changes what the rendered document shows.
-  Asciidoctor decides what a document means, and link:testing-strategy.adoc[the testing strategy] describes how every rule is checked against it.
+Asciidoctor decides what a document means, and link:testing-strategy.adoc[the testing strategy] describes how every rule is checked against it.
 
 [#trailing-whitespace]
 == Trailing whitespace
@@ -67,9 +67,9 @@ The https://docs.asciidoctor.org/asciidoc/latest/document/header/[document title
 Left alone:
 
 * A document title written on two lines.
-  It turns on https://docs.asciidoctor.org/asciidoctor/latest/migrate/asciidoc-py/#compatibility-mode[compat-mode], and the same document on one line would render its inline markup differently.
+It turns on https://docs.asciidoctor.org/asciidoctor/latest/migrate/asciidoc-py/#compatibility-mode[compat-mode], and the same document on one line would render its inline markup differently.
 * A title the rewrite would change.
-  A closing marker counts only when it matches the one in front of it, so `## Title ==` has the title `Title ==`, while `== Title ==` would have the title `Title`.
+A closing marker counts only when it matches the one in front of it, so `## Title ==` has the title `Title ==`, while `== Title ==` would have the title `Title`.
 
 [#setext-headings]
 == Setext headings
@@ -96,9 +96,9 @@ The underline character sets the level: `=` is level 0, `-` is level 1, `~` is l
 Left alone:
 
 * An indented title.
-  A one-line title cannot carry the indentation, because Asciidoctor skips the whitespace between the marker and the title.
+A one-line title cannot carry the indentation, because Asciidoctor skips the whitespace between the marker and the title.
 * A two-line title at the very top of a document.
-  That one is the document title rather than a section title, and it stays on two lines; see <<heading-markers>>.
+That one is the document title rather than a section title, and it stays on two lines; see <<heading-markers>>.
 
 [#blank-lines]
 == Blank lines
@@ -154,7 +154,7 @@ In a few places a blank line is syntax rather than spacing, and there adocfmt ke
 Left alone:
 
 * Blank lines inside a list item.
-  One there decides what still belongs to the item, so adocfmt neither adds nor removes one.
+One there decides what still belongs to the item, so adocfmt neither adds nor removes one.
 +
 .Where the note ends up
 [%collapsible]
@@ -185,7 +185,7 @@ code <1>
 |===
 ====
 * The blank line after an item that ends in indented text.
-  Indented text runs on to the next blank line, so without it the marker of the next item is read as part of that text.
+Indented text runs on to the next blank line, so without it the marker of the next item is read as part of that text.
 +
 .Where the second item ends up
 [%collapsible]
@@ -212,8 +212,8 @@ a|
 |===
 ====
 * The blank lines around a lone `+`.
-  The run above it picks which list level the block below attaches to, the run under it whether that block attaches at all: at most one blank line attaches it, two or more end the list.
-  Outside a list the `+` attaches nothing, and Asciidoctor reads it and everything under it down to the next blank line as one paragraph.
+The run above it picks which list level the block below attaches to, the run under it whether that block attaches at all: at most one blank line attaches it, two or more end the list.
+Outside a list the `+` attaches nothing, and Asciidoctor reads it and everything under it down to the next blank line as one paragraph.
 +
 .What a lone `+` joins
 [%collapsible]
@@ -240,11 +240,11 @@ More text.
 |===
 ====
 * The blank line under a comment.
-  Asciidoctor throws comments away before it renders, so nothing ties a comment to the block beneath it, and pulling it down would only change how the source reads.
+Asciidoctor throws comments away before it renders, so nothing ties a comment to the block beneath it, and pulling it down would only change how the source reads.
 * The blank line under an attribute entry whose last line still ends in `{backslash}` or `{plus}`.
-  The value reads on to the next blank line, so removing that line would feed the block below into the attribute instead of rendering it.
+The value reads on to the next blank line, so removing that line would feed the block below into the attribute instead of rendering it.
 * Whatever stands under front matter, down to the first blank line.
-  Asciidoctor does not skip front matter unless it is told to, and reads everything from the opening fence to that blank line as one paragraph, so a blank line there changes what the document title below it becomes.
+Asciidoctor does not skip front matter unless it is told to, and reads everything from the opening fence to that blank line as one paragraph, so a blank line there changes what the document title below it becomes.
 +
 .What the title below front matter becomes
 [%collapsible]
