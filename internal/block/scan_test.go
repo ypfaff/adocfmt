@@ -150,6 +150,37 @@ Container "====\n"
   Paragraph "Second.\n"`,
 		},
 		{
+			name: "a directive in the body marks the fence, since what it brings in may close the block",
+			src:  "----\ninclude::part.adoc[]\n----\n\n====\nText.\n\nifdef::x[]\nMore.\nendif::[]\n====\n",
+			want: `
+Verbatim delim! "----\ninclude::part.adoc[]\n----\n"
+Container delim! "====\n"
+  Paragraph "Text.\n"
+  Directive! gap! "ifdef::x[]\n"
+  Paragraph! gap! "More.\nendif::[]\n"`,
+		},
+		{
+			name: "a directive nested deeper marks the fence around it too",
+			src:  "====\n----\ninclude::part.adoc[]\n----\n====\n",
+			want: `
+Container delim! "====\n"
+  Verbatim delim! "----\ninclude::part.adoc[]\n----\n"`,
+		},
+		{
+			name: "a comment block is never extensible, since Asciidoctor does not preprocess one",
+			src:  "////\ninclude::part.adoc[]\n////\n\n[comment]\n----\ninclude::part.adoc[]\n----\n",
+			want: `
+Verbatim "////\ninclude::part.adoc[]\n////\n"
+Verbatim meta("[comment]\n") "----\ninclude::part.adoc[]\n----\n"`,
+		},
+		{
+			name: "a directive above a block freezes the gap below it, not the block",
+			src:  "include::part.adoc[]\n----\ncode\n----\n",
+			want: `
+Directive! gap! "include::part.adoc[]\n"
+Verbatim gap! "----\ncode\n----\n"`,
+		},
+		{
 			name: "below section level a heading line is prose",
 			src:  "====\n== H ==\nText.\n====\n\n* a\n+\n== H\n* b\n",
 			want: `

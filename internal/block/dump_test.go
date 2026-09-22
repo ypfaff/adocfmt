@@ -40,6 +40,11 @@ func (d *dumper) node(node Node, depth int) {
 	if node.Gap().Frozen {
 		d.writef(" gap!")
 	}
+	// A bang on the fence marks a body a directive may extend, the way it marks
+	// a frozen node and a frozen gap.
+	if delim, ok := fenceOf(node); ok && delim.Extensible {
+		d.writef(" delim!")
+	}
 	for _, meta := range node.Meta() {
 		// A bang marks a metadata line whose gap below carries meaning, the way
 		// it marks a frozen node and a frozen gap.
@@ -75,4 +80,18 @@ func (d *dumper) node(node Node, depth int) {
 
 func (d *dumper) quote(span Span) string {
 	return strconv.Quote(string(d.doc.Src[span.Start:span.End]))
+}
+
+// fenceOf reports the delimiter of a delimited node. The three types carrying
+// one share no accessor, since the printer tells them apart anyway.
+func fenceOf(node Node) (Delimiter, bool) {
+	switch node := node.(type) {
+	case *Verbatim:
+		return node.Delim, true
+	case *Container:
+		return node.Delim, true
+	case *Table:
+		return node.Delim, true
+	}
+	return Delimiter{}, false
 }
