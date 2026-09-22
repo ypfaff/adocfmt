@@ -6,7 +6,7 @@ adocfmt applies the rules on this page and leaves the rest of the document as it
 == Guarantees
 
 * A byte that no rule covers is written back unchanged.
-* Line endings are left alone, so a file written with Windows line endings keeps them.
+* Line endings keep their form, so a file written with Windows line endings keeps them, and a line a rule writes ends the same way.
 * Front matter is left alone, the block of YAML that some static site generators put at the top of a file.
 * Lines whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional] are left alone, because what they hold is known only once Asciidoctor has resolved the directive.
 * A document that cannot be read reliably is refused: adocfmt reports what it found and writes nothing.
@@ -99,3 +99,171 @@ Left alone:
   A one-line title cannot carry the indentation, because Asciidoctor skips the whitespace between the marker and the title.
 * A two-line title at the very top of a document.
   That one is the document title rather than a section title, and it stays on two lines; see <<heading-markers>>.
+
+[#blank-lines]
+== Blank lines
+
+One blank line separates two blocks, none binds a metadata line to its block or one list item to the next, and the file ends with a single line ending.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+= Title
+:toc:
+
+== Section
+.Listing
+
+----
+code
+----
+text
+
+
+
+* one
+
+* two
+....
+a|
+....
+= Title
+:toc:
+
+== Section
+
+.Listing
+----
+code
+----
+
+text
+
+* one
+* two
+....
+|===
+
+Asciidoctor renders a block the same with and without a blank line in front of it, which is what makes the separating line free to insert.
+In a few places a blank line is syntax rather than spacing, and there adocfmt keeps what it finds.
+
+Left alone:
+
+* Blank lines in a list.
+  One there decides what still belongs to the item above it, so adocfmt neither adds nor removes one inside an item; several in a row still become one.
++
+.Where the note ends up
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| Part of the item | A block of its own
+
+a|
+....
+* An item
++
+----
+code <1>
+----
+<1> a note
+....
+a|
+....
+* An item
++
+----
+code <1>
+----
+
+<1> a note
+....
+|===
+====
+* The blank line after an item that ends in indented text.
+  Indented text runs on to the next blank line, so without it the marker of the next item is read as part of that text.
++
+.Where the second item ends up
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| Inside the indented text | An item of its own
+
+a|
+....
+* one
+
+  indented text
+* two
+....
+a|
+....
+* one
+
+  indented text
+
+* two
+....
+|===
+====
+* The blank lines around a lone `+`.
+  They pick which list level the block below attaches to, and outside a list Asciidoctor reads the `+` and the line under it as one paragraph.
++
+.What a lone `+` joins
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| One paragraph | Two paragraphs
+
+a|
+....
+Text.
+
++
+More text.
+....
+a|
+....
+Text.
+
++
+
+More text.
+....
+|===
+====
+* The blank line under a comment.
+  Asciidoctor throws comments away before it renders, so nothing ties a comment to the block beneath it, and pulling it down would only change how the source reads.
+* Whatever stands under front matter.
+  Asciidoctor does not skip front matter unless it is told to, and a blank line there changes what the document title below it becomes.
++
+.What the title below front matter becomes
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| Read as text | A section title
+
+a|
+....
+---
+layout: post
+---
+= Title
+....
+a|
+....
+---
+layout: post
+---
+
+= Title
+....
+|===
+====
+* Blank lines next to an include or a conditional, and blank lines inside a listing, a literal block or a table, which count as one block each.
