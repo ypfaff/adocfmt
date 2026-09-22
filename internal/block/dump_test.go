@@ -41,6 +41,12 @@ func (d *dumper) node(node Node, depth int) {
 		d.writef(" gap!")
 	}
 	for _, meta := range node.Meta() {
+		// A bang marks a metadata line whose gap below carries meaning, the way
+		// it marks a frozen node and a frozen gap.
+		if meta.Open {
+			d.writef(" meta!(%s)", d.quote(meta.Lines))
+			continue
+		}
 		d.writef(" meta(%s)", d.quote(meta.Lines))
 	}
 

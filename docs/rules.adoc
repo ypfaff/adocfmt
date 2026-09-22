@@ -239,6 +239,8 @@ More text.
 ====
 * The blank line under a comment.
   Asciidoctor throws comments away before it renders, so nothing ties a comment to the block beneath it, and pulling it down would only change how the source reads.
+* The blank line under an attribute entry whose last line still ends in `{backslash}` or `{plus}`.
+  The value reads on to the next blank line, so removing that line would feed the block below into the attribute instead of rendering it.
 * Whatever stands under front matter.
   Asciidoctor does not skip front matter unless it is told to, and a blank line there changes what the document title below it becomes.
 +

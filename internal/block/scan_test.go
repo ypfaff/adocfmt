@@ -441,6 +441,13 @@ Paragraph meta(".Title\n") meta(":a: one \\\ntwo\n") "Text.\n"
 Literal meta("[.lead]\n") meta(":hardbreaks:\n") "a\nb\n"`,
 		},
 		{
+			name: "an entry among metadata lines reaching past its last line is marked open",
+			src:  "[.lead]\n:a: one \\\n\nText.\n\n[.lead]\n:b: one \\\ntwo\n\nMore.\n",
+			want: `
+Paragraph meta("[.lead]\n") meta!(":a: one \\\n") "Text.\n"
+Paragraph meta("[.lead]\n") meta(":b: one \\\ntwo\n") "More.\n"`,
+		},
+		{
 			name: "a comment block or an attribute entry with no metadata above is a block of its own",
 			src:  "////\nc\n////\n.Title\nText.\n\n:x: y\n[source]\ncode\n",
 			want: `

@@ -209,19 +209,20 @@ func (s *scanner) metaLine(b *base, closer []byte) bool {
 		return false
 	}
 	start := s.pos()
+	var open bool
 	switch kind {
 	case MetaDirective:
 		s.track(sh)
 		b.frozen, b.gap.Frozen, s.freeze = true, true, true
 		s.at++
 	case MetaAttrEntry:
-		s.entry(b)
+		open = s.entry(b)
 	case MetaCommentBlock:
 		s.commentBlock()
 	default:
 		s.at++
 	}
-	b.meta = append(b.meta, Meta{Kind: kind, Gap: b.gap, Lines: Span{start, s.pos()}})
+	b.meta = append(b.meta, Meta{Kind: kind, Gap: b.gap, Lines: Span{start, s.pos()}, Open: open})
 	return true
 }
 
@@ -426,14 +427,16 @@ func (s *scanner) attribute(b base) Node {
 // long as the line before ends in the entry's own wrap marker, whatever the
 // line looks like. A directive among them it resolves first, so the entry
 // freezes the way a paragraph around a directive does.
-func (s *scanner) entry(b *base) {
+//
+// It reports whether a blank line is what ended the value, see Meta.Open.
+func (s *scanner) entry(b *base) bool {
 	e, _ := parseAttrEntry(s.text(s.lines[s.at]))
 	s.bind(e)
 	s.at++
 	for open := e.wrap != ""; open && !s.done(); s.at++ {
 		sh := s.shape()
 		if sh.kind == shapeBlank {
-			return
+			return true
 		}
 		if sh.kind == shapeDirective {
 			s.track(sh)
@@ -442,6 +445,7 @@ func (s *scanner) entry(b *base) {
 		}
 		open = bytes.HasSuffix(bytes.TrimLeft(s.text(s.lines[s.at]), " \t"), []byte(e.wrap))
 	}
+	return false
 }
 
 // bind follows an attribute entry into or out of lineBound. hardbreaks-option
