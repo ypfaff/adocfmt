@@ -23,16 +23,23 @@ func Print(doc *block.Document) []byte { return emit(doc, false) }
 func PrintRaw(doc *block.Document) []byte { return emit(doc, true) }
 
 func emit(doc *block.Document, raw bool) []byte {
-	p := printer{src: doc.Src, raw: raw}
+	p := printer{src: doc.Src, raw: raw, eol: string(doc.LineEnding)}
 	p.span(doc.BOM)
-	p.nodes(doc.Nodes, doc.Tail)
+	p.start = p.out.Len()
+	p.nodes(doc.Nodes, doc.Tail, betweenSiblings)
+	p.finish()
 	return p.out.Bytes()
 }
 
 type printer struct {
 	src []byte
 	raw bool
-	out bytes.Buffer
+	eol string
+	// start is where the first line begins, past the byte order mark, so a
+	// document holding no line at all is told from one whose last line is left
+	// open.
+	start int
+	out   bytes.Buffer
 }
 
 // span emits the source it covers, minus the trailing whitespace of each of
@@ -49,26 +56,37 @@ func (p *printer) span(s block.Span) {
 // rule may touch either.
 func (p *printer) write(s block.Span) { p.out.Write(p.src[s.Start:s.End]) }
 
-func (p *printer) nodes(nodes []block.Node, tail block.Gap) {
+func (p *printer) nodes(nodes []block.Node, tail block.Gap, w where) {
+	var prev block.Node
 	for _, node := range nodes {
-		p.node(node)
+		p.node(node, prev, w)
+		prev = node
 	}
-	p.gap(tail)
+	p.tail(tail)
 }
 
 // node emits one node. Its own gap is the one between its last metadata line
 // and the block, so where it has metadata the gap in front of it is the first
 // metadata line's.
-func (p *printer) node(node block.Node) {
-	for _, meta := range node.Meta() {
-		p.gap(meta.Gap)
-		p.span(meta.Lines)
+func (p *printer) node(node block.Node, prev block.Node, w where) {
+	meta := node.Meta()
+	if len(meta) == 0 {
+		p.gap(node.Gap(), prev, w)
+		p.body(node)
+		return
 	}
-	p.gap(node.Gap())
+
+	p.gap(meta[0].Gap, prev, w)
+	p.span(meta[0].Lines)
+	above := meta[0].Kind
+	for _, m := range meta[1:] {
+		p.bound(m.Gap, above)
+		p.span(m.Lines)
+		above = m.Kind
+	}
+	p.bound(node.Gap(), above)
 	p.body(node)
 }
-
-func (p *printer) gap(g block.Gap) { p.span(g.Span) }
 
 // body dispatches to the function owning the type. The default emits the
 // node's lines unchanged, which is what a node keeps doing until a rule claims
@@ -96,21 +114,27 @@ func (p *printer) body(node block.Node) {
 	}
 }
 
+// container starts over: its delimiters confine what is inside, so a list item
+// holding it does not reach past them.
 func (p *printer) container(node *block.Container) {
 	p.span(node.Delim.Open)
-	p.nodes(node.Children, node.Tail)
+	p.nodes(node.Children, node.Tail, betweenSiblings)
 	p.span(node.Delim.Close)
 }
 
 func (p *printer) list(node *block.List) {
+	var prev block.Node
 	for _, item := range node.Items {
-		p.node(item)
+		p.node(item, prev, betweenItems)
+		prev = item
 	}
 }
 
 func (p *printer) item(node *block.ListItem) {
 	p.span(node.Principal)
+	var prev block.Node = node
 	for _, child := range node.Children {
-		p.node(child)
+		p.node(child, prev, insideItem)
+		prev = child
 	}
 }

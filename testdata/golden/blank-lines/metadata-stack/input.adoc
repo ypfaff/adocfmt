@@ -1,0 +1,7 @@
+.Listing
+
+[source,go]
+
+----
+code
+----

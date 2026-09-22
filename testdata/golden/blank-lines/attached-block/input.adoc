@@ -1,0 +1,8 @@
+* one
++
+[NOTE]
+====
+Attached by the continuation.
+====
+
+* two

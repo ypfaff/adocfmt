@@ -1,0 +1,7 @@
+[#id]
+:name: value
+////
+A comment block among the metadata lines.
+////
+
+Text {name}.
