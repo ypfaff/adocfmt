@@ -1,0 +1,7 @@
+* one
+include::other.adoc[]
+
+  first literal
+
+
+  second literal

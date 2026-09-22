@@ -1,0 +1,11 @@
+.Title
+include::other.adoc[]
+====
+Text.
+
+
+More text.
+----
+code
+----
+====

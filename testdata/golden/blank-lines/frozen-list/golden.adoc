@@ -1,0 +1,6 @@
+[NOTE]
+include::other.adoc[]
+* one
+
+
+* two
