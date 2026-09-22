@@ -1,0 +1,13 @@
+adocfmt
+Copyright 2026-present Yannick Pfaff
+
+Licensed under the Apache License, Version 2.0. See LICENSE.
+
+This product includes test inputs from the Asciidoctor test suite
+(https://github.com/asciidoctor/asciidoctor), released under the MIT License,
+Copyright (C) 2012-present Dan Allen, Sarah White, Ryan Waldron and the
+individual contributors to Asciidoctor. The inputs live under
+testdata/asciidoctor-cases, together with a copy of that license.
+
+AsciiDoc(R) and AsciiDoc Language(TM) are trademarks of the Eclipse
+Foundation, Inc.

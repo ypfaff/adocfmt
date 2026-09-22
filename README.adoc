@@ -1,6 +1,6 @@
 = adocfmt
 
-An opinionated AsciiDoc formatter in Go.
+An opinionated AsciiDoc® formatter in Go.
 
 Early work in progress.
 See link:docs/rules.adoc[the formatting rules] for what it changes today.
@@ -17,3 +17,11 @@ golangci-lint run
 ----
 
 Run `lefthook install` once to activate the Git hooks from link:lefthook.yml[`lefthook.yml`].
+
+== License
+
+Apache License 2.0; see link:LICENSE[`LICENSE`] and link:NOTICE[`NOTICE`].
+
+The cases under link:testdata/asciidoctor-cases[`testdata/asciidoctor-cases`] are test inputs of the Asciidoctor test suite and stay under its MIT license, which sits next to them.
+
+AsciiDoc® and AsciiDoc Language™ are trademarks of the Eclipse Foundation, Inc.
