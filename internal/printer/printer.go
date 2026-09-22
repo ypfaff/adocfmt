@@ -114,15 +114,33 @@ func (p *printer) body(node block.Node) {
 	}
 }
 
+// frozen emits a node whose lines have to stay as they are, and reports that it
+// did. The nodes holding other nodes ask, because a rule reaches the gaps
+// between their children through the traversal. Raw printing descends instead,
+// so the identity check keeps measuring every child.
+func (p *printer) frozen(node block.Node) bool {
+	if p.raw || !node.Frozen() {
+		return false
+	}
+	p.span(node.Lines())
+	return true
+}
+
 // container starts over: its delimiters confine what is inside, so a list item
 // holding it does not reach past them.
 func (p *printer) container(node *block.Container) {
+	if p.frozen(node) {
+		return
+	}
 	p.span(node.Delim.Open)
 	p.nodes(node.Children, node.Tail, betweenSiblings)
 	p.span(node.Delim.Close)
 }
 
 func (p *printer) list(node *block.List) {
+	if p.frozen(node) {
+		return
+	}
 	var prev block.Node
 	for _, item := range node.Items {
 		p.node(item, prev, betweenItems)
@@ -131,6 +149,9 @@ func (p *printer) list(node *block.List) {
 }
 
 func (p *printer) item(node *block.ListItem) {
+	if p.frozen(node) {
+		return
+	}
 	p.span(node.Principal)
 	var prev block.Node = node
 	for _, child := range node.Children {

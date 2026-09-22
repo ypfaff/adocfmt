@@ -268,4 +268,5 @@ layout: post
 ....
 |===
 ====
-* Blank lines next to an include or a conditional, and blank lines inside a listing, a literal block or a table, which count as one block each.
+* Blank lines next to an include or a conditional, and the ones inside a block whose content one of them decides.
+* Blank lines inside a listing, a literal block or a table, which count as one block each.
