@@ -1,0 +1,101 @@
+= Formatting rules
+:toc:
+
+adocfmt applies the rules on this page and leaves the rest of the document as it is.
+
+== Guarantees
+
+* A byte that no rule covers is written back unchanged.
+* Line endings are left alone, so a file written with Windows line endings keeps them.
+* Front matter is left alone, the block of YAML that some static site generators put at the top of a file.
+* Lines whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional] are left alone, because what they hold is known only once Asciidoctor has resolved the directive.
+* A document that cannot be read reliably is refused: adocfmt reports what it found and writes nothing.
+* No rule changes what the rendered document shows.
+  Asciidoctor decides what a document means, and link:testing-strategy.adoc[the testing strategy] describes how every rule is checked against it.
+
+[#trailing-whitespace]
+== Trailing whitespace
+
+Spaces and tabs at the end of a line are removed, including inside code and literal blocks.
+A line that holds nothing but whitespace becomes empty.
+
+`·` marks a space.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+Text.··
+line +··
+....
+a|
+....
+Text.
+line +
+....
+|===
+
+AsciiDoc forces a https://docs.asciidoctor.org/asciidoc/latest/blocks/hard-line-breaks/[line break] by ending a line with a space and a `{plus}`.
+That space is part of the break and stays; only the whitespace after the `{plus}` is removed.
+
+[#heading-markers]
+== Heading markers
+
+A one-line https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/[section title] is written with `=` signs and a single space.
+A closing marker at the end of the line is removed.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+## Section ##
+==   Other
+....
+a|
+....
+== Section
+== Other
+....
+|===
+
+The https://docs.asciidoctor.org/asciidoc/latest/document/header/[document title] is written the same way, and the author, revision and attribute lines below it stay as they are.
+
+Left alone:
+
+* A document title written on two lines.
+  It turns on https://docs.asciidoctor.org/asciidoctor/latest/migrate/asciidoc-py/#compatibility-mode[compat-mode], and the same document on one line would render its inline markup differently.
+* A title the rewrite would change.
+  A closing marker counts only when it matches the one in front of it, so `## Title ==` has the title `Title ==`, while `== Title ==` would have the title `Title`.
+
+[#setext-headings]
+== Setext headings
+
+A section title written as a line of text with an underline below it moves onto one line.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+Section
+-------
+....
+a|
+....
+== Section
+....
+|===
+
+The underline character sets the level: `=` is level 0, `-` is level 1, `~` is level 2, `^` is level 3, and `{plus}` is level 4.
+
+Left alone:
+
+* An indented title.
+  A one-line title cannot carry the indentation, because Asciidoctor skips the whitespace between the marker and the title.
+* A two-line title at the very top of a document.
+  That one is the document title rather than a section title, and it stays on two lines; see <<heading-markers>>.
