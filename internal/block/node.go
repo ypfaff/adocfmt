@@ -82,8 +82,6 @@ type Meta struct {
 // no others.
 type Node interface {
 	// Extent reports every byte the node owns, its gap and metadata included.
-	// Emitting it verbatim is what a print function does until a rule claims
-	// the node.
 	Extent() Span
 	Gap() Gap
 	Meta() []Meta
