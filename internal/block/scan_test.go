@@ -737,6 +737,14 @@ List "::"
   ListItem "term1::\n\n'''\ncontinued\n"`,
 		},
 		{
+			name: "a directive among the lines it takes freezes the gap after them",
+			src:  "term1::\ninclude::part.adoc[]\n\ntext\n\nterm2:: d\n",
+			want: `
+List "::"
+  ListItem! "term1::\ninclude::part.adoc[]\n\ntext\n"
+  ListItem gap! "term2:: d\n"`,
+		},
+		{
 			name: "inside a list a paragraph ends at the next item",
 			src:  "term1::\n\ndef1\nterm2::\n\ndef2\n",
 			want: `
