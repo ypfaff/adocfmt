@@ -607,7 +607,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 	closer := s.text(open)[:sh.width]
 	region := s.region()
 	start := s.pos()
-	delim := Delimiter{Char: sh.char, Width: sh.width, Open: open.full}
+	delim := Delimiter{Char: sh.char, Fill: sh.fill, Width: sh.width, Open: open.full}
 	style := styleOf(s.src, b.meta)
 	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle) {
 		sh.content = contentVerbatim

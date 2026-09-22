@@ -30,11 +30,15 @@ type Gap struct {
 	Frozen bool
 }
 
-// Delimiter is the pair of lines fencing a delimited block. Blocks pair by char
-// and exact width, so shortening one is only safe when its body holds no run of
-// the same char.
+// Delimiter is the pair of lines fencing a delimited block: Char, then Fill
+// until the line is Width long. Fill is Char again, except in a table, where
+// one of | , : ! opens a run of = signs.
+//
+// A block closes only on a line equal to the one that opened it, which is what
+// makes Width part of its identity.
 type Delimiter struct {
 	Char  byte
+	Fill  byte
 	Width int
 	Open  Span
 	Close Span
