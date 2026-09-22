@@ -74,6 +74,9 @@ func (s *scanner) fold(item *ListItem, start int, closer []byte) {
 	s.textRun(&folded, closer, endsItemText)
 	item.frozen = item.frozen || folded.frozen
 	item.Principal = Span{start, s.pos()}
+	// Folding keeps the gap in Principal instead of giving it back, so the
+	// freeze that reading it consumed has to carry past the folded lines.
+	s.freeze = s.freeze || m.freeze
 }
 
 func foldsOntoTerm(kind shapeKind) bool {
