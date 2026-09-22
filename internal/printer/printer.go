@@ -3,7 +3,8 @@
 // Printing is one recursive traversal, with one function per node type. Every
 // formatting opinion becomes a branch in the function for the node it applies
 // to, or, where the opinion is line-local, in span, the one place every byte of
-// source passes through.
+// source passes through. A gap is decided in the traversal, because what it
+// holds depends on the nodes on both sides of it.
 package printer
 
 import (
@@ -52,17 +53,34 @@ func (p *printer) nodes(nodes []block.Node, tail block.Gap) {
 	for _, node := range nodes {
 		p.node(node)
 	}
-	p.span(tail.Span)
+	p.gap(tail)
 }
 
-// node dispatches to the function owning the type. The default emits the node
-// unchanged, which is what a node keeps doing until a rule claims it.
+// node emits one node. Its own gap is the one between its last metadata line
+// and the block, so where it has metadata the gap in front of it is the first
+// metadata line's.
 func (p *printer) node(node block.Node) {
+	for _, meta := range node.Meta() {
+		p.gap(meta.Gap)
+		p.span(meta.Lines)
+	}
+	p.gap(node.Gap())
+	p.body(node)
+}
+
+func (p *printer) gap(g block.Gap) { p.span(g.Span) }
+
+// body dispatches to the function owning the type. The default emits the
+// node's lines unchanged, which is what a node keeps doing until a rule claims
+// it.
+func (p *printer) body(node block.Node) {
 	switch node := node.(type) {
 	case *block.Container:
 		p.container(node)
 	case *block.List:
 		p.list(node)
+	case *block.ListItem:
+		p.item(node)
 	case *block.Header:
 		p.header(node)
 	case *block.Heading:
@@ -72,27 +90,26 @@ func (p *printer) node(node block.Node) {
 	case *block.FrontMatter:
 		// YAML, not AsciiDoc: trailing whitespace inside a block scalar is
 		// content there.
-		p.write(node.Extent())
+		p.write(node.Lines())
 	default:
-		p.span(node.Extent())
+		p.span(node.Lines())
 	}
 }
 
 func (p *printer) container(node *block.Container) {
-	p.span(block.Span{Start: node.Extent().Start, End: node.Delim.Open.End})
+	p.span(node.Delim.Open)
 	p.nodes(node.Children, node.Tail)
 	p.span(node.Delim.Close)
 }
 
 func (p *printer) list(node *block.List) {
-	p.span(block.Span{Start: node.Extent().Start, End: node.Lines().Start})
 	for _, item := range node.Items {
-		p.item(item)
+		p.node(item)
 	}
 }
 
 func (p *printer) item(node *block.ListItem) {
-	p.span(block.Span{Start: node.Extent().Start, End: node.Principal.End})
+	p.span(node.Principal)
 	for _, child := range node.Children {
 		p.node(child)
 	}
