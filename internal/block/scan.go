@@ -81,7 +81,8 @@ type scanner struct {
 	// atStart is true until the first block that cannot precede the document
 	// header, so a level 0 title further down stays an ordinary section.
 	atStart bool
-	// freeze carries a directive's reach to the gap that follows it.
+	// freeze carries the reach of a directive or the front matter fence to the
+	// gaps that follow it, see gap.
 	freeze bool
 	// markers are the list markers of the open lists, innermost last.
 	markers []string
@@ -144,7 +145,11 @@ func (s *scanner) gap() Gap {
 		s.at++
 	}
 	gap := Gap{Span: Span{start, s.pos()}, Frozen: s.freeze}
-	s.freeze = false
+	// A freeze reaches to the next blank line of the source rather than to the
+	// next node: what a directive brings in, and what the front matter fence
+	// opens, Asciidoctor reads on as one block until a blank line ends it, so
+	// every gap it crosses on the way would split it.
+	s.freeze = s.freeze && gap.Span.Empty()
 	return gap
 }
 
@@ -334,7 +339,10 @@ func (s *scanner) body(b base, closer []byte) Node {
 	case shapeDirective:
 		return s.directive(b, sh)
 	case shapeContinuation:
-		b.gap.Frozen = true
+		// Outside a list the + attaches nothing: Asciidoctor reads it and every
+		// line under it as one paragraph, the way it reads front matter. In a
+		// list it is syntax, and the run under it is the printer's decision.
+		b.gap.Frozen, s.freeze = true, !s.inList()
 		b.lines = s.take()
 		return &Continuation{base: b}
 	default:
@@ -658,6 +666,10 @@ func (s *scanner) closingLine() Span {
 // frontMatter reads the YAML block a static site generator puts first. It is
 // detected on the raw input because AsciiDoc would read it as a thematic break
 // plus prose and reformat it.
+//
+// Asciidoctor itself does not skip it without skip-front-matter: it reads the
+// opening fence as a thematic break and everything under it up to the first
+// blank line as one paragraph. That is why the block freezes what follows.
 func (s *scanner) frontMatter() Node {
 	if s.done() || !bytes.Equal(s.text(s.lines[0]), frontMatterFence) {
 		return nil
@@ -672,6 +684,7 @@ func (s *scanner) frontMatter() Node {
 		return nil
 	}
 	s.at++
+	s.freeze = true
 	b := base{gap: Gap{Span: Span{start, start}}, lines: Span{start, s.pos()}}
 	return &FrontMatter{base: b}
 }

@@ -28,7 +28,7 @@ Directive! gap! "ifdef::x[]\n"
 Attribute gap! ":c: d\n"
 Directive! gap! "endif::[]\n"
 Header gap! "= Title\nAuthor Name\n" title "Title"
-Paragraph "Text.\n"`,
+Paragraph gap! "Text.\n"`,
 		},
 		{
 			name: "a comment block before the title does not end the header either",
@@ -207,7 +207,7 @@ Paragraph "Text.\n"`,
 			want: `
 Literal meta("[source]\n") "code\n"
 Continuation gap! "+\n"
-Paragraph "Text.\n"
+Paragraph gap! "Text.\n"
 Verbatim meta("[source]\n") "----\n* a\n----\n"`,
 		},
 		{
@@ -799,7 +799,16 @@ Setext "Title  \n-----\n" title "Title"`,
 			src:  "---\ntitle: x\n---\n\n= Title\n",
 			want: `
 FrontMatter "---\ntitle: x\n---\n"
-Header "= Title\n" title "Title"`,
+Header gap! "= Title\n" title "Title"`,
+		},
+		{
+			name: "front matter freezes the gaps down to the next blank line",
+			src:  "---\ntitle: x\n---\n:a: 1\n== Sec\n\nText.\n",
+			want: `
+FrontMatter "---\ntitle: x\n---\n"
+Attribute gap! ":a: 1\n"
+Heading gap! "== Sec\n" title "Sec"
+Paragraph gap! "Text.\n"`,
 		},
 	}
 
