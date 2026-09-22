@@ -2,5 +2,6 @@
 # clone is configured to do.
 * text=auto eol=lf
 
-# Except where the line endings are what the case tests.
-testdata/golden/**/crlf/* -text
+# Except where the line endings are what the case tests, which such a case says
+# in the name it starts with.
+testdata/golden/**/crlf*/* -text
