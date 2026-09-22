@@ -131,6 +131,7 @@ const (
 type shape struct {
 	kind    shapeKind
 	char    byte
+	fill    byte // the char filling out a fence behind its first one
 	width   int
 	content content
 	level   int
@@ -222,14 +223,14 @@ func classify(src []byte, l line) shape {
 func delimiterShape(s []byte) (shape, bool) {
 	switch {
 	case len(s) == 2 && s[0] == '-' && s[1] == '-':
-		return shape{kind: shapeDelimiter, char: '-', width: 2, content: contentCompound}, true
+		return shape{kind: shapeDelimiter, char: '-', fill: '-', width: 2, content: contentCompound}, true
 	case len(s) >= 3 && uniform(s[:3], '`') && (len(s) == 3 || s[3] != '`'):
-		return shape{kind: shapeDelimiter, char: '`', width: 3, content: contentVerbatim}, true
+		return shape{kind: shapeDelimiter, char: '`', fill: '`', width: 3, content: contentVerbatim}, true
 	case len(s) >= 4 && isTableChar(s[0]) && uniform(s[1:], '='):
-		return shape{kind: shapeDelimiter, char: s[0], width: len(s), content: contentTable}, true
+		return shape{kind: shapeDelimiter, char: s[0], fill: '=', width: len(s), content: contentTable}, true
 	case len(s) >= 4 && uniform(s, s[0]):
 		if held, ok := delimiters[s[0]]; ok {
-			return shape{kind: shapeDelimiter, char: s[0], width: len(s), content: held}, true
+			return shape{kind: shapeDelimiter, char: s[0], fill: s[0], width: len(s), content: held}, true
 		}
 	}
 	return shape{}, false

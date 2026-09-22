@@ -60,3 +60,32 @@ func TestLines(t *testing.T) {
 		}
 	}
 }
+
+// TestDelimiterShape pins the two chars a fence is built from. A table fence
+// fills out with = rather than with the char it opens on, which is the one
+// place a fence is not a run of a single char.
+func TestDelimiterShape(t *testing.T) {
+	tests := []struct {
+		src        string
+		char, fill byte
+		width      int
+	}{
+		{"--", '-', '-', 2},
+		{"```", '`', '`', 3},
+		{"```go", '`', '`', 3},
+		{"----", '-', '-', 4},
+		{"......", '.', '.', 6},
+		{"|=======", '|', '=', 8},
+		{",===", ',', '=', 4},
+		{":===", ':', '=', 4},
+		{"!===", '!', '=', 4},
+	}
+
+	for _, test := range tests {
+		sh, ok := delimiterShape([]byte(test.src))
+		if !ok || sh.char != test.char || sh.fill != test.fill || sh.width != test.width {
+			t.Errorf("delimiterShape(%q) = %q %q %d, %t, want %q %q %d, true",
+				test.src, sh.char, sh.fill, sh.width, ok, test.char, test.fill, test.width)
+		}
+	}
+}
