@@ -671,12 +671,17 @@ func (s *scanner) closingLine() Span {
 // opening fence as a thematic break and everything under it up to the first
 // blank line as one paragraph. That is why the block freezes what follows.
 func (s *scanner) frontMatter() Node {
-	if s.done() || !bytes.Equal(s.text(s.lines[0]), frontMatterFence) {
+	start := s.pos()
+	for !s.done() && s.shape().kind == shapeBlank {
+		s.at++
+	}
+	opensAt := s.pos()
+	if s.done() || !s.onFence() {
+		s.at = 0
 		return nil
 	}
-	start := s.pos()
 	s.at++
-	for !s.done() && !bytes.Equal(s.text(s.lines[s.at]), frontMatterFence) {
+	for !s.done() && !s.onFence() {
 		s.at++
 	}
 	if s.done() {
@@ -684,7 +689,17 @@ func (s *scanner) frontMatter() Node {
 		return nil
 	}
 	s.at++
+	if opensAt > start {
+		// The fence opens front matter on the first line only, so the blank
+		// lines above it are what keeps this document from having any.
+		s.at, s.freeze = 0, true
+		return nil
+	}
 	s.freeze = true
 	b := base{gap: Gap{Span: Span{start, start}}, lines: Span{start, s.pos()}}
 	return &FrontMatter{base: b}
+}
+
+func (s *scanner) onFence() bool {
+	return bytes.Equal(s.text(s.lines[s.at]), frontMatterFence)
 }

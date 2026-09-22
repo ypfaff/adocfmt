@@ -810,6 +810,21 @@ Attribute gap! ":a: 1\n"
 Heading gap! "== Sec\n" title "Sec"
 Paragraph gap! "Text.\n"`,
 		},
+		{
+			name: "a blank line above a fence pair is what keeps it from being front matter",
+			src:  "\n---\ntitle: x\n---\n= Title\n",
+			want: `
+Opaque gap! "---\n"
+Paragraph "title: x\n---\n= Title\n"`,
+		},
+		{
+			name: "a blank line above a lone fence protects nothing",
+			src:  "\n---\ntitle: x\n\n= Title\n",
+			want: `
+Opaque "---\n"
+Paragraph "title: x\n"
+Heading "= Title\n" title "Title"`,
+		},
 	}
 
 	for _, test := range tests {

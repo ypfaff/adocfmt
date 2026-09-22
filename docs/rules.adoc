@@ -270,5 +270,7 @@ layout: post
 ....
 |===
 ====
+* A blank line at the top of a file whose first line of content is a `---` that a later `---` closes.
+Front matter counts only when the fence is the very first line, so removing that blank line would make front matter out of lines that are none.
 * Blank lines next to an include or a conditional, and the ones inside a block whose content one of them decides.
 * Blank lines inside a listing, a literal block or a table, which count as one block each.
