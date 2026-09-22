@@ -89,6 +89,9 @@ func run() error {
 		}
 	}
 
+	if err := writeLicense(checkout, casesDir); err != nil {
+		return err
+	}
 	if err := writeReadme(casesDir, total); err != nil {
 		return err
 	}
@@ -121,6 +124,17 @@ func writeCases(source, casesDir string) (int, error) {
 	return len(cases), nil
 }
 
+// writeLicense puts Asciidoctor's license next to the cases, because the MIT
+// permission notice has to travel with them. Taking it from the checkout keeps
+// the text in step with the pinned tag.
+func writeLicense(checkout, casesDir string) error {
+	license, err := os.ReadFile(filepath.Join(checkout, "LICENSE"))
+	if err != nil {
+		return fmt.Errorf("reading Asciidoctor's license: %w", err)
+	}
+	return os.WriteFile(filepath.Join(casesDir, "LICENSE"), license, 0o644)
+}
+
 func writeReadme(casesDir string, cases int) error {
 	readme := fmt.Sprintf(`= Asciidoctor cases
 
@@ -131,7 +145,7 @@ Directory names follow the Ruby test file, file names the test the input belongs
 
 See link:../../docs/testing-strategy.adoc[the testing strategy] for what these cases cover.
 
-Source: %s, MIT License, Copyright (C) 2012-present Dan Allen, Sarah White, Ryan Waldron and the individual contributors to Asciidoctor.
+Source: %s, MIT License (link:LICENSE[`+"`LICENSE`"+`]), Copyright (C) 2012-present Dan Allen, Sarah White, Ryan Waldron and the individual contributors to Asciidoctor.
 
 Cases: %d
 `, asciidoctorTag, asciidoctorURL, cases)
