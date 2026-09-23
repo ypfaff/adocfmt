@@ -2,6 +2,10 @@
 # clone is configured to do.
 * text=auto eol=lf
 
-# Except where the line endings are what the case tests, which such a case says
-# in the name it starts with.
-testdata/golden/**/crlf*/* -text
+# Except in these cases, where the line endings are what the case tests.
+testdata/golden/blank-lines/crlf/* -text
+testdata/golden/blank-lines/crlf-no-final-newline/* -text
+testdata/golden/block-delimiters/crlf/* -text
+testdata/golden/heading-markers/crlf/* -text
+testdata/golden/setext-headings/crlf/* -text
+testdata/golden/trailing-whitespace/crlf/* -text
