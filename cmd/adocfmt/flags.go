@@ -6,15 +6,15 @@ import (
 	"io"
 )
 
-// options holds what the flags set.
 type options struct {
+	write   bool
 	check   bool
 	version bool
 	help    bool
 }
 
-// flagEntry is one line of the command line. Registration and the usage text
-// both read the same entries, so a flag cannot reach one and miss the other.
+// Registration and the usage text both read these, so a flag cannot reach one
+// and miss the other.
 type flagEntry struct {
 	target      *bool
 	short, long string
@@ -23,18 +23,17 @@ type flagEntry struct {
 
 func (o *options) entries() []flagEntry {
 	return []flagEntry{
+		{&o.write, "w", "write", "Write the result back to the file."},
 		{&o.check, "c", "check", "Name the files that are not formatted; exit 1 if any."},
 		{&o.version, "", "version", "Print the version."},
 		{&o.help, "h", "help", "Print this help."},
 	}
 }
 
-// register binds the flags to o.
-//
-// The flag package writes usage and errors to one stream, and the command sends
-// them to different ones, so it prints both itself.
 func (o *options) register() *flag.FlagSet {
 	flags := flag.NewFlagSet("adocfmt", flag.ContinueOnError)
+	// The package writes usage and errors to one stream, and the command sends
+	// them to different ones, so it prints both itself.
 	flags.SetOutput(io.Discard)
 	for _, entry := range o.entries() {
 		flags.BoolVar(entry.target, entry.long, false, entry.help)
@@ -45,9 +44,8 @@ func (o *options) register() *flag.FlagSet {
 	return flags
 }
 
-// usage writes what a reader who asked for it came for, which is why it goes to
-// stdout. A short and a long name are one entry, which is what flag.PrintDefaults
-// cannot do.
+// usage goes to stdout, because a reader asked for it. A short and a long name
+// are one entry, which flag.PrintDefaults cannot do.
 func usage(w io.Writer) {
 	_, _ = fmt.Fprint(w, "adocfmt formats AsciiDoc files.\n\nUsage:\n  adocfmt [flags] [path ...]\n\nFlags:\n")
 	for _, entry := range (&options{}).entries() {
