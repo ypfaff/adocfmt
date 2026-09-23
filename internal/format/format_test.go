@@ -1,6 +1,8 @@
 package format
 
 import (
+	"errors"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -20,13 +22,39 @@ func TestFormatRefuses(t *testing.T) {
 	}
 }
 
+// TestFormatRefusalCarriesFindings pins that a caller reaches the line of every
+// finding, which is what lets the command write path:line: message.
+func TestFormatRefusalCarriesFindings(t *testing.T) {
+	t.Parallel()
+
+	_, err := Format([]byte("ifdef::extra[]\n\n----\ncode\n"))
+
+	var refusal *Refusal
+	if !errors.As(err, &refusal) {
+		t.Fatalf("got error %v, want a *Refusal", err)
+	}
+	want := []Finding{
+		{Line: 1, Message: "conditional region has no endif"},
+		{Line: 3, Message: "block has no closing delimiter"},
+	}
+	if !slices.Equal(refusal.Findings, want) {
+		t.Errorf("got %+v, want %+v", refusal.Findings, want)
+	}
+}
+
 // TestFormatRejects pins that source the scanner must not repair silently is
-// refused with a reason.
+// refused with a reason, and that it is no Refusal: it names no line, so the
+// command has nothing to place it on.
 func TestFormatRejects(t *testing.T) {
 	t.Parallel()
 
 	_, err := Format([]byte("a\r\nb\n"))
 	if err == nil || !strings.Contains(err.Error(), "mixed line endings") {
 		t.Errorf("got error %v, want one about mixed line endings", err)
+	}
+
+	var refusal *Refusal
+	if errors.As(err, &refusal) {
+		t.Errorf("got a *Refusal, want a plain error")
 	}
 }
