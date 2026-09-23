@@ -21,6 +21,15 @@ func TestRun(t *testing.T) {
 		return path
 	}
 	unformatted := write("unformatted.adoc", "Text.   \n\n\n== Section ==\n")
+	formatted := write("formatted.adoc", "Text.\n")
+
+	walked := filepath.Join(dir, "tree")
+	if err := os.MkdirAll(filepath.Join(walked, "nested"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"a.adoc", "b.asciidoc", "notes.txt", "nested/c.adoc"} {
+		write(filepath.Join("tree", filepath.FromSlash(name)), "Text.   \n")
+	}
 	refused := write("refused.adoc", "ifdef::extra[]\n\n----\ncode\n")
 	mixed := write("mixed.adoc", "a\r\nb\n")
 	missing := filepath.Join(dir, "missing.adoc")
@@ -44,6 +53,45 @@ func TestRun(t *testing.T) {
 			args:   []string{unformatted},
 			code:   exitOK,
 			stdout: "Text.\n\n== Section\n",
+		},
+		{
+			name: "check says nothing about a file that is already formatted",
+			args: []string{"--check", formatted},
+			code: exitOK,
+		},
+		{
+			name:   "check names an unformatted file on stdout, and changes none",
+			args:   []string{"--check", unformatted},
+			code:   exitChanged,
+			stdout: unformatted + "\n",
+		},
+		{
+			name:   "check reads stdin under the name a diagnostic uses",
+			args:   []string{"--check"},
+			stdin:  "Text.   \n",
+			code:   exitChanged,
+			stdout: stdinName + "\n",
+		},
+		{
+			name: "check walks a directory in path order, by extension",
+			args: []string{"--check", walked},
+			code: exitChanged,
+			stdout: filepath.Join(walked, "a.adoc") + "\n" +
+				filepath.Join(walked, "b.asciidoc") + "\n" +
+				filepath.Join(walked, "nested", "c.adoc") + "\n",
+		},
+		{
+			name:   "a refusal outweighs a file that would change",
+			args:   []string{"--check", unformatted, refused},
+			code:   exitError,
+			stdout: unformatted + "\n",
+			stderr: "conditional region has no endif",
+		},
+		{
+			name:   "a directory has to say what to do with what it holds",
+			args:   []string{walked},
+			code:   exitError,
+			stderr: "is a directory; use --check to walk it",
 		},
 		{
 			name:   "a refused document names its file and line per finding",
@@ -111,46 +159,53 @@ func TestRun(t *testing.T) {
 			if code != test.code {
 				t.Errorf("got exit %d, want %d (stderr: %s)", code, test.code, &stderr)
 			}
-			if !strings.Contains(stdout.String(), test.stdout) {
+			// An empty expectation means the stream stays empty, which is how a
+			// run that answers on stderr says it produced no result.
+			switch {
+			case test.stdout == "" && stdout.Len() > 0:
+				t.Errorf("stdout is %q, want nothing", &stdout)
+			case !strings.Contains(stdout.String(), test.stdout):
 				t.Errorf("stdout is %q, want it to hold %q", &stdout, test.stdout)
 			}
 			if !strings.Contains(stderr.String(), test.stderr) {
 				t.Errorf("stderr is %q, want it to hold %q", &stderr, test.stderr)
 			}
 
-			// The streams are the command's promise: what was asked for goes to
-			// stdout, a complaint to stderr, and neither run carries both.
+			// A run with nothing to complain about complains nowhere, which is
+			// what lets an editor read stdout back into a buffer.
 			if code == exitOK && stderr.Len() > 0 {
 				t.Errorf("a clean run wrote to stderr: %s", &stderr)
-			}
-			if code != exitOK && stdout.Len() > 0 {
-				t.Errorf("a failed run wrote to stdout: %s", &stdout)
 			}
 		})
 	}
 }
 
-// TestRunLeavesTheFileAlone pins that no mode flag means no write, so the file
-// the command read comes out of the run as it went in.
-func TestRunLeavesTheFileAlone(t *testing.T) {
+// TestRunWritesNoFile pins that neither mode in this stage touches the file it
+// read: without a flag the result is the output, and --check only names it.
+func TestRunWritesNoFile(t *testing.T) {
 	t.Parallel()
 
-	src := "Text.   \n\n\n== Section ==\n"
-	path := filepath.Join(t.TempDir(), "doc.adoc")
-	if err := os.WriteFile(path, []byte(src), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	const src = "Text.   \n\n\n== Section ==\n"
+	for _, mode := range [][]string{nil, {"--check"}} {
+		t.Run(strings.Join(append([]string{"adocfmt"}, mode...), " "), func(t *testing.T) {
+			t.Parallel()
 
-	var stdout, stderr bytes.Buffer
-	if code := run([]string{path}, nil, &stdout, &stderr); code != exitOK {
-		t.Fatalf("got exit %d, want %d (stderr: %s)", code, exitOK, &stderr)
-	}
-	after, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if string(after) != src {
-		t.Errorf("the file changed to %q, want %q", after, src)
+			path := filepath.Join(t.TempDir(), "doc.adoc")
+			if err := os.WriteFile(path, []byte(src), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			var stdout, stderr bytes.Buffer
+			run(append(mode, path), nil, &stdout, &stderr)
+
+			after, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(after) != src {
+				t.Errorf("the file changed to %q, want %q", after, src)
+			}
+		})
 	}
 }
 
@@ -174,12 +229,12 @@ func TestUsageNamesEveryFlag(t *testing.T) {
 // TestRelease pins that a stamped build names its tag and an unstamped one says
 // it is not one. It writes package state, so it does not run in parallel.
 func TestRelease(t *testing.T) {
-	if got, want := release(), "(devel)"; got != want {
+	if got, want := release(), "(development)"; got != want {
 		t.Errorf("an unstamped build reports %q, want %q", got, want)
 	}
 
 	version, commit, date = "v1.2.3", "abc1234", "2026-09-23"
-	t.Cleanup(func() { version, commit, date = "(devel)", "", "" })
+	t.Cleanup(func() { version, commit, date = "(development)", "", "" })
 
 	if got, want := release(), "v1.2.3 (abc1234, 2026-09-23)"; got != want {
 		t.Errorf("a stamped build reports %q, want %q", got, want)
