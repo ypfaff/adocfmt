@@ -2,8 +2,10 @@ package block
 
 import (
 	"bytes"
+	"cmp"
 	"errors"
 	"fmt"
+	"slices"
 	"unicode/utf8"
 )
 
@@ -41,6 +43,11 @@ func Scan(src []byte) (*Document, error) {
 	for _, at := range s.regions {
 		s.report(at, "conditional region has no endif")
 	}
+
+	// An open region is found once the source runs out, so it is reported after
+	// findings that stand below it.
+	slices.SortStableFunc(s.findings, func(a, b Finding) int { return cmp.Compare(a.Line, b.Line) })
+
 	doc.Findings = s.findings
 	return doc, nil
 }

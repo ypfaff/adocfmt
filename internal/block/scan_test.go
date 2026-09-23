@@ -941,6 +941,14 @@ func TestScanReports(t *testing.T) {
 			},
 		},
 		{
+			name: "an open region is decided last and reported first all the same",
+			src:  "ifdef::extra[]\n\n----\ncode\n",
+			want: []Finding{
+				{Line: 1, Message: "conditional region has no endif"},
+				{Line: 3, Message: "block has no closing delimiter"},
+			},
+		},
+		{
 			name: "a directive is not a finding, the scanner freezes around it instead",
 			src:  "include::part.adoc[]\n\nifdef::extra[]\nText.\nendif::[]\n",
 			want: nil,
