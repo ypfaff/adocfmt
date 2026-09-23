@@ -34,6 +34,26 @@ func TestGoldenCases(t *testing.T) {
 	}
 }
 
+// TestGoldenCasesAreFormatted is the idempotence check on the cases a rule is
+// written against: the golden file is what the formatter produces, so
+// formatting it has to hand it back unchanged.
+func TestGoldenCasesAreFormatted(t *testing.T) {
+	for _, dir := range goldenCases(t) {
+		t.Run(caseName(dir), func(t *testing.T) {
+			t.Parallel()
+
+			want := readCase(t, dir, golden.GoldenFile)
+			got, err := Format(want)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(got, want) {
+				t.Errorf("formatting %s changes it at %s", golden.GoldenFile, firstDifferingLine(want, got))
+			}
+		})
+	}
+}
+
 // TestGoldenCasesRenderEquivalent guards the golden files themselves: the update
 // tool freezes whatever the formatter produces, so without this a rule that
 // changes meaning would be recorded as the expectation.
