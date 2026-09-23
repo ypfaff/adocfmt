@@ -7,9 +7,8 @@ import (
 	"slices"
 )
 
-// extensions are what a walk picks up. A path named on the command line is
-// formatted whatever its extension, so a hook that passes the files it staged
-// reaches all of them.
+// A path named on the command line is formatted whatever its extension, so a
+// hook that passes the files it staged reaches all of them.
 var extensions = []string{".adoc", ".asciidoc"}
 
 // collect turns the paths named on the command line into the files to format,
@@ -37,11 +36,9 @@ func collect(paths []string) ([]string, error) {
 	return files, nil
 }
 
-// walk lists the AsciiDoc files below dir, in path order.
-//
-// It follows no symlink, which is what
-// filepath.WalkDir does anyway: a link is no regular file, so the walk reaches
-// neither the directory behind it nor the file.
+// walk lists the AsciiDoc files below dir, in path order. It follows no
+// symlink, which is what filepath.WalkDir does anyway: a link is no regular
+// file, so the walk reaches neither the directory behind it nor the file.
 func walk(dir string) ([]string, error) {
 	var files []string
 	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {

@@ -91,7 +91,20 @@ func TestRun(t *testing.T) {
 			name:   "a directory has to say what to do with what it holds",
 			args:   []string{walked},
 			code:   exitError,
-			stderr: "is a directory; use --check to walk it",
+			stderr: "is a directory; use --write or --check",
+		},
+		{
+			name:   "write and check ask for two different things",
+			args:   []string{"--write", "--check", unformatted},
+			code:   exitError,
+			stderr: "contradict each other",
+		},
+		{
+			name:   "write has no file to write stdin back to",
+			args:   []string{"--write"},
+			stdin:  "Text.   \n",
+			code:   exitError,
+			stderr: "--write needs a path",
 		},
 		{
 			name:   "a refused document names its file and line per finding",
