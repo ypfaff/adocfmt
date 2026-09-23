@@ -14,7 +14,7 @@ const minWidth = 4
 // and for no other, so a node left out of the map prints as it stands.
 func fenceWidths(doc *block.Document) map[block.Node]int {
 	f := fencer{src: doc.Src, widths: map[block.Node]int{}}
-	f.nodes(doc.Nodes)
+	f.nodes(doc.Nodes, nil)
 	return f.widths
 }
 
@@ -23,44 +23,59 @@ type fencer struct {
 	widths map[block.Node]int
 }
 
-func (f *fencer) nodes(nodes []block.Node) {
+func (f *fencer) nodes(nodes []block.Node, around []block.Delimiter) {
 	for _, node := range nodes {
-		f.node(node)
+		f.node(node, around)
 	}
 }
 
 // node picks the width of every fence the node holds before its own, and picks
 // none at all inside a frozen one, whose lines the printer emits as they stand,
 // see printer.frozen.
-func (f *fencer) node(node block.Node) {
+func (f *fencer) node(node block.Node, around []block.Delimiter) {
 	if node.Frozen() {
 		return
 	}
 	switch node := node.(type) {
 	case *block.Container:
-		f.nodes(node.Children)
-		f.pick(node, node.Delim)
+		f.nodes(node.Children, enclose(around, node, node.Delim))
+		f.pick(node, node.Delim, around)
 	case *block.Verbatim:
-		f.pick(node, node.Delim)
+		f.pick(node, node.Delim, around)
 	case *block.Table:
-		f.pick(node, node.Delim)
+		f.pick(node, node.Delim, around)
 	case *block.List:
 		for _, item := range node.Items {
-			f.node(item)
+			f.node(item, around)
 		}
 	case *block.ListItem:
-		f.nodes(node.Children)
+		f.nodes(node.Children, around)
 	}
 }
 
-// pick records the width the fence is written at, the smallest one no line
-// inside the block comes out at, and records nothing where the rule leaves the
-// fence as it is.
-func (f *fencer) pick(node block.Node, delim block.Delimiter) {
+// enclose carries a fence down to the blocks inside it, so that none of them
+// comes out on its line. A fence the rule writes needs no carrying: it picks
+// after them and gives way to whatever they came out at.
+func enclose(around []block.Delimiter, node block.Node, delim block.Delimiter) []block.Delimiter {
+	if rewritable(node, delim) {
+		return around
+	}
+	return append(around[:len(around):len(around)], delim)
+}
+
+// pick records the width the fence is written at, the smallest one neither a
+// line inside the block comes out at nor a fence around it stands at, and
+// records nothing where the rule leaves the fence as it is.
+func (f *fencer) pick(node block.Node, delim block.Delimiter, around []block.Delimiter) {
 	if !rewritable(node, delim) {
 		return
 	}
 	taken := map[int]bool{}
+	for _, outer := range around {
+		if _, ok := outer.Fences(delim.Line(outer.Width)); ok {
+			taken[outer.Width] = true
+		}
+	}
 	if container, ok := node.(*block.Container); ok {
 		f.below(delim, container.Children, taken)
 	} else {
