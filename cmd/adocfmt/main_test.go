@@ -173,16 +173,19 @@ func TestRun(t *testing.T) {
 				t.Errorf("got exit %d, want %d (stderr: %s)", code, test.code, &stderr)
 			}
 			// An empty expectation means the stream stays empty, which is how a
-			// run that answers on stderr says it produced no result.
-			switch {
-			case test.stdout == "" && stdout.Len() > 0:
-				t.Errorf("stdout is %q, want nothing", &stdout)
-			case !strings.Contains(stdout.String(), test.stdout):
-				t.Errorf("stdout is %q, want it to hold %q", &stdout, test.stdout)
+			// run that answers on one stream says it produced nothing on the other.
+			pin := func(name string, got *bytes.Buffer, want string) {
+				t.Helper()
+
+				switch {
+				case want == "" && got.Len() > 0:
+					t.Errorf("%s is %q, want nothing", name, got)
+				case !strings.Contains(got.String(), want):
+					t.Errorf("%s is %q, want it to hold %q", name, got, want)
+				}
 			}
-			if !strings.Contains(stderr.String(), test.stderr) {
-				t.Errorf("stderr is %q, want it to hold %q", &stderr, test.stderr)
-			}
+			pin("stdout", &stdout, test.stdout)
+			pin("stderr", &stderr, test.stderr)
 
 			// A run with nothing to complain about complains nowhere, which is
 			// what lets an editor read stdout back into a buffer.
