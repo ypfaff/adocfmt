@@ -6,12 +6,12 @@ import "github.com/ypfaff/adocfmt/internal/block"
 // the two this rule leaves alone.
 const minWidth = 4
 
-// fenceWidths picks the width every fence is written at, and leaves out the
-// ones the rule does not touch.
+// fenceWidths picks the width every fence is written at.
 //
 // It runs before printing and bottom up, because a container may only take a
 // width no fence inside it comes out at, and printing emits its opening line
-// before its children are text.
+// before its children are text. An entry stands for a fence the rule writes,
+// and for no other, so a node left out of the map prints as it stands.
 func fenceWidths(doc *block.Document) map[block.Node]int {
 	f := fencer{src: doc.Src, widths: map[block.Node]int{}}
 	f.nodes(doc.Nodes)
@@ -25,19 +25,31 @@ type fencer struct {
 
 func (f *fencer) nodes(nodes []block.Node) {
 	for _, node := range nodes {
-		switch node := node.(type) {
-		case *block.Container:
-			f.nodes(node.Children)
-			f.pick(node, node.Delim)
-		case *block.Verbatim:
-			f.pick(node, node.Delim)
-		case *block.Table:
-			f.pick(node, node.Delim)
-		case *block.List:
-			for _, item := range node.Items {
-				f.nodes(item.Children)
-			}
+		f.node(node)
+	}
+}
+
+// node picks the width of every fence the node holds before its own, and picks
+// none at all inside a frozen one, whose lines the printer emits as they stand,
+// see printer.frozen.
+func (f *fencer) node(node block.Node) {
+	if node.Frozen() {
+		return
+	}
+	switch node := node.(type) {
+	case *block.Container:
+		f.nodes(node.Children)
+		f.pick(node, node.Delim)
+	case *block.Verbatim:
+		f.pick(node, node.Delim)
+	case *block.Table:
+		f.pick(node, node.Delim)
+	case *block.List:
+		for _, item := range node.Items {
+			f.node(item)
 		}
+	case *block.ListItem:
+		f.nodes(node.Children)
 	}
 }
 
@@ -66,12 +78,12 @@ func (f *fencer) pick(node block.Node, delim block.Delimiter) {
 // Markdown fence have one legal width each. A comment block is a node of its
 // own only where it stands alone, so rewriting one would turn on where it sits.
 // A directive, inside the block or right above it, may bring in the very line a
-// shorter fence would close on.
+// shorter fence would close on. A frozen node never gets this far, see node.
 func rewritable(node block.Node, delim block.Delimiter) bool {
 	if delim.Width < minWidth || delim.Char == '/' || delim.Extensible || !delim.Closed() {
 		return false
 	}
-	return !node.Frozen() && !above(node).Frozen
+	return !above(node).Frozen
 }
 
 // below adds the width of every line printed inside a container that would

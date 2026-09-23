@@ -42,8 +42,7 @@ type printer struct {
 	// document holding no line at all is told from one whose last line is left
 	// open.
 	start int
-	// widths holds the width every fence is written at, decided before printing
-	// because a container's opening line is emitted before its children are.
+	// widths holds the width every fence is written at, see fenceWidths.
 	widths map[block.Node]int
 	out    bytes.Buffer
 }
