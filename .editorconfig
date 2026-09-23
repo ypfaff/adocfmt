@@ -1,5 +1,11 @@
 root = true
 
-# The inputs of these cases carry trailing whitespace on purpose.
+# These cases test trailing whitespace, so their input has to keep it.
 [testdata/golden/trailing-whitespace/**]
+trim_trailing_whitespace = false
+
+[testdata/golden/blank-lines/whitespace-only-line/**]
+trim_trailing_whitespace = false
+
+[testdata/golden/block-delimiters/body-fence-with-trailing-whitespace/**]
 trim_trailing_whitespace = false
