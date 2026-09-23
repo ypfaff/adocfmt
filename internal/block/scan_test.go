@@ -167,11 +167,17 @@ Container delim! "====\n"
   Verbatim delim! "----\ninclude::part.adoc[]\n----\n"`,
 		},
 		{
-			name: "a comment block is never extensible, since Asciidoctor does not preprocess one",
-			src:  "////\ninclude::part.adoc[]\n////\n\n[comment]\n----\ninclude::part.adoc[]\n----\n",
+			name: "a comment block is never extensible, and neither is the open block a [comment] makes one",
+			src:  "////\ninclude::part.adoc[]\n////\n\n[comment]\n--\ninclude::part.adoc[]\n--\n",
 			want: `
 Verbatim "////\ninclude::part.adoc[]\n////\n"
-Verbatim meta("[comment]\n") "----\ninclude::part.adoc[]\n----\n"`,
+Verbatim meta("[comment]\n") "--\ninclude::part.adoc[]\n--\n"`,
+		},
+		{
+			name: "a [comment] on a wider fence is dropped, so a directive in the body extends it all the same",
+			src:  "[comment]\n----\ninclude::part.adoc[]\n----\n",
+			want: `
+Verbatim delim! meta("[comment]\n") "----\ninclude::part.adoc[]\n----\n"`,
 		},
 		{
 			name: "a directive above a block freezes the gap below it, not the block",
@@ -894,6 +900,14 @@ func TestScanReports(t *testing.T) {
 			name: "a delimiter that closes outside the region it opened in",
 			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n----\n",
 			want: []Finding{{Line: 2, Message: "delimiter opens and closes in different conditional regions"}},
+		},
+		{
+			name: "a conditional inside a [comment] on a wider fence opens a region all the same",
+			src:  "[comment]\n----\nifdef::extra[]\n----\nText.\n",
+			want: []Finding{
+				{Line: 2, Message: "delimiter opens and closes in different conditional regions"},
+				{Line: 3, Message: "conditional region has no endif"},
+			},
 		},
 		{
 			name: "also when the conditional sits among the metadata lines",
