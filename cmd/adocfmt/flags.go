@@ -8,6 +8,7 @@ import (
 
 // options holds what the flags set.
 type options struct {
+	check   bool
 	version bool
 	help    bool
 }
@@ -22,6 +23,7 @@ type flagEntry struct {
 
 func (o *options) entries() []flagEntry {
 	return []flagEntry{
+		{&o.check, "c", "check", "Name the files that are not formatted; exit 1 if any."},
 		{&o.version, "", "version", "Print the version."},
 		{&o.help, "h", "help", "Print this help."},
 	}
