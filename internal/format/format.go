@@ -18,8 +18,15 @@ type Finding = block.Finding
 // write the path it read in front of each of them.
 type Refusal struct{ Findings []Finding }
 
-// Error implements error.
+// Error joins the findings, one per line.
+//
+// Refusal is exported, so one can reach here empty or nil. Neither is a
+// document the scanner turned down, and saying so beats an empty message or a
+// panic.
 func (r *Refusal) Error() string {
+	if r == nil || len(r.Findings) == 0 {
+		return "refused without a finding"
+	}
 	lines := make([]string, len(r.Findings))
 	for at, finding := range r.Findings {
 		lines[at] = finding.Error()
