@@ -58,3 +58,19 @@ func TestFormatRejects(t *testing.T) {
 		t.Errorf("got a *Refusal, want a plain error")
 	}
 }
+
+// TestRefusalWithoutFindings pins that the exported type answers rather than
+// panics when it holds nothing, which errors.As lets a caller reach.
+func TestRefusalWithoutFindings(t *testing.T) {
+	t.Parallel()
+
+	for name, refusal := range map[string]*Refusal{"nil": nil, "empty": {}} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			if got, want := refusal.Error(), "refused without a finding"; got != want {
+				t.Errorf("got %q, want %q", got, want)
+			}
+		})
+	}
+}

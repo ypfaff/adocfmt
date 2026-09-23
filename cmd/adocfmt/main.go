@@ -202,7 +202,8 @@ func fail(stderr io.Writer, message string, args ...any) int {
 // alone.
 func report(stderr io.Writer, name string, err error) {
 	var refusal *format.Refusal
-	if !errors.As(err, &refusal) {
+	// errors.As matches a nil *Refusal, which carries no finding to place.
+	if !errors.As(err, &refusal) || refusal == nil {
 		_, _ = fmt.Fprintf(stderr, "%s: %v\n", name, err)
 		return
 	}
