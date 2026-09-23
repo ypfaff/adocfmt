@@ -89,3 +89,57 @@ func TestDelimiterShape(t *testing.T) {
 		}
 	}
 }
+
+// TestLineBelow pins the line a rule reads back against, which is the one the
+// source has under the line it rewrites.
+func TestLineBelow(t *testing.T) {
+	tests := []struct {
+		src  string
+		at   int
+		want string
+	}{
+		{"a\nb\n", 0, "b"},
+		{"- one\ntwo\n", 3, "two"},
+		{"a\n", 0, ""},
+		{"a", 0, ""},
+		{"a\nb", 0, "b"},
+		{"a\nb  \n", 0, "b"},
+		{"a\r\nb\r\n", 0, "b"},
+		{"a\n\nc\n", 0, ""},
+	}
+
+	for _, test := range tests {
+		if got := string(LineBelow([]byte(test.src), test.at)); got != test.want {
+			t.Errorf("LineBelow(%q, %d) = %q, want %q", test.src, test.at, got, test.want)
+		}
+	}
+}
+
+// TestUnderlinesTitle pins the window a rewritten line has to stay out of: a
+// line within one character of the line below it turns that line into an
+// underline.
+func TestUnderlinesTitle(t *testing.T) {
+	tests := []struct {
+		title, underline string
+		want             bool
+	}{
+		{"Section", "-------", true},
+		{"Section", "------", true},
+		{"Section", "--------", true},
+		{"Section", "-----", false},
+		{"* item", "~~~~~~", true},
+		{"-   item", "~~~~~~", false},
+		{"Section", "", false},
+		{"Section", "***", false},
+		{"Section", "--=--", false},
+		{".Title", "------", false},
+		{"----", "----", false},
+		{"Ü", "=", true},
+	}
+
+	for _, test := range tests {
+		if got := UnderlinesTitle([]byte(test.title), []byte(test.underline)); got != test.want {
+			t.Errorf("UnderlinesTitle(%q, %q) = %t, want %t", test.title, test.underline, got, test.want)
+		}
+	}
+}

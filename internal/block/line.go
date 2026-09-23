@@ -89,6 +89,31 @@ func HeadingTitle(line []byte) ([]byte, bool) {
 	return line[sh.span.Start:sh.span.End], true
 }
 
+// LineBelow returns the content of the line under the one at, its terminator
+// and trailing whitespace off, and nothing where no line follows.
+func LineBelow(src []byte, at int) []byte {
+	next := bytes.IndexByte(src[at:], '\n')
+	if next < 0 {
+		return nil
+	}
+	start := at + next + 1
+	end := len(src)
+	if last := bytes.IndexByte(src[start:], '\n'); last >= 0 {
+		end = start + last + 1
+	}
+	return src[start:textEnd(src, start, terminator(src, Span{start, end}))]
+}
+
+// UnderlinesTitle reports whether the two lines form a two-line section title,
+// read the way the scanner reads the pair. A rule that shortens a line asks
+// before it writes: the underline has to match the title within one character,
+// so a line that gets shorter can fall into that window and stop being what it
+// was.
+func UnderlinesTitle(title, underline []byte) bool {
+	_, ok := setextPair(title, underline)
+	return ok
+}
+
 // Terminator returns the line ending src ends with: LF, CRLF, or nothing where
 // src ends without one.
 func Terminator(src []byte) []byte {
@@ -645,19 +670,23 @@ var setextLevels = map[byte]int{'=': 0, '-': 1, '~': 2, '^': 3, '+': 4}
 // the title only that it carry a letter or digit and not open with a dot,
 // which is why a list marker or a block macro can be one.
 func setextLevel(src []byte, title, underline line) (int, bool) {
-	under := src[underline.text.Start:underline.text.End]
-	if len(under) == 0 {
+	return setextPair(src[title.text.Start:title.text.End], src[underline.text.Start:underline.text.End])
+}
+
+// setextPair reports the level the two lines spell, and whether they form a
+// pair at all.
+func setextPair(title, underline []byte) (int, bool) {
+	if len(underline) == 0 {
 		return 0, false
 	}
-	level, ok := setextLevels[under[0]]
-	if !ok || !uniform(under, under[0]) {
+	level, ok := setextLevels[underline[0]]
+	if !ok || !uniform(underline, underline[0]) {
 		return 0, false
 	}
-	text := src[title.text.Start:title.text.End]
-	if len(text) == 0 || text[0] == '.' || !hasAlphanumeric(text) {
+	if len(title) == 0 || title[0] == '.' || !hasAlphanumeric(title) {
 		return 0, false
 	}
-	if diff := utf8.RuneCount(text) - len(under); diff > 1 || diff < -1 {
+	if diff := utf8.RuneCount(title) - len(underline); diff > 1 || diff < -1 {
 		return 0, false
 	}
 	return level, true
