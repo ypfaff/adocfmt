@@ -609,7 +609,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 	start := s.pos()
 	delim := Delimiter{Char: sh.char, Fill: sh.fill, Width: sh.width, Open: open.full}
 	style := styleOf(s.src, b.meta)
-	comment := sh.char == '/' || style == commentStyle
+	raw := readsRaw(sh, style)
 	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle) {
 		sh.content = contentVerbatim
 	}
@@ -622,13 +622,13 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		s.markers = nil
 		children, tail := s.nodes(closer)
 		s.markers = markers
-		delim.Extensible = s.extensible(comment, openAt+1)
+		delim.Extensible = s.extensible(raw, openAt+1)
 		delim.Close = s.closingLine()
 		b.lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
 	} else {
-		s.skipVerbatim(closer, comment)
-		delim.Extensible = s.extensible(comment, openAt+1)
+		s.skipVerbatim(closer, raw)
+		delim.Extensible = s.extensible(raw, openAt+1)
 		delim.Close = s.closingLine()
 		b.lines = Span{start, s.pos()}
 		if sh.content == contentTable {
@@ -647,13 +647,22 @@ func (s *scanner) delimited(b base, sh shape) Node {
 	return node
 }
 
+// readsRaw reports whether Asciidoctor reads the block with the preprocessor
+// off, so no directive inside it opens a conditional region or brings a line in.
+// That is the comment block, and the open block a [comment] turns into one. On
+// any wider fence Asciidoctor drops the style and reads the block its delimiter
+// names.
+func readsRaw(sh shape, style string) bool {
+	return sh.char == '/' || (style == commentStyle && sh.width == openBlockWidth)
+}
+
 // extensible reports whether a directive stands between from and the line the
 // block closes on. What one brings in is known only once Asciidoctor has
 // resolved it, so the body may hold lines the scanner never sees, a line
-// closing the block among them. A comment block is never extensible, because
-// Asciidoctor reads one without preprocessing it.
-func (s *scanner) extensible(comment bool, from int) bool {
-	if comment {
+// closing the block among them. A block read raw holds no such line, see
+// readsRaw.
+func (s *scanner) extensible(raw bool, from int) bool {
+	if raw {
 		return false
 	}
 	for at := from; at < s.at; at++ {
@@ -664,12 +673,11 @@ func (s *scanner) extensible(comment bool, from int) bool {
 	return false
 }
 
-// skipVerbatim advances to the line closing a verbatim block. Asciidoctor reads
-// a comment block without preprocessing it, so a directive inside one opens no
-// conditional region.
-func (s *scanner) skipVerbatim(closer []byte, comment bool) {
+// skipVerbatim advances to the line closing a verbatim block, tracking the
+// conditional regions a directive inside it opens, see readsRaw.
+func (s *scanner) skipVerbatim(closer []byte, raw bool) {
 	for !s.done() && !bytes.Equal(s.text(s.lines[s.at]), closer) {
-		if inner := s.shape(); inner.kind == shapeDirective && !comment {
+		if inner := s.shape(); inner.kind == shapeDirective && !raw {
 			s.track(inner)
 		}
 		s.at++

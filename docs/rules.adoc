@@ -357,7 +357,8 @@ Left alone:
 
 * An https://docs.asciidoctor.org/asciidoc/latest/blocks/open-blocks/[open block] and a Markdown fence.
 Each has one legal width, two dashes and three backticks, so there is nothing to shorten.
-* A https://docs.asciidoctor.org/asciidoc/latest/comments/[comment block].
+* A https://docs.asciidoctor.org/asciidoc/latest/comments/[comment block], the one `////` opens.
 It is a block of its own only where it stands alone, and part of the metadata of the block below it otherwise, so rewriting it would turn on where it sits rather than on what it holds.
+A `[comment]` over a wider fence makes no comment block: Asciidoctor drops the style there and reads the block its delimiter names.
 * A block an include or a conditional reaches, inside its body or on the line above it.
 What the directive brings in may hold the very line a shorter fence would close on.
