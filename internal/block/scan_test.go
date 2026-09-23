@@ -902,6 +902,16 @@ func TestScanReports(t *testing.T) {
 			want: []Finding{{Line: 2, Message: "delimiter opens and closes in different conditional regions"}},
 		},
 		{
+			name: "a line of the body that closes the block Asciidoctor ended there",
+			src:  "====\n----\n====\n----\n====\n",
+			want: []Finding{{Line: 3, Message: "closes the block opened above it"}},
+		},
+		{
+			name: "also where the line opens a block of its own further in",
+			src:  "======\n====\n======\ntext\n======\n====\n======\n",
+			want: []Finding{{Line: 3, Message: "closes the block opened above it"}},
+		},
+		{
 			name: "a conditional inside a [comment] on a wider fence opens a region all the same",
 			src:  "[comment]\n----\nifdef::extra[]\n----\nText.\n",
 			want: []Finding{

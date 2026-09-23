@@ -623,6 +623,9 @@ func (s *scanner) delimited(b base, sh shape) Node {
 		children, tail := s.nodes(closer)
 		s.markers = markers
 		delim.Extensible = s.extensible(raw, openAt+1)
+		if at, ok := s.closesInside(closer, openAt+1); ok {
+			s.report(at, "closes the block opened above it")
+		}
 		delim.Close = s.closingLine()
 		b.lines = Span{start, s.pos()}
 		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
@@ -682,6 +685,21 @@ func (s *scanner) skipVerbatim(closer []byte, raw bool) {
 		}
 		s.at++
 	}
+}
+
+// closesInside finds a line of the body equal to the one that opened the block.
+// Asciidoctor ends a block on the first such line, however deep the nodes read
+// so far put it, so the tree holds blocks the document does not have. Which
+// reading was meant is not the scanner's to guess.
+//
+// A verbatim block and a table cannot hold one, since skipVerbatim stops there.
+func (s *scanner) closesInside(closer []byte, from int) (int, bool) {
+	for at := from; at < s.at; at++ {
+		if bytes.Equal(s.text(s.lines[at]), closer) {
+			return at, true
+		}
+	}
+	return 0, false
 }
 
 func (s *scanner) closingLine() Span {
