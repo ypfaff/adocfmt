@@ -68,16 +68,12 @@ func (p *picker) list(list *block.List, next block.Node) {
 		picked = canon
 	}
 	// Only the first line of a list can become a section title, and only where
-	// the list stands at section level. Where the marker the rule picked would
-	// make one, the list keeps the marker it has; where the line would be one
-	// even then, that item stays as it stands and the rest of the list follows
-	// the marker.
+	// the list stands at section level. Where writing it would make one, that
+	// item prints as it stands, and the rest of the list keeps the marker the
+	// item carries: a second marker there would nest the rest under it.
 	items := list.Items
-	if list.Section && p.underlines(items[0], picked) {
-		picked = ""
-		if p.underlines(items[0], picked) {
-			items = items[1:]
-		}
+	if list.Section && p.underlines(list, items[0], picked) {
+		picked, items = "", items[1:]
 	}
 	for _, item := range items {
 		p.picked[item] = written(p.src, item, picked)
@@ -161,10 +157,15 @@ func (p *picker) carries(span block.Span, marker string) bool {
 // underlines reports whether the item's first line, written with the marker,
 // would turn the line below it into the underline of a section title.
 //
-// The line below is read from the source, because it is the line that ends up
-// there: the blank line a rule may drop between two items is followed by a
-// marker, which no underline is, and everywhere else a blank line stays.
-func (p *picker) underlines(item *block.ListItem, picked string) bool {
+// The line below is read from the source rather than from the output, because
+// the two are the same line here: the only line another rule may drop between
+// two items is a blank one, and what follows it is a marker, which no underline
+// is. It has to stand in the list as well, since under the list the printer
+// writes a blank line, and nothing underlines a blank line.
+func (p *picker) underlines(list *block.List, item *block.ListItem, picked string) bool {
+	if len(block.Lines(p.src[list.Lines().Start:list.Lines().End])) < 2 {
+		return false
+	}
 	head, at := itemHead(p.src, item, written(p.src, item, picked))
 	if lines := block.Lines(p.src[at:item.Principal.End]); len(lines) > 0 {
 		head = append(head, lines[0]...)
