@@ -409,9 +409,15 @@ func precedesTitle(sh shape) bool {
 	}
 }
 
+// headerLines is what the document title takes under it: the author line and
+// the revision line. Asciidoctor counts the two rather than reading what they
+// say, so whatever stands there belongs to the header.
+const headerLines = 2
+
 // header is the document header, which stays compact: it runs to the first
-// blank line, author, revision and attribute lines included. twoLine says the
-// title is written as a title and an underline.
+// blank line and takes headerLines under the title, with the attribute and
+// comment lines among them, which Asciidoctor reads without counting. twoLine
+// says the title is written as a title and an underline.
 func (s *scanner) header(b base, title Span, twoLine bool) Node {
 	start := s.pos()
 	s.at++
@@ -419,10 +425,18 @@ func (s *scanner) header(b base, title Span, twoLine bool) Node {
 		s.at++
 	}
 	titleLines := Span{start, s.pos()}
+	taken := 0
 	for !s.done() && s.shape().kind != shapeBlank {
-		if s.shape().kind == shapeAttrEntry {
+		kind := s.shape().kind
+		if kind == shapeAttrEntry {
 			s.entry(&b)
 			continue
+		}
+		if kind != shapeComment {
+			if taken == headerLines {
+				break
+			}
+			taken++
 		}
 		s.at++
 	}
