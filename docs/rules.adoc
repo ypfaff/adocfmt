@@ -363,3 +363,111 @@ It is a block of its own only where it stands alone, and part of the metadata of
 A `[comment]` over a wider fence makes no comment block: Asciidoctor drops the style there and reads the block its delimiter names.
 * A block an include or a conditional reaches, inside its body or on the line above it.
 What the directive brings in may hold the very line a shorter fence would close on.
+
+[#list-markers]
+== List markers
+
+A https://docs.asciidoctor.org/asciidoc/latest/lists/[list] is written with one marker per kind, `{asterisk}` for a bullet and `.` for a number, and with one space between the marker and the text.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+1.  first
+2.  second
+
+-	one
+-	two
+....
+a|
+....
+. first
+. second
+
+* one
+* two
+....
+|===
+
+The numbers themselves carry nothing: Asciidoctor counts the items and only warns where the numbers say something else, so `3. 4. 5.` renders like `. . .`.
+To start at another number, set the https://docs.asciidoctor.org/asciidoc/latest/lists/ordered/#start[`start`] attribute, which this rule leaves alone.
+
+Left alone:
+
+* A list whose new marker another list already uses, one around it or one inside it.
+AsciiDoc nests a list on its marker, so the two would end up as one.
++
+.Where the items would end up
+[%collapsible]
+====
+The `{asterisk}` list sits inside the `-` list because the marker changes, and would be a second item of it once both read the same.
+A https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/[delimited block] ends the search in both directions, since no list open outside it is open within.
+
+[cols="1,1"]
+|===
+| Two levels | One level
+
+a|
+....
+- one
+* nested
+....
+a|
+....
+* one
+* nested
+....
+|===
+====
+* `a.`, `A.`, `i)`, `I)`, the `•` bullet, description terms and callouts.
+Each of them picks something a `{asterisk}` or a `.` cannot say.
++
+.What the rule still writes there
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+a.   alpha
+
+term::   text
+....
+a|
+....
+a. alpha
+
+term:: text
+....
+|===
+====
+* A list an include or a conditional reaches, next to it or inside one of its items.
+Nothing marks the end of a list, so the items a directive brings in may still belong to it, and which marker they carry is known only once Asciidoctor has resolved it.
+* The first line of a list, where a shorter line would read as a section title.
+The rest of the list keeps that line's marker.
++
+.What the line would become
+[%collapsible]
+====
+A https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/[section title] can be written over two lines, and Asciidoctor takes the second one as the underline while it is within one character of the first.
+
+[cols="1,1"]
+|===
+| A list | A section title
+
+a|
+....
+-   item
+~~~~~~
+....
+a|
+....
+* item
+~~~~~~
+....
+|===
+====
