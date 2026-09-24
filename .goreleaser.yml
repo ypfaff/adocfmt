@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+
+# What this file does not do: Homebrew. GoReleaser publishes a cask into a
+# separate tap repository, and this project ships a formula in this
+# repository instead. The release workflow generates it.
+version: 2
+
+project_name: adocfmt
+
+builds:
+  - main: ./cmd/adocfmt
+    binary: "{{ .ProjectName }}"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    # The default adds 386, which no target of ours runs on.
+    goarch:
+      - amd64
+      - arm64
+    # Together these three make a build depend on the commit alone rather than on
+    # the machine it ran on: no local paths in the binary, the commit time as the
+    # file time, and the commit date instead of the default build date.
+    flags:
+      - -trimpath
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .CommitDate }}
+
+archives:
+  # The same name the default builds for our targets, spelled out because
+  # generate-formula.sh builds the release URLs from it. Left implicit, adding a
+  # target such as GOAMD64=v3 would rename the archives and break the formula.
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    # Naming files replaces the default list, which covers LICENSE and README
+    # but not NOTICE. The Apache License section 4 requires NOTICE to travel
+    # with the distribution.
+    files:
+      - LICENSE
+      - NOTICE
+      - README.adoc
+
+# The default carries the version in the name; generate-formula.sh reads one
+# fixed path.
+checksum:
+  name_template: checksums.txt
