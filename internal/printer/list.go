@@ -113,19 +113,46 @@ func (p *picker) rewritable(list *block.List, marker string, next block.Node) bo
 			return false
 		}
 	}
-	return !slices.Contains(list.Open, marker) && !holds(list, marker)
+	return !slices.Contains(list.Open, marker) && !p.holds(list, marker)
 }
 
-// holds reports whether a list below this one carries the marker, which is the
-// list it would close back to once this one carries the same marker. A
-// delimited block confines the lists inside it, and ends the search.
-func holds(list *block.List, marker string) bool {
+// holds reports whether a line inside the list would be an item of it once the
+// list carried the marker. A line the scanner read as prose counts too:
+// Asciidoctor ends a paragraph on an item of a list open around it, so the
+// rewrite would turn that line into one.
+func (p *picker) holds(list *block.List, marker string) bool {
 	for _, item := range list.Items {
-		for _, child := range item.Children {
-			nested, ok := child.(*block.List)
-			if ok && (nested.Marker == marker || holds(nested, marker)) {
+		if p.carries(item.Principal, marker) || p.heldBy(item.Children, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func (p *picker) heldBy(nodes []block.Node, marker string) bool {
+	for _, node := range nodes {
+		switch node := node.(type) {
+		case *block.Container, *block.Verbatim, *block.Table:
+			// A delimiter confines what it holds: no list open outside it is
+			// open within, so no line in there becomes an item of this one.
+		case *block.List:
+			if p.holds(node, marker) {
 				return true
 			}
+		default:
+			if p.carries(node.Lines(), marker) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// carries reports whether a line of the span opens a list item with the marker.
+func (p *picker) carries(span block.Span, marker string) bool {
+	for _, line := range block.Lines(p.src[span.Start:span.End]) {
+		if on, ok := block.ListMarker(line); ok && on == marker {
+			return true
 		}
 	}
 	return false
