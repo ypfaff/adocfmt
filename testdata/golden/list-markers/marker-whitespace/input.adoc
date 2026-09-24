@@ -1,0 +1,6 @@
+*   spaces
+*	tab
+
+-   spaces
+
+1.	tab

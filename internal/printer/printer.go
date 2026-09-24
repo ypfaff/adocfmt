@@ -26,6 +26,7 @@ func emit(doc *block.Document, raw bool) []byte {
 	p := printer{src: doc.Src, raw: raw, eol: string(doc.LineEnding)}
 	if !raw {
 		p.widths = fenceWidths(doc)
+		p.markers = listMarkers(doc)
 	}
 	p.span(doc.BOM)
 	p.start = p.out.Len()
@@ -44,7 +45,10 @@ type printer struct {
 	start int
 	// widths holds the width every fence is written at, see fenceWidths.
 	widths map[block.Node]int
-	out    bytes.Buffer
+	// markers holds the marker every list item is written with, see
+	// listMarkers.
+	markers map[block.Node]string
+	out     bytes.Buffer
 }
 
 // span emits the source it covers, minus the trailing whitespace of each of
@@ -144,27 +148,4 @@ func (p *printer) container(node *block.Container) {
 	p.fence(node, node.Delim, node.Delim.Open)
 	p.nodes(node.Children, node.Tail, betweenSiblings)
 	p.fence(node, node.Delim, node.Delim.Close)
-}
-
-func (p *printer) list(node *block.List) {
-	if p.frozen(node) {
-		return
-	}
-	var prev block.Node
-	for _, item := range node.Items {
-		p.node(item, prev, betweenItems)
-		prev = item
-	}
-}
-
-func (p *printer) item(node *block.ListItem) {
-	if p.frozen(node) {
-		return
-	}
-	p.span(node.Principal)
-	var prev block.Node = node
-	for _, child := range node.Children {
-		p.node(child, prev, insideItem)
-		prev = child
-	}
 }
