@@ -88,6 +88,13 @@ func TestRun(t *testing.T) {
 			stderr: "conditional region has no endif",
 		},
 		{
+			name:   "a path it cannot read costs its own files alone",
+			args:   []string{"--check", unformatted, missing},
+			code:   exitError,
+			stdout: unformatted + "\n",
+			stderr: "no such file or directory",
+		},
+		{
 			name:   "a directory has to say what to do with what it holds",
 			args:   []string{walked},
 			code:   exitError,

@@ -84,11 +84,7 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 // writeAll leaves a document the scanner refuses as it is, and still writes the
 // surrounding files.
 func writeAll(paths []string, stderr io.Writer) int {
-	files, err := collect(paths)
-	if err != nil {
-		return fail(stderr, "%v", err)
-	}
-	code := exitOK
+	files, code := collect(paths, stderr)
 	for _, path := range files {
 		src, err := os.ReadFile(path)
 		if err != nil {
@@ -120,11 +116,7 @@ func checkAll(paths []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return check(src, stdinName, stdout, stderr)
 	}
 
-	files, err := collect(paths)
-	if err != nil {
-		return fail(stderr, "%v", err)
-	}
-	code := exitOK
+	files, code := collect(paths, stderr)
 	for _, path := range files {
 		src, err := os.ReadFile(path)
 		if err != nil {
