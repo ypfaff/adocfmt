@@ -260,8 +260,7 @@ Paragraph "Text.\n"`,
 			src:  "[source]\ncode\n+\nText.\n\n[source]\n----\n* a\n----\n",
 			want: `
 Literal meta("[source]\n") "code\n"
-Continuation gap! "+\n"
-Paragraph gap! "Text.\n"
+Paragraph! gap! "+\nText.\n"
 Verbatim meta("[source]\n") "----\n* a\n----\n"`,
 		},
 		{
@@ -527,7 +526,7 @@ List extensible! "*"
 Paragraph "Text.\n"
 Paragraph meta("[[id]]\n") "More.\n"
 Paragraph "normal text\n"
-Continuation gap! "+\n"`,
+Paragraph! gap! "+\n"`,
 		},
 		{
 			name: "a lone + ends the paragraph a continuation carries as well",
@@ -798,13 +797,21 @@ List "::"
   ListItem "term1::\n\n'''\ncontinued\n"`,
 		},
 		{
+			name: "a + with no list around it opens a paragraph of its own",
+			src:  "text\n+\n- a\n+\n1. a\n",
+			want: `
+Paragraph "text\n"
+Paragraph! gap! "+\n- a\n"
+Paragraph! gap! "+\n1. a\n"`,
+		},
+		{
 			name: "a + right under the one carrying it is text again",
 			src:  "* one\n+\n+\n1. two\n\n1. three\n",
 			want: `
 List "*"
   ListItem "* one\n"
     Continuation gap! "+\n"
-    Paragraph! "+\n1. two\n"
+    Paragraph! gap! "+\n1. two\n"
     List "1."
       ListItem "1. three\n"`,
 		},
