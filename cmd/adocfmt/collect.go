@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 )
 
 // A path named on the command line is formatted whatever its extension, so a
@@ -36,17 +37,24 @@ func collect(paths []string) ([]string, error) {
 	return files, nil
 }
 
-// walk lists the AsciiDoc files below dir, in path order. It follows no
-// symlink, which is what filepath.WalkDir does anyway: a link is no regular
-// file, so the walk reaches neither the directory behind it nor the file.
+// walk lists the AsciiDoc files below dir, in path order and under dir's own
+// name. A link inside the tree is passed over, which is what filepath.WalkDir
+// does anyway: a link is no regular file, so the walk reaches neither the
+// directory behind it nor the file.
 func walk(dir string) ([]string, error) {
+	// WalkDir Lstats its root, so a linked directory has to be read through
+	// what it resolves to.
+	root, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		return nil, err
+	}
 	var files []string
-	err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
+	err = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if entry.Type().IsRegular() && slices.Contains(extensions, filepath.Ext(path)) {
-			files = append(files, path)
+			files = append(files, filepath.Join(dir, strings.TrimPrefix(path, root)))
 		}
 		return nil
 	})

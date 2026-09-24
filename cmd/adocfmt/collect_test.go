@@ -38,7 +38,14 @@ func tree(t *testing.T) string {
 func TestCollectWalksADirectory(t *testing.T) {
 	t.Parallel()
 
-	root := tree(t)
+	collectsTheWholeTree(t, tree(t))
+}
+
+// collectsTheWholeTree fails unless collect walks root into the four AsciiDoc
+// files tree built, each under root's own name.
+func collectsTheWholeTree(t *testing.T, root string) {
+	t.Helper()
+
 	files, err := collect([]string{root})
 	if err != nil {
 		t.Fatal(err)
@@ -98,6 +105,21 @@ func TestCollectAndSymlinks(t *testing.T) {
 	if slices.Contains(walked, link) {
 		t.Errorf("the walk collected the link %s", link)
 	}
+}
+
+// TestCollectWalksALinkedDirectory pins that a link to a directory is walked
+// like the directory it stands for, and that the files come back under the name
+// the command line used. The walk would otherwise end at the link and report
+// nothing at all.
+func TestCollectWalksALinkedDirectory(t *testing.T) {
+	t.Parallel()
+
+	link := filepath.Join(t.TempDir(), "linked")
+	if err := os.Symlink(tree(t), link); err != nil {
+		t.Skipf("this file system has no symlinks: %v", err)
+	}
+
+	collectsTheWholeTree(t, link)
 }
 
 // TestCollectReportsAPathThatIsNotThere pins that a path the command cannot
