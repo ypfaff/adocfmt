@@ -77,6 +77,32 @@ func TestCollectTakesANamedFileWhateverItsEnding(t *testing.T) {
 	}
 }
 
+// TestCollectWalksAnExtensionInAnyCase pins that case does not decide what the
+// walk picks up, because a path named on the command line is taken whatever it
+// is called and the two entry points have to agree.
+func TestCollectWalksAnExtensionInAnyCase(t *testing.T) {
+	t.Parallel()
+
+	root := t.TempDir()
+	for _, name := range []string{"LOUD.ADOC", "Mixed.AsciiDoc"} {
+		if err := os.WriteFile(filepath.Join(root, name), []byte("Text.\n"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	files, err := collect([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		filepath.Join(root, "LOUD.ADOC"),
+		filepath.Join(root, "Mixed.AsciiDoc"),
+	}
+	if !slices.Equal(files, want) {
+		t.Errorf("got %v, want %v", files, want)
+	}
+}
+
 // TestCollectAndSymlinks pins both halves of the rule: a link named on the
 // command line is a file like any other, and one the walk runs into is passed
 // over, so the file behind it is not formatted twice.
