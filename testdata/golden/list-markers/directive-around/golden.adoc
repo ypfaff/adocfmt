@@ -1,11 +1,11 @@
 include::above.adoc[]
 
-- one
-- two
+-   one
+-   two
 
 Text.
 
-- three
-- four
+-   three
+-   four
 
 include::below.adoc[]
