@@ -7,6 +7,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: ci
+      include: scope
     groups:
       # Majors stay out: they tend to change an action's inputs, which needs a
       # workflow change and a review of its own.
@@ -20,6 +21,7 @@ updates:
       interval: weekly
     commit-message:
       prefix: chore
+      include: scope
     groups:
       modules:
         patterns: ["*"]
