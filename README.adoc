@@ -18,6 +18,16 @@ brew install ypfaff/adocfmt/adocfmt
 
 Otherwise take the archive for your platform from link:https://github.com/ypfaff/adocfmt/releases[the releases] and put the binary on your `PATH`.
 
+== GitHub Action
+
+[source,yaml]
+----
+- uses: ypfaff/adocfmt@v0
+----
+
+Installs `adocfmt` and runs `adocfmt --check .`, failing the step if a file needs formatting or a document is refused.
+See link:action.yml[`action.yml`] for the inputs.
+
 == Development
 
 [source,shell]

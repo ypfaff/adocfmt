@@ -56,19 +56,38 @@ jobs:
           echo "version=${version}" >>"${GITHUB_OUTPUT}"
           echo "### Releasing v${version}" >>"${GITHUB_STEP_SUMMARY}"
 
+      - name: Configure the release commit identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Before the tag, because uses: ypfaff/adocfmt@vX.Y.Z resolves action.yml
+      # off the tagged commit: writing the default after tagging would tag a
+      # commit that still names the previous release.
+      - name: Set the action's default version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          .github/scripts/set-action-version.sh --version "${VERSION}" --file action.yml
+          git add action.yml
+          # A retry of the same version finds the default already committed.
+          git diff --cached --quiet ||
+            git commit --message "chore(action): default to v${VERSION}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
       # GoReleaser reads the version off the tag, so the tag comes first. Pushing
       # it here rather than letting the release create it keeps the tag on the
       # commit that was built, and go install serves the version right away. The
       # price: a release that fails afterwards leaves the tag behind, and the next
       # attempt needs the tag deleted or the next version.
       - name: Tag the release
+        id: tag
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag --annotate "v${VERSION}" --message "Release v${VERSION}"
           git push origin "v${VERSION}"
+          echo "sha=$(git rev-parse HEAD)" >>"${GITHUB_OUTPUT}"
 
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
@@ -90,3 +109,15 @@ jobs:
           git add HomebrewFormula/adocfmt.rb
           git commit --message "chore(homebrew): update the formula to v${VERSION}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      # Points at the tagged commit's SHA, not at HEAD: HEAD has since moved on
+      # with the Homebrew formula commit, which the moving tag has no reason to
+      # follow.
+      - name: Move the major version tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.tag.outputs.sha }}
+        run: |
+          major="v${VERSION%%.*}"
+          git tag --force --annotate "${major}" "${SHA}" --message "Release v${VERSION}"
+          git push --force origin "refs/tags/${major}"

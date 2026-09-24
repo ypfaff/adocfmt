@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: adocfmt
+description: Check or format AsciiDoc files with adocfmt.
+author: Yannick Pfaff
+
+inputs:
+  version:
+    description: The adocfmt version to install, such as 1.2.3 or v1.2.3.
+    # Rewritten by the release pipeline for every tag; see
+    # .github/scripts/set-action-version.sh.
+    default: '0.0.0' # adocfmt-version-marker
+  args:
+    description: Arguments passed to adocfmt.
+    default: '--check .'
+  install-only:
+    description: Install adocfmt without running it.
+    default: 'false'
+
+outputs:
+  version:
+    description: The adocfmt version that was installed.
+    value: ${{ steps.install.outputs.version }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install adocfmt
+      id: install
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        version="${VERSION#v}"
+        dest="${RUNNER_TEMP}/adocfmt-${version}"
+        "${GITHUB_ACTION_PATH}/.github/scripts/install-adocfmt.sh" \
+          --version "${version}" \
+          --os "${RUNNER_OS}" \
+          --arch "${RUNNER_ARCH}" \
+          --dest "${dest}"
+        echo "${dest}" >>"${GITHUB_PATH}"
+        echo "version=${version}" >>"${GITHUB_OUTPUT}"
+
+    - name: Run adocfmt
+      if: inputs.install-only != 'true'
+      shell: bash
+      env:
+        ARGS: ${{ inputs.args }}
+      run: |
+        set +o errexit
+        adocfmt ${ARGS}
+        code=$?
+        set -o errexit
+        case "${code}" in
+          0) ;;
+          1) echo "::error::adocfmt found files that are not formatted; run it with --write to fix them" ;;
+          2) echo "::error::adocfmt reported an error; see the log above" ;;
+        esac
+        exit "${code}"
