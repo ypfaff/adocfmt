@@ -22,6 +22,7 @@ func writeFile(t *testing.T, dir, name, src string, mode fs.FileMode) string {
 	if err := os.WriteFile(path, []byte(src), mode); err != nil {
 		t.Fatal(err)
 	}
+	// os.WriteFile applies the umask and sets no bit above the permissions.
 	if err := os.Chmod(path, mode); err != nil {
 		t.Fatal(err)
 	}
@@ -51,22 +52,33 @@ func TestWriteReplacesTheFile(t *testing.T) {
 
 // TestWriteKeepsTheMode pins that the file keeps the mode it had. The rename
 // swaps the inode, so without carrying it over the file would come back at the
-// 0600 os.CreateTemp gives a temporary file.
+// 0600 os.CreateTemp gives a temporary file. The bits above the permissions go
+// the same way, and a formatter that disarms a setuid script is worse than one
+// that refuses to touch it.
 func TestWriteKeepsTheMode(t *testing.T) {
 	t.Parallel()
 
-	path := writeFile(t, t.TempDir(), "doc.adoc", unformattedSrc, 0o644)
+	for _, mode := range []fs.FileMode{
+		0o644,
+		0o755 | fs.ModeSetuid | fs.ModeSetgid | fs.ModeSticky,
+	} {
+		t.Run(mode.String(), func(t *testing.T) {
+			t.Parallel()
 
-	var stdout, stderr bytes.Buffer
-	if code := run([]string{"--write", path}, nil, &stdout, &stderr); code != exitOK {
-		t.Fatalf("got exit %d, want %d (stderr: %s)", code, exitOK, &stderr)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, want := info.Mode().Perm(), fs.FileMode(0o644); got != want {
-		t.Errorf("the mode is %v, want %v", got, want)
+			path := writeFile(t, t.TempDir(), "doc.adoc", unformattedSrc, mode)
+
+			var stdout, stderr bytes.Buffer
+			if code := run([]string{"--write", path}, nil, &stdout, &stderr); code != exitOK {
+				t.Fatalf("got exit %d, want %d (stderr: %s)", code, exitOK, &stderr)
+			}
+			info, err := os.Stat(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := info.Mode(); got != mode {
+				t.Errorf("the mode is %v, want %v", got, mode)
+			}
+		})
 	}
 }
 
