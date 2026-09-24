@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -138,6 +139,35 @@ func TestWriteThroughASymlinkKeepsTheLink(t *testing.T) {
 	}
 	if string(after) != formattedSrc {
 		t.Errorf("the target is %q, want %q", after, formattedSrc)
+	}
+}
+
+// TestWriteFailingNamesTheFileTheUserNamed pins that a failed write is
+// reported under the name on the command line. The write that fails is the one
+// to the temporary file beside it, whose random name stands for nothing the
+// reader can look up.
+func TestWriteFailingNamesTheFileTheUserNamed(t *testing.T) {
+	t.Parallel()
+
+	if os.Geteuid() == 0 {
+		t.Skip("root writes into a directory whatever its mode says")
+	}
+	dir := t.TempDir()
+	path := writeFile(t, dir, "doc.adoc", unformattedSrc, 0o644)
+	if err := os.Chmod(dir, 0o555); err != nil {
+		t.Fatal(err)
+	}
+	// t.TempDir removes the directory, which it cannot do read-only.
+	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--write", path}, nil, &stdout, &stderr); code != exitError {
+		t.Fatalf("got exit %d, want %d (stderr: %s)", code, exitError, &stderr)
+	}
+	// The temporary file is path and a suffix, so the colon is what tells the
+	// two names apart.
+	if got := stderr.String(); !strings.Contains(got, path+":") {
+		t.Errorf("stderr is %q, want %q named in it", got, path)
 	}
 }
 
