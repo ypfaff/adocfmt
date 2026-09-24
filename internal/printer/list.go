@@ -27,47 +27,47 @@ func canonical(marker string) (string, bool) {
 // the rule writes, and for no other, so an item left out of the map prints as
 // it stands.
 func listMarkers(doc *block.Document) map[block.Node]string {
-	p := picker{src: doc.Src, picked: map[block.Node]string{}}
-	p.nodes(doc.Nodes)
-	return p.picked
+	k := picker{src: doc.Src, markers: map[block.Node]string{}}
+	k.nodes(doc.Nodes)
+	return k.markers
 }
 
 type picker struct {
-	src    []byte
-	picked map[block.Node]string
+	src     []byte
+	markers map[block.Node]string
 }
 
 // nodes walks a run of siblings. What a list among them stands in, it carries
 // itself, so the walk only has to hand it the node underneath, which a
 // directive there reaches it from.
-func (p *picker) nodes(nodes []block.Node) {
+func (k *picker) nodes(nodes []block.Node) {
 	for at, node := range nodes {
 		switch node := node.(type) {
 		case *block.Container:
-			p.nodes(node.Children)
+			k.nodes(node.Children)
 		case *block.List:
 			var next block.Node
 			if at+1 < len(nodes) {
 				next = nodes[at+1]
 			}
-			p.list(node, next)
+			k.list(node, next)
 		}
 	}
 }
 
-func (p *picker) list(list *block.List, next block.Node) {
+func (k *picker) list(list *block.List, next block.Node) {
 	if list.Frozen() {
 		return
 	}
 	for _, item := range list.Items {
-		p.nodes(item.Children)
+		k.nodes(item.Children)
 	}
-	if p.reached(list, next) {
+	if k.reached(list, next) {
 		return
 	}
 
 	var picked string
-	if canon, ok := canonical(list.Marker); ok && p.rewritable(list, canon) {
+	if canon, ok := canonical(list.Marker); ok && k.rewritable(list, canon) {
 		picked = canon
 	}
 	// Only the first line of a list can become a section title, and only where
@@ -75,17 +75,17 @@ func (p *picker) list(list *block.List, next block.Node) {
 	// item prints as it stands, and the rest of the list keeps the marker the
 	// item carries: a second marker there would nest the rest under it.
 	items := list.Items
-	if list.Section && p.underlines(list, items[0], picked) {
+	if list.Section && k.underlines(list, items[0], picked) {
 		picked, items = "", items[1:]
 	}
 	for _, item := range items {
-		p.picked[item] = written(p.src, item, picked)
+		k.markers[item] = written(k.src, item, picked)
 	}
 }
 
 // written is the marker an item is written with: the one the rule picked, or
-// the one the item stands on, since List.Marker is the key Asciidoctor
-// normalizes to rather than what the item says.
+// the one the item stands on. That is not List.Marker, which holds the key the
+// items are compared on, "1." for an item that says "7.".
 func written(src []byte, item *block.ListItem, picked string) string {
 	if picked != "" {
 		return picked
@@ -99,7 +99,7 @@ func written(src []byte, item *block.ListItem, picked string) string {
 // directive. The scanner reports the directives it read within the list as
 // List.Extensible, and a directive beside the list freezes the gap between
 // them.
-func (p *picker) reached(list *block.List, next block.Node) bool {
+func (k *picker) reached(list *block.List, next block.Node) bool {
 	return list.Extensible || above(list).Frozen || (next != nil && above(next).Frozen)
 }
 
@@ -109,40 +109,40 @@ func (p *picker) reached(list *block.List, next block.Node) bool {
 // a marker already open belongs to, so a marker in use around this list would
 // move its items. A frozen item keeps the marker it has, which would leave it
 // nested under the item above once the rest of the list carries another one.
-func (p *picker) rewritable(list *block.List, marker string) bool {
+func (k *picker) rewritable(list *block.List, marker string) bool {
 	for _, item := range list.Items {
 		if item.Frozen() {
 			return false
 		}
 	}
-	return !slices.Contains(list.Open, marker) && !p.holds(list, marker)
+	return !slices.Contains(list.Open, marker) && !k.holds(list, marker)
 }
 
 // holds reports whether a line inside the list would be an item of it once the
 // list carried the marker. A line the scanner read as prose counts too:
 // Asciidoctor ends a paragraph on an item of a list open around it, so the
 // rewrite would turn that line into one.
-func (p *picker) holds(list *block.List, marker string) bool {
+func (k *picker) holds(list *block.List, marker string) bool {
 	for _, item := range list.Items {
-		if p.carries(item.Principal, marker) || p.heldBy(item.Children, marker) {
+		if k.carries(item.Principal, marker) || k.heldBy(item.Children, marker) {
 			return true
 		}
 	}
 	return false
 }
 
-func (p *picker) heldBy(nodes []block.Node, marker string) bool {
+func (k *picker) heldBy(nodes []block.Node, marker string) bool {
 	for _, node := range nodes {
 		switch node := node.(type) {
 		case *block.Container, *block.Verbatim, *block.Table:
 			// A delimiter confines what it holds: no list open outside it is
 			// open within, so no line in there becomes an item of this one.
 		case *block.List:
-			if p.holds(node, marker) {
+			if k.holds(node, marker) {
 				return true
 			}
 		default:
-			if p.carries(node.Lines(), marker) {
+			if k.carries(node.Lines(), marker) {
 				return true
 			}
 		}
@@ -151,8 +151,8 @@ func (p *picker) heldBy(nodes []block.Node, marker string) bool {
 }
 
 // carries reports whether a line of the span opens a list item with the marker.
-func (p *picker) carries(span block.Span, marker string) bool {
-	for _, line := range block.Lines(p.src[span.Start:span.End]) {
+func (k *picker) carries(span block.Span, marker string) bool {
+	for _, line := range block.Lines(k.src[span.Start:span.End]) {
 		if on, ok := block.ListMarker(line); ok && on == marker {
 			return true
 		}
@@ -168,24 +168,24 @@ func (p *picker) carries(span block.Span, marker string) bool {
 // two items is a blank one, and what follows it is a marker, which no underline
 // is. It has to stand in the list as well, since under the list the printer
 // writes a blank line, and nothing underlines a blank line.
-func (p *picker) underlines(list *block.List, item *block.ListItem, picked string) bool {
-	if len(block.Lines(p.src[list.Lines().Start:list.Lines().End])) < 2 {
+func (k *picker) underlines(list *block.List, item *block.ListItem, picked string) bool {
+	if len(block.Lines(k.src[list.Lines().Start:list.Lines().End])) < 2 {
 		return false
 	}
-	head, at := itemHead(p.src, item, written(p.src, item, picked))
-	if lines := block.Lines(p.src[at:item.Principal.End]); len(lines) > 0 {
+	head, at := itemHead(k.src, item, written(k.src, item, picked))
+	if lines := block.Lines(k.src[at:item.Principal.End]); len(lines) > 0 {
 		head = append(head, lines[0]...)
 	}
-	return block.UnderlinesTitle(head, block.LineBelow(p.src, item.Principal.Start))
+	return block.UnderlinesTitle(head, block.LineBelow(k.src, item.Principal.Start))
 }
 
 // itemHead builds the head of an item's first line: the indentation the marker
 // stands at, the marker, and the single space separating it from the text.
-// text is where that text begins, the whitespace behind the marker skipped.
+// textAt is where that text begins, the whitespace behind the marker skipped.
 //
 // The space is left out where the item carries no text of its own, which only
 // a description term does, since it would be trailing whitespace there.
-func itemHead(src []byte, item *block.ListItem, marker string) (head []byte, text int) {
+func itemHead(src []byte, item *block.ListItem, marker string) (head []byte, textAt int) {
 	at := item.Marker.End
 	for at < len(src) && (src[at] == ' ' || src[at] == '\t') {
 		at++
