@@ -102,8 +102,8 @@ func ListMarker(line []byte) (string, bool) {
 	return key, ok
 }
 
-// LineBelow returns the content of the line under the one at, its terminator
-// and trailing whitespace off, and nothing where no line follows.
+// LineBelow returns the content of the line under the one at points into, its
+// terminator and trailing whitespace off, and nothing where no line follows.
 func LineBelow(src []byte, at int) []byte {
 	next := bytes.IndexByte(src[at:], '\n')
 	if next < 0 {
@@ -118,10 +118,9 @@ func LineBelow(src []byte, at int) []byte {
 }
 
 // UnderlinesTitle reports whether the two lines form a two-line section title,
-// read the way the scanner reads the pair. A rule that shortens a line asks
-// before it writes: the underline has to match the title within one character,
-// so a line that gets shorter can fall into that window and stop being what it
-// was.
+// read the way the scanner reads the pair. The underline has to match the title
+// within one character, so a rule that shortens a line asks first: a line it
+// makes shorter can reach that length and become a section title.
 func UnderlinesTitle(title, underline []byte) bool {
 	_, ok := setextPair(title, underline)
 	return ok
