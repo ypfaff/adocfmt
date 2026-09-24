@@ -349,6 +349,9 @@ func (s *scanner) body(b base, closer []byte) Node {
 		// Outside a list the + attaches nothing: Asciidoctor reads it and every
 		// line under it as one paragraph, the way it reads front matter. In a
 		// list it is syntax, and the run under it is the printer's decision.
+		if s.carrying && b.gap.Span.Empty() {
+			return s.carriedPlus(b, closer)
+		}
 		b.gap.Frozen, s.freeze = true, !s.inList()
 		b.lines = s.take()
 		return &Continuation{base: b}
@@ -609,6 +612,22 @@ func (s *scanner) endsProse() func(shape) bool {
 
 func (s *scanner) endsCarriedText(sh shape) bool {
 	return endsText(sh) || s.sibling()
+}
+
+// carriedPlus reads a + that stands right under the one carrying it. The first
+// + attaches what follows, the second is text again: Asciidoctor takes it and
+// every line to the next blank line as one paragraph, and drops every further +
+// out of that paragraph. What it renders is therefore not the lines that stand
+// here, so none of them may move.
+func (s *scanner) carriedPlus(b base, closer []byte) Node {
+	start := s.pos()
+	s.at++
+	for !s.done() && !s.closes(closer) && s.shape().kind != shapeBlank {
+		s.at++
+	}
+	b.frozen = true
+	b.lines = Span{start, s.pos()}
+	return &Paragraph{base: b}
 }
 
 func (s *scanner) directive(b base, sh shape) Node {
