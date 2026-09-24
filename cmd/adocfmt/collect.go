@@ -53,10 +53,20 @@ func walk(dir string) ([]string, error) {
 		if err != nil {
 			return err
 		}
-		if entry.Type().IsRegular() && slices.Contains(extensions, filepath.Ext(path)) {
+		if entry.Type().IsRegular() && hasExtension(path) {
 			files = append(files, filepath.Join(dir, strings.TrimPrefix(path, root)))
 		}
 		return nil
 	})
 	return files, err
+}
+
+// hasExtension reports whether path carries one of the extensions. Case does
+// not decide: UPPER.ADOC is an AsciiDoc file like any other, and the file
+// system it lies on may not even tell the two spellings apart.
+func hasExtension(path string) bool {
+	ext := filepath.Ext(path)
+	return slices.ContainsFunc(extensions, func(want string) bool {
+		return strings.EqualFold(want, ext)
+	})
 }
