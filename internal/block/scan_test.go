@@ -798,6 +798,23 @@ List "::"
   ListItem "term1::\n\n'''\ncontinued\n"`,
 		},
 		{
+			name: "a block attribute line under a term ends the description list",
+			src:  "term::\n[verse]\ndetached\n",
+			want: `
+List "::"
+  ListItem "term::\n"
+Literal meta("[verse]\n") "detached\n"`,
+		},
+		{
+			name: "it stays in the item where a list follows it instead",
+			src:  "term::\n[start=3]\n1. one\n",
+			want: `
+List "::"
+  ListItem "term::\n"
+    List meta("[start=3]\n") "1."
+      ListItem "1. one\n"`,
+		},
+		{
 			name: "a directive among the lines it takes freezes the gap after them",
 			src:  "term1::\ninclude::part.adoc[]\n\ntext\n\nterm2:: d\n",
 			want: `

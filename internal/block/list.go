@@ -70,7 +70,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 		s.fold(item, start, closer)
 	}
 
-	item.Children = s.attached(closer)
+	item.Children = s.attached(closer, isTermMarker(sh.marker))
 	item.lines = Span{start, s.pos()}
 	return item
 }
@@ -108,7 +108,7 @@ func foldsOntoTerm(kind shapeKind) bool {
 // carries, a nested list, an indented literal block, or whatever follows the
 // item's content with no blank line between, which Asciidoctor keeps in the
 // item.
-func (s *scanner) attached(closer []byte) []Node {
+func (s *scanner) attached(closer []byte, term bool) []Node {
 	var children []Node
 	for {
 		m := s.mark()
@@ -127,6 +127,9 @@ func (s *scanner) attached(closer []byte) []Node {
 			}
 		case sh.kind == shapeMarker && !s.open(sh.marker):
 			children = append(children, s.list(base{gap: gap}, sh, closer))
+		case term && bracketed(sh.kind) && s.endsTerm():
+			s.rewind(m)
+			return children
 		case sh.kind == shapeIndented && !gap.Span.Empty():
 			children = append(children, s.literal(base{gap: gap}, closer))
 		case gap.Span.Empty() && sh.kind != shapeMarker && sh.kind != shapeDelimiter:
@@ -136,6 +139,26 @@ func (s *scanner) attached(closer []byte) []Node {
 			return children
 		}
 	}
+}
+
+// endsTerm reports whether the block attribute line the scanner stands on ends
+// the description list instead of binding to a block inside the item.
+// Asciidoctor keeps the line in the item only where a list follows it, and ends
+// the list on anything else, taking the line to the block below.
+func (s *scanner) endsTerm() bool {
+	m := s.mark()
+	defer s.rewind(m)
+	for !s.done() && (bracketed(s.shape().kind) || s.shape().kind == shapeBlank) {
+		s.at++
+	}
+	return s.done() || s.shape().kind != shapeMarker
+}
+
+// bracketed reports whether the line is one Asciidoctor reads as a block
+// attribute line, which is the line that ends a description list. A block title
+// is not one of them.
+func bracketed(kind shapeKind) bool {
+	return kind == shapeAttributes || kind == shapeAnchor
 }
 
 // adjacent reads the line that follows an item's content with no blank line
