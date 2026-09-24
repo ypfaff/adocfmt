@@ -10,9 +10,9 @@ import (
 // replace puts out in the file at path.
 //
 // The result goes to a temporary file beside the target and is renamed onto it,
-// so a run cut short leaves the original whole rather than half rewritten. The
-// document therefore cannot be lost; a hard link, extended attributes and the
-// owner can, because the name comes to point at a file of its own.
+// so a killed process leaves the original whole rather than half rewritten. A
+// hard link, extended attributes and the owner do not survive it, because the
+// name comes to point at a file of its own.
 func replace(path string, out []byte) error {
 	// A link renamed onto would become a regular file, and the document behind
 	// it would never be written.
