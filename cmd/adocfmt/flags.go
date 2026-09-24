@@ -44,10 +44,22 @@ func (o *options) register() *flag.FlagSet {
 	return flags
 }
 
+const usageHeader = `adocfmt formats AsciiDoc files.
+
+Usage:
+  adocfmt [flags] [path ...]
+
+Flags:
+`
+
+const usageFooter = `
+With no path adocfmt reads stdin and writes the result to stdout.
+`
+
 // usage goes to stdout, because a reader asked for it. A short and a long name
 // are one entry, which flag.PrintDefaults cannot do.
 func usage(w io.Writer) {
-	_, _ = fmt.Fprint(w, "adocfmt formats AsciiDoc files.\n\nUsage:\n  adocfmt [flags] [path ...]\n\nFlags:\n")
+	_, _ = io.WriteString(w, usageHeader)
 	for _, entry := range (&options{}).entries() {
 		name := "    --" + entry.long
 		if entry.short != "" {
@@ -55,5 +67,5 @@ func usage(w io.Writer) {
 		}
 		_, _ = fmt.Fprintf(w, "  %-16s %s\n", name, entry.help)
 	}
-	_, _ = fmt.Fprint(w, "\nWith no path adocfmt reads stdin and writes the result to stdout.\n")
+	_, _ = io.WriteString(w, usageFooter)
 }
