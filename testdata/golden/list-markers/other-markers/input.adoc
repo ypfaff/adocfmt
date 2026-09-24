@@ -1,0 +1,14 @@
+a.   alpha
+b.   beta
+
+i)   roman
+
+term::   text
+other::
+  folded
+
+----
+code <1>
+----
+
+<1>   callout

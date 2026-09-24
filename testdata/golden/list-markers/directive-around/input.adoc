@@ -1,0 +1,11 @@
+include::above.adoc[]
+
+-   one
+-   two
+
+Text.
+
+-   three
+-   four
+
+include::below.adoc[]
