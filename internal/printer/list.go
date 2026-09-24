@@ -19,18 +19,6 @@ func canonical(marker string) (string, bool) {
 	return "", false
 }
 
-// ordered reports whether the marker spells an ordered list, whose numbering
-// style follows how deep the list sits. The markers are the keys markerOf
-// hands out.
-func ordered(marker string) bool {
-	switch marker {
-	case "1.", "a.", "A.", "i)", "I)":
-		return true
-	default:
-		return marker[0] == '.'
-	}
-}
-
 // listMarkers picks the marker every list item is written with.
 //
 // It runs before printing, because the marker is the identity of the whole
@@ -127,12 +115,7 @@ func (p *picker) rewritable(list *block.List, marker string, below block.Node, o
 			return false
 		}
 	}
-	if slices.Contains(open, marker) || holds(list, marker) {
-		return false
-	}
-	// An explicit number also sets the arabic style, which overrides the one
-	// the nesting level gives a list written with dots.
-	return marker != "." || !slices.ContainsFunc(open, ordered)
+	return !slices.Contains(open, marker) && !holds(list, marker)
 }
 
 // holds reports whether a list below this one carries the marker, which is the
