@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Which part of the version to raise
+        type: choice
+        default: minor
+        options:
+          - major
+          - minor
+          - patch
+      version:
+        description: Release this exact version instead, without the v
+        type: string
+        required: false
+
+run-name: Release ${{ inputs.version || inputs.bump }} by @${{ github.actor }}
+
+permissions:
+  contents: write
+
+# Two releases at once would race for the tag and the formula commit, and
+# cancelling one halfway would leave a tag without a release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, because the version comes from the tags and the
+          # changelog from the commits since the last one.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
+      - name: Determine the version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ -n "${VERSION}" ]]; then
+            version="$(.github/scripts/calculate-version.sh --explicit "${VERSION}")"
+          else
+            version="$(.github/scripts/calculate-version.sh --bump "${BUMP}")"
+          fi
+          echo "version=${version}" >>"${GITHUB_OUTPUT}"
+          echo "### Releasing v${version}" >>"${GITHUB_STEP_SUMMARY}"
+
+      # GoReleaser reads the version off the tag, so the tag comes first. Pushing
+      # it here rather than letting the release create it keeps the tag on the
+      # commit that was built, and go install serves the version right away. The
+      # price: a release that fails afterwards leaves the tag behind, and the next
+      # attempt needs the tag deleted or the next version.
+      - name: Tag the release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "v${VERSION}" --message "Release v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_CURRENT_TAG: v${{ steps.version.outputs.version }}
+
+      # After the release, because the checksums it writes into the formula exist
+      # only once the archives are built.
+      - name: Update the Homebrew formula
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          .github/scripts/generate-formula.sh \
+            --version "${VERSION}" \
+            --checksums dist/checksums.txt \
+            --output HomebrewFormula/adocfmt.rb
+          git add HomebrewFormula/adocfmt.rb
+          git commit --message "chore(homebrew): update the formula to v${VERSION}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

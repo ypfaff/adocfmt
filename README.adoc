@@ -6,6 +6,18 @@ Early work in progress.
 See link:docs/rules.adoc[the formatting rules] for what it changes today.
 It is built from a block scanner, the printer it feeds, and a link:docs/testing-strategy.adoc[testing strategy] that every rule has to satisfy.
 
+== Installation
+
+With Homebrew, on macOS and Linux:
+
+[source,shell]
+----
+brew tap ypfaff/adocfmt https://github.com/ypfaff/adocfmt
+brew install ypfaff/adocfmt/adocfmt
+----
+
+Otherwise take the archive for your platform from link:https://github.com/ypfaff/adocfmt/releases[the releases] and put the binary on your `PATH`.
+
 == Development
 
 [source,shell]
