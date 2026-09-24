@@ -7,7 +7,12 @@ import "slices"
 // marker of an enclosing list ends this one.
 func (s *scanner) list(b base, sh shape, closer []byte) Node {
 	start := s.pos()
-	list := &List{base: b, Marker: sh.marker}
+	list := &List{
+		base:    b,
+		Marker:  sh.marker,
+		Open:    slices.Clone(s.markers),
+		Section: closer == nil && len(s.markers) == 0,
+	}
 	s.markers = append(s.markers, sh.marker)
 	carrying := s.carrying
 	s.carrying = false
