@@ -81,9 +81,10 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	return emitOne(paths, stdin, stdout, stderr)
 }
 
-// writeAll leaves a document the scanner refuses as it is, and still writes the
-// surrounding files.
-func writeAll(paths []string, stderr io.Writer) int {
+// eachFile hands the source of every file below paths to do, and answers with
+// the strongest exit code the run earned. A file it cannot read is reported and
+// passed over, the way collect passes over a path it cannot read.
+func eachFile(paths []string, stderr io.Writer, do func(src []byte, path string) int) int {
 	files, code := collect(paths, stderr)
 	for _, path := range files {
 		src, err := os.ReadFile(path)
@@ -91,20 +92,28 @@ func writeAll(paths []string, stderr io.Writer) int {
 			code = max(code, fail(stderr, "%v", err))
 			continue
 		}
+		code = max(code, do(src, path))
+	}
+	return code
+}
+
+// writeAll leaves a document the scanner refuses as it is, and still writes the
+// surrounding files.
+func writeAll(paths []string, stderr io.Writer) int {
+	return eachFile(paths, stderr, func(src []byte, path string) int {
 		out, err := format.Format(src)
 		if err != nil {
 			report(stderr, path, err)
-			code = max(code, exitError)
-			continue
+			return exitError
 		}
 		if bytes.Equal(src, out) {
-			continue
+			return exitOK
 		}
 		if err := replace(path, out); err != nil {
-			code = max(code, fail(stderr, "%v", err))
+			return fail(stderr, "%v", err)
 		}
-	}
-	return code
+		return exitOK
+	})
 }
 
 func checkAll(paths []string, stdin io.Reader, stdout, stderr io.Writer) int {
@@ -115,17 +124,9 @@ func checkAll(paths []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		return check(src, stdinName, stdout, stderr)
 	}
-
-	files, code := collect(paths, stderr)
-	for _, path := range files {
-		src, err := os.ReadFile(path)
-		if err != nil {
-			code = max(code, fail(stderr, "%v", err))
-			continue
-		}
-		code = max(code, check(src, path, stdout, stderr))
-	}
-	return code
+	return eachFile(paths, stderr, func(src []byte, path string) int {
+		return check(src, path, stdout, stderr)
+	})
 }
 
 // emitOne writes one document, because a directory or a second path would fill
