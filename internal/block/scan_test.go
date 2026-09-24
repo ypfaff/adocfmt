@@ -20,6 +20,23 @@ Header "= Title\nAuthor Name\n:toc:\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "the header takes the author and the revision line and no more",
+			src:  "= Title\nAuthor Name\nv1, 2020\n- one\n- two\n",
+			want: `
+Header "= Title\nAuthor Name\nv1, 2020\n" title "Title"
+List "-"
+  ListItem "- one\n"
+  ListItem "- two\n"`,
+		},
+		{
+			name: "a comment line under the title is read without being counted",
+			src:  "= Title\nAuthor Name\n// note\nv1, 2020\n- one\n",
+			want: `
+Header "= Title\nAuthor Name\n// note\nv1, 2020\n" title "Title"
+List "-"
+  ListItem "- one\n"`,
+		},
+		{
 			name: "attribute entries and conditionals before the title do not end the header",
 			src:  ":a: b\n\nifdef::x[]\n:c: d\nendif::[]\n= Title\nAuthor Name\n\nText.\n",
 			want: `
