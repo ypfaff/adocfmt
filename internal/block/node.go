@@ -209,10 +209,17 @@ type Table struct {
 
 // List is a run of items sharing one marker. A different marker nests, which is
 // how AsciiDoc spells nesting.
+//
+// Open holds the markers of the lists this one stands in, innermost last, and
+// Section reports whether it stands where Asciidoctor reads a section title at
+// all. Both are what the scanner knew while it read the list, so a rule asking
+// what a marker would do here reads them instead of working them out again.
 type List struct {
 	base
-	Marker string
-	Items  []*ListItem
+	Marker  string
+	Open    []string
+	Section bool
+	Items   []*ListItem
 }
 
 // ListItem is one entry. Principal is its own text, Children are the blocks

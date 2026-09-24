@@ -28,7 +28,7 @@ func canonical(marker string) (string, bool) {
 // it stands.
 func listMarkers(doc *block.Document) map[block.Node]string {
 	p := picker{src: doc.Src, picked: map[block.Node]string{}}
-	p.nodes(doc.Nodes, nil, true)
+	p.nodes(doc.Nodes)
 	return p.picked
 }
 
@@ -37,38 +37,34 @@ type picker struct {
 	picked map[block.Node]string
 }
 
-// nodes walks a run of siblings, open holding the markers of the lists around
-// them, innermost last. section says a list among them stands at section
-// level, which is the one place Asciidoctor reads a line and the line below it
-// as a section title before it reads a list item.
-func (p *picker) nodes(nodes []block.Node, open []string, section bool) {
+// nodes walks a run of siblings. What a list among them stands in, it carries
+// itself, so the walk only has to hand it the node underneath, which a
+// directive there reaches it from.
+func (p *picker) nodes(nodes []block.Node) {
 	for at, node := range nodes {
-		var below block.Node
-		if at+1 < len(nodes) {
-			below = nodes[at+1]
-		}
 		switch node := node.(type) {
 		case *block.Container:
-			// The block confines what is inside it: no list open around it is
-			// open within, so nothing inside collides with a marker outside.
-			p.nodes(node.Children, nil, false)
+			p.nodes(node.Children)
 		case *block.List:
-			p.list(node, below, open, section)
+			var next block.Node
+			if at+1 < len(nodes) {
+				next = nodes[at+1]
+			}
+			p.list(node, next)
 		}
 	}
 }
 
-func (p *picker) list(list *block.List, below block.Node, open []string, section bool) {
+func (p *picker) list(list *block.List, next block.Node) {
 	if list.Frozen() {
 		return
 	}
-	inner := append(open[:len(open):len(open)], list.Marker)
 	for _, item := range list.Items {
-		p.nodes(item.Children, inner, false)
+		p.nodes(item.Children)
 	}
 
 	var picked string
-	if canon, ok := canonical(list.Marker); ok && p.rewritable(list, canon, below, open) {
+	if canon, ok := canonical(list.Marker); ok && p.rewritable(list, canon, next) {
 		picked = canon
 	}
 	// Only the first line of a list can become a section title, and only where
@@ -77,7 +73,7 @@ func (p *picker) list(list *block.List, below block.Node, open []string, section
 	// even then, that item stays as it stands and the rest of the list follows
 	// the marker.
 	items := list.Items
-	if section && p.underlines(items[0], picked) {
+	if list.Section && p.underlines(items[0], picked) {
 		picked = ""
 		if p.underlines(items[0], picked) {
 			items = items[1:]
@@ -106,8 +102,8 @@ func written(src []byte, item *block.ListItem, picked string) string {
 // nested under the item above once the rest of the list carries another one. A
 // directive reaches a list from either side, and a list has no closing
 // delimiter to keep what the directive brings in out of it.
-func (p *picker) rewritable(list *block.List, marker string, below block.Node, open []string) bool {
-	if above(list).Frozen || (below != nil && above(below).Frozen) {
+func (p *picker) rewritable(list *block.List, marker string, next block.Node) bool {
+	if above(list).Frozen || (next != nil && above(next).Frozen) {
 		return false
 	}
 	for _, item := range list.Items {
@@ -115,7 +111,7 @@ func (p *picker) rewritable(list *block.List, marker string, below block.Node, o
 			return false
 		}
 	}
-	return !slices.Contains(open, marker) && !holds(list, marker)
+	return !slices.Contains(list.Open, marker) && !holds(list, marker)
 }
 
 // holds reports whether a list below this one carries the marker, which is the
