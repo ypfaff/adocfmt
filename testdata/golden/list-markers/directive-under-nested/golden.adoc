@@ -1,0 +1,4 @@
+. outer
+- deep
+
+include::items.adoc[]

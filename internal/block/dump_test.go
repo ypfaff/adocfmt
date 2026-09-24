@@ -41,9 +41,12 @@ func (d *dumper) node(node Node, depth int) {
 		d.writef(" gap!")
 	}
 	// A bang on the fence marks a body a directive may extend, the way it marks
-	// a frozen node and a frozen gap.
+	// a frozen node and a frozen gap. A list has no fence to carry it.
 	if delim, ok := fenceOf(node); ok && delim.Extensible {
 		d.writef(" delim!")
+	}
+	if list, ok := node.(*List); ok && list.Extensible {
+		d.writef(" extensible!")
 	}
 	for _, meta := range node.Meta() {
 		// A bang marks a metadata line whose gap below carries meaning, the way
