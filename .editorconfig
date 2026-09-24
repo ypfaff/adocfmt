@@ -1,5 +1,12 @@
 root = true
 
+[*]
+insert_final_newline = true
+
+# Some cases test a missing final newline, so their files have to keep it.
+[testdata/**]
+insert_final_newline = unset
+
 # These cases test trailing whitespace, so their input has to keep it.
 [testdata/golden/trailing-whitespace/**]
 trim_trailing_whitespace = false
