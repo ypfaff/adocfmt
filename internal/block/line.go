@@ -89,6 +89,19 @@ func HeadingTitle(line []byte) ([]byte, bool) {
 	return line[sh.span.Start:sh.span.End], true
 }
 
+// ListMarker returns the marker a line opens a list item with, read the way the
+// scanner reads it, and whether it opens one at all. The marker is the key the
+// items of a list are compared on rather than the text they carry, see
+// List.Marker.
+func ListMarker(line []byte) (string, bool) {
+	body := bytes.TrimLeft(line, " \t")
+	if len(body) == 0 {
+		return "", false
+	}
+	_, key, ok := markerOf(body)
+	return key, ok
+}
+
 // LineBelow returns the content of the line under the one at, its terminator
 // and trailing whitespace off, and nothing where no line follows.
 func LineBelow(src []byte, at int) []byte {
