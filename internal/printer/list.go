@@ -62,9 +62,12 @@ func (p *picker) list(list *block.List, next block.Node) {
 	for _, item := range list.Items {
 		p.nodes(item.Children)
 	}
+	if p.reached(list, next) {
+		return
+	}
 
 	var picked string
-	if canon, ok := canonical(list.Marker); ok && p.rewritable(list, canon, next) {
+	if canon, ok := canonical(list.Marker); ok && p.rewritable(list, canon) {
 		picked = canon
 	}
 	// Only the first line of a list can become a section title, and only where
@@ -90,20 +93,23 @@ func written(src []byte, item *block.ListItem, picked string) string {
 	return string(src[item.Marker.Start:item.Marker.End])
 }
 
+// reached reports whether an include or a conditional reaches the list, which
+// leaves every line of it as it stands, the space behind a marker included:
+// what those lines mean is known only once Asciidoctor has resolved the
+// directive. The scanner reports the directives it read within the list as
+// List.Extensible, and a directive beside the list freezes the gap between
+// them.
+func (p *picker) reached(list *block.List, next block.Node) bool {
+	return list.Extensible || above(list).Frozen || (next != nil && above(next).Frozen)
+}
+
 // rewritable reports whether the list may be written with the marker.
 //
 // Asciidoctor nests on a change of marker and ends every list down to the one
 // a marker already open belongs to, so a marker in use around this list would
 // move its items. A frozen item keeps the marker it has, which would leave it
-// nested under the item above once the rest of the list carries another one. A
-// directive reaches a list from either side, and a list has no closing
-// delimiter to keep what the directive brings in out of it. The scanner reports
-// the directives it saw within reach as List.Extensible; the gaps around the
-// list are what is left, since a directive freezes the gap it stands next to.
-func (p *picker) rewritable(list *block.List, marker string, next block.Node) bool {
-	if list.Extensible || above(list).Frozen || (next != nil && above(next).Frozen) {
-		return false
-	}
+// nested under the item above once the rest of the list carries another one.
+func (p *picker) rewritable(list *block.List, marker string) bool {
 	for _, item := range list.Items {
 		if item.Frozen() {
 			return false
