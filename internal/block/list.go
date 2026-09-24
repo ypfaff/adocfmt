@@ -6,7 +6,7 @@ import "slices"
 // marker, not on indentation, so a different marker opens a nested list and a
 // marker of an enclosing list ends this one.
 func (s *scanner) list(b base, sh shape, closer []byte) Node {
-	start := s.pos()
+	start, from := s.pos(), s.at
 	list := &List{
 		base:    b,
 		Marker:  sh.marker,
@@ -32,7 +32,18 @@ func (s *scanner) list(b base, sh shape, closer []byte) Node {
 		sh = next
 	}
 	list.lines = Span{start, s.pos()}
+	list.Extensible = s.extensible(false, from) || s.directiveBelow()
 	return list
+}
+
+// directiveBelow reports whether a directive stands right under the list. It
+// asks past the end of the list because nothing closes one: the items the
+// directive brings in may still be items of it.
+func (s *scanner) directiveBelow() bool {
+	m := s.mark()
+	defer s.rewind(m)
+	s.gap()
+	return !s.done() && s.shape().kind == shapeDirective
 }
 
 func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {

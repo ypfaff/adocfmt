@@ -101,9 +101,11 @@ func written(src []byte, item *block.ListItem, picked string) string {
 // move its items. A frozen item keeps the marker it has, which would leave it
 // nested under the item above once the rest of the list carries another one. A
 // directive reaches a list from either side, and a list has no closing
-// delimiter to keep what the directive brings in out of it.
+// delimiter to keep what the directive brings in out of it. The scanner reports
+// the directives it saw within reach as List.Extensible; the gaps around the
+// list are what is left, since a directive freezes the gap it stands next to.
 func (p *picker) rewritable(list *block.List, marker string, next block.Node) bool {
-	if above(list).Frozen || (next != nil && above(next).Frozen) {
+	if list.Extensible || above(list).Frozen || (next != nil && above(next).Frozen) {
 		return false
 	}
 	for _, item := range list.Items {

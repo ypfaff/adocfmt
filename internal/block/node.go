@@ -211,15 +211,18 @@ type Table struct {
 // how AsciiDoc spells nesting.
 //
 // Open holds the markers of the lists this one stands in, innermost last, and
-// Section reports whether it stands where Asciidoctor reads a section title at
-// all. Both are what the scanner knew while it read the list, so a rule asking
-// what a marker would do here reads them instead of working them out again.
+// Section reports whether it stands where a section title can be read at all.
+//
+// Extensible is Delimiter.Extensible for a list, which has no fence to carry
+// it: a directive inside an item or right under it may still bring items in,
+// because nothing closes a list.
 type List struct {
 	base
-	Marker  string
-	Open    []string
-	Section bool
-	Items   []*ListItem
+	Marker     string
+	Open       []string
+	Section    bool
+	Extensible bool
+	Items      []*ListItem
 }
 
 // ListItem is one entry. Principal is its own text, Children are the blocks

@@ -497,7 +497,7 @@ Literal meta("[source]\n") "code\n"`,
 			name: "also inside a list, where the block stays attached to the item",
 			src:  "* a\n+\n.Title\ninclude::part.adoc[]\nText.\n* b\n",
 			want: `
-List "*"
+List extensible! "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
     Paragraph! gap! meta(".Title\n") meta("include::part.adoc[]\n") "Text.\n"
@@ -784,7 +784,7 @@ List "::"
 			name: "a directive among the lines it takes freezes the gap after them",
 			src:  "term1::\ninclude::part.adoc[]\n\ntext\n\nterm2:: d\n",
 			want: `
-List "::"
+List extensible! "::"
   ListItem! "term1::\ninclude::part.adoc[]\n\ntext\n"
   ListItem gap! "term2:: d\n"`,
 		},
