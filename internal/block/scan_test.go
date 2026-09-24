@@ -798,6 +798,27 @@ List "::"
   ListItem "term1::\n\n'''\ncontinued\n"`,
 		},
 		{
+			name: "a + right under the one carrying it is text again",
+			src:  "* one\n+\n+\n1. two\n\n1. three\n",
+			want: `
+List "*"
+  ListItem "* one\n"
+    Continuation gap! "+\n"
+    Paragraph! "+\n1. two\n"
+    List "1."
+      ListItem "1. three\n"`,
+		},
+		{
+			name: "a blank line between the two keeps the second one carrying",
+			src:  "* one\n+\n\n+\ntext\n",
+			want: `
+List "*"
+  ListItem "* one\n"
+    Continuation gap! "+\n"
+    Continuation gap! "+\n"
+    Paragraph "text\n"`,
+		},
+		{
 			name: "a block attribute line under a term ends the description list",
 			src:  "term::\n[verse]\ndetached\n",
 			want: `
