@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 )
@@ -9,8 +10,8 @@ import (
 //
 // The result goes to a temporary file beside the target and is renamed onto it,
 // so a run cut short leaves the original whole rather than half rewritten. The
-// document therefore cannot be lost; a hard link and extended attributes can,
-// because the name comes to point at a file of its own.
+// document therefore cannot be lost; a hard link, extended attributes and the
+// owner can, because the name comes to point at a file of its own.
 func replace(path string, out []byte) error {
 	// A link renamed onto would become a regular file, and the document behind
 	// it would never be written.
@@ -38,8 +39,10 @@ func replace(path string, out []byte) error {
 		return err
 	}
 	// os.CreateTemp makes a file only its owner may read, and that mode would
-	// travel with the rename.
-	if err := os.Chmod(temp.Name(), info.Mode().Perm()); err != nil {
+	// travel with the rename. Mode carries the file type as well, so the mask
+	// names what chmod is allowed to set.
+	mode := info.Mode() & (fs.ModePerm | fs.ModeSetuid | fs.ModeSetgid | fs.ModeSticky)
+	if err := os.Chmod(temp.Name(), mode); err != nil {
 		return err
 	}
 	return os.Rename(temp.Name(), target)
