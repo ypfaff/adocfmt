@@ -80,3 +80,19 @@ func hasExtension(path string) bool {
 		return strings.EqualFold(want, ext)
 	})
 }
+
+// eachFile hands the source of every file below paths to do, and answers with
+// the strongest exit code the run earned. A file it cannot read is reported and
+// passed over, the way collect passes over a path it cannot read.
+func eachFile(paths []string, stderr io.Writer, do func(src []byte, path string) int) int {
+	files, code := collect(paths, stderr)
+	for _, path := range files {
+		src, err := os.ReadFile(path)
+		if err != nil {
+			code = max(code, fail(stderr, "%v", err))
+			continue
+		}
+		code = max(code, do(src, path))
+	}
+	return code
+}
