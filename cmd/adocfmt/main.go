@@ -76,8 +76,9 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return checkAll(paths, stdin, stdout, stderr)
 	case opts.write:
 		return writeAll(paths, stderr)
+	default:
+		return emitOne(paths, stdin, stdout, stderr)
 	}
-	return emitOne(paths, stdin, stdout, stderr)
 }
 
 // fail puts the program name in front, because a reader of a CI log has to see

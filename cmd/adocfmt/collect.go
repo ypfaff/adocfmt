@@ -9,8 +9,7 @@ import (
 	"strings"
 )
 
-// A path named on the command line is formatted whatever its extension, so a
-// hook that passes the files it staged reaches all of them.
+// extensions are what a directory walk picks up.
 var extensions = []string{".adoc", ".asciidoc"}
 
 // collect turns the paths named on the command line into the files to format,
@@ -30,6 +29,7 @@ func collect(paths []string, stderr io.Writer) ([]string, int) {
 			continue
 		}
 		if !info.IsDir() {
+			// A path named on the command line is taken whatever its extension.
 			files = append(files, path)
 			continue
 		}

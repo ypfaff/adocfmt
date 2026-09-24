@@ -18,6 +18,7 @@ func emitOne(paths []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		return emit(src, stdinName, stdout, stderr)
 	case 1:
+		// A stat error is left to the ReadFile below, which names the path.
 		if info, err := os.Stat(paths[0]); err == nil && info.IsDir() {
 			return fail(stderr, "%s is a directory; use --write or --check", paths[0])
 		}
