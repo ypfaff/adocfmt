@@ -8,7 +8,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -79,107 +78,6 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		return writeAll(paths, stderr)
 	}
 	return emitOne(paths, stdin, stdout, stderr)
-}
-
-// eachFile hands the source of every file below paths to do, and answers with
-// the strongest exit code the run earned. A file it cannot read is reported and
-// passed over, the way collect passes over a path it cannot read.
-func eachFile(paths []string, stderr io.Writer, do func(src []byte, path string) int) int {
-	files, code := collect(paths, stderr)
-	for _, path := range files {
-		src, err := os.ReadFile(path)
-		if err != nil {
-			code = max(code, fail(stderr, "%v", err))
-			continue
-		}
-		code = max(code, do(src, path))
-	}
-	return code
-}
-
-// writeAll leaves a document the scanner refuses as it is, and still writes the
-// surrounding files.
-func writeAll(paths []string, stderr io.Writer) int {
-	return eachFile(paths, stderr, func(src []byte, path string) int {
-		out, err := format.Format(src)
-		if err != nil {
-			report(stderr, path, err)
-			return exitError
-		}
-		if bytes.Equal(src, out) {
-			return exitOK
-		}
-		if err := replace(path, out); err != nil {
-			return fail(stderr, "%v", err)
-		}
-		return exitOK
-	})
-}
-
-func checkAll(paths []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	if len(paths) == 0 {
-		src, err := io.ReadAll(stdin)
-		if err != nil {
-			return fail(stderr, "reading %s: %v", stdinName, err)
-		}
-		return check(src, stdinName, stdout, stderr)
-	}
-	return eachFile(paths, stderr, func(src []byte, path string) int {
-		return check(src, path, stdout, stderr)
-	})
-}
-
-// emitOne writes one document, because a directory or a second path would fill
-// a terminal with documents nobody asked to read.
-func emitOne(paths []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	switch len(paths) {
-	case 0:
-		src, err := io.ReadAll(stdin)
-		if err != nil {
-			return fail(stderr, "reading %s: %v", stdinName, err)
-		}
-		return emit(src, stdinName, stdout, stderr)
-	case 1:
-		if info, err := os.Stat(paths[0]); err == nil && info.IsDir() {
-			return fail(stderr, "%s is a directory; use --write or --check", paths[0])
-		}
-		src, err := os.ReadFile(paths[0])
-		if err != nil {
-			return fail(stderr, "%v", err)
-		}
-		return emit(src, paths[0], stdout, stderr)
-	default:
-		return fail(stderr, "more than one path; use --write or --check")
-	}
-}
-
-// check names the document on stdout, the way gofmt -l does, so the list pipes
-// into the command that acts on it.
-func check(src []byte, name string, stdout, stderr io.Writer) int {
-	out, err := format.Format(src)
-	if err != nil {
-		report(stderr, name, err)
-		return exitError
-	}
-	if bytes.Equal(src, out) {
-		return exitOK
-	}
-	_, _ = fmt.Fprintln(stdout, name)
-	return exitChanged
-}
-
-// emit checks its write, because this one carries the product: a document cut
-// short by a full disk must not report success.
-func emit(src []byte, name string, stdout, stderr io.Writer) int {
-	out, err := format.Format(src)
-	if err != nil {
-		report(stderr, name, err)
-		return exitError
-	}
-	if _, err := stdout.Write(out); err != nil {
-		return fail(stderr, "writing the result: %v", err)
-	}
-	return exitOK
 }
 
 // fail puts the program name in front, because a reader of a CI log has to see

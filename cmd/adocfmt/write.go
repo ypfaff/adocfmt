@@ -1,11 +1,34 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
+
+	"github.com/ypfaff/adocfmt/internal/format"
 )
+
+// writeAll leaves a document the scanner refuses as it is, and still writes the
+// surrounding files.
+func writeAll(paths []string, stderr io.Writer) int {
+	return eachFile(paths, stderr, func(src []byte, path string) int {
+		out, err := format.Format(src)
+		if err != nil {
+			report(stderr, path, err)
+			return exitError
+		}
+		if bytes.Equal(src, out) {
+			return exitOK
+		}
+		if err := replace(path, out); err != nil {
+			return fail(stderr, "%v", err)
+		}
+		return exitOK
+	})
+}
 
 // replace puts out in the file at path.
 //
