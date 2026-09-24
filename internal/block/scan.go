@@ -346,13 +346,15 @@ func (s *scanner) body(b base, closer []byte) Node {
 	case shapeDirective:
 		return s.directive(b, sh)
 	case shapeContinuation:
-		// Outside a list the + attaches nothing: Asciidoctor reads it and every
-		// line under it as one paragraph, the way it reads front matter. In a
-		// list it is syntax, and the run under it is the printer's decision.
-		if s.carrying && b.gap.Span.Empty() {
-			return s.carriedPlus(b, closer)
+		// A + carries the block under it only inside a list, and only where no
+		// other + carries it already. Everywhere else it is text again.
+		if !s.inList() {
+			return s.plusText(b, closer, endsText)
 		}
-		b.gap.Frozen, s.freeze = true, !s.inList()
+		if s.carrying && b.gap.Span.Empty() {
+			return s.plusText(b, closer, endsCarriedPlus)
+		}
+		b.gap.Frozen = true
 		b.lines = s.take()
 		return &Continuation{base: b}
 	default:
@@ -587,6 +589,13 @@ func endsItemText(sh shape) bool {
 	return endsText(sh) || sh.kind == shapeMarker
 }
 
+// endsCarriedPlus is where the paragraph ends that a + under a carrying + opens.
+// It stops where any text does, except at a further lone +, which Asciidoctor
+// drops out of the paragraph rather than ending it on.
+func endsCarriedPlus(sh shape) bool {
+	return endsText(sh) && sh.kind != shapeContinuation
+}
+
 // endsVerbatim stops where Asciidoctor stops a verbatim-styled paragraph: at a
 // blank line or a lone +, whatever the lines in between look like.
 func endsVerbatim(sh shape) bool {
@@ -614,18 +623,15 @@ func (s *scanner) endsCarriedText(sh shape) bool {
 	return endsText(sh) || s.sibling()
 }
 
-// carriedPlus reads a + that stands right under the one carrying it. The first
-// + attaches what follows, the second is text again: Asciidoctor takes it and
-// every line to the next blank line as one paragraph, and drops every further +
-// out of that paragraph. What it renders is therefore not the lines that stand
-// here, so none of them may move.
-func (s *scanner) carriedPlus(b base, closer []byte) Node {
+// plusText reads a + that carries nothing, with the lines under it that
+// Asciidoctor reads as one paragraph with it. The + renders as the text it is,
+// and a further one among those lines Asciidoctor drops, so what the paragraph
+// shows is not the lines that stand here and none of them may move.
+func (s *scanner) plusText(b base, closer []byte, ends func(shape) bool) Node {
 	start := s.pos()
 	s.at++
-	for !s.done() && !s.closes(closer) && s.shape().kind != shapeBlank {
-		s.at++
-	}
-	b.frozen = true
+	s.textRun(&b, closer, ends)
+	b.frozen, b.gap.Frozen = true, true
 	b.lines = Span{start, s.pos()}
 	return &Paragraph{base: b}
 }
