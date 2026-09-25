@@ -176,8 +176,12 @@ type Setext struct {
 	Title Span
 }
 
-// Paragraph holds prose, the only content a sentence rule may reflow.
+// Paragraph holds prose.
 type Paragraph struct{ base }
+
+// Admonition is a paragraph whose first line opens with a label such as NOTE:,
+// which Asciidoctor renders as an admonition block rather than as prose.
+type Admonition struct{ base }
 
 // Literal holds verbatim lines without a delimiter: an indented paragraph, one
 // an attribute line turned into code, or prose whose line breaks Asciidoctor
