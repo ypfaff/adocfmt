@@ -55,13 +55,18 @@ func Scan(src []byte) (*Document, error) {
 
 // ReadsAs reports whether lines that replace the node's own still read as a
 // node of its kind, so a rule that moves text between lines asks first: a join
-// or a split can turn text into syntax. The lines are read on their own,
-// without the lists open around the node, so a later line that starts like an
-// item of any list is refused as well.
+// or a split can turn text into syntax. A split can leave a first line that
+// reads as an attribute line the node carries, so the node has to hold every
+// line itself. The lines are read on their own, without the lists open around
+// the node, so a later line that starts like an item of any list is refused as
+// well.
 func ReadsAs(node Node, lines []byte) bool {
 	doc, err := Scan(lines)
-	if err != nil || len(doc.Nodes) != 1 || doc.Nodes[0].Frozen() ||
-		reflect.TypeOf(doc.Nodes[0]) != reflect.TypeOf(node) {
+	if err != nil || len(doc.Nodes) != 1 {
+		return false
+	}
+	got := doc.Nodes[0]
+	if got.Frozen() || reflect.TypeOf(got) != reflect.TypeOf(node) || got.Lines() != (Span{0, len(lines)}) {
 		return false
 	}
 	for _, line := range Lines(lines)[1:] {

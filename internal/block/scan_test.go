@@ -1135,6 +1135,7 @@ func TestReadsAs(t *testing.T) {
 		{"a join makes a label", &Paragraph{}, "NOTE: One.\n", false},
 		{"a split starts a list", &Paragraph{}, "* One.\n", false},
 		{"a later line starts an item", &Paragraph{}, "One.\n. Two.\n", false},
+		{"a split makes an attribute line", &Paragraph{}, "[Optional.]\nSet it.\n", false},
 	}
 
 	for _, test := range tests {
