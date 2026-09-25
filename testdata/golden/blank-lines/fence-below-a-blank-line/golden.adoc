@@ -1,8 +1,6 @@
 
 ---
 
-layout: post
----
-= Title
+layout: post --- = Title
 
 preamble

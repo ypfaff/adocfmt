@@ -1,0 +1,6 @@
+Text. More.
+include::x.adoc[]
+
+[%hardbreaks]
+One. Two.
+Three.

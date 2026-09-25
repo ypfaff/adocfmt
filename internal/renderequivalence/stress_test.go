@@ -12,9 +12,9 @@ import (
 )
 
 // TestStressedCases checks the scanner's classification against Asciidoctor
-// while no rule exists to do it. Printing the tree unchanged makes every
-// misread block invisible to the render checks, so this test rewrites each
-// block the way the planned rules will, and the checks turn red wherever the
+// harder than the rules do. Printing the tree unchanged makes every misread
+// block invisible to the render checks, so this test rewrites every heading
+// even where a rule would leave it, and the checks turn red wherever the
 // scanner read a block differently from Asciidoctor.
 func TestStressedCases(t *testing.T) {
 	if testing.Short() {
@@ -60,9 +60,8 @@ func TestStressedCases(t *testing.T) {
 	}
 }
 
-// stress prints the tree the way the harshest rules would: every paragraph on
-// one line and every heading in canonical form. Whatever a rule must not touch
-// stays as it is.
+// stress prints every heading in canonical form, even where the heading rule
+// would keep it as it stands. Whatever a rule must not touch stays as it is.
 func stress(doc *block.Document) []byte {
 	s := stresser{src: doc.Src, eol: "\n"}
 	if bytes.Contains(doc.Src, []byte("\r\n")) {
@@ -98,12 +97,6 @@ func (s *stresser) node(node block.Node) {
 	s.span(node.Gap().Span)
 
 	switch node := node.(type) {
-	case *block.Paragraph:
-		if node.Frozen() {
-			s.span(node.Lines())
-			return
-		}
-		s.paragraph(node.Lines())
 	case *block.Heading:
 		s.heading(node.Frozen(), node.Level, node.Title, node.Lines())
 	case *block.Setext:
@@ -124,21 +117,6 @@ func (s *stresser) node(node block.Node) {
 	default:
 		s.span(node.Lines())
 	}
-}
-
-// paragraph joins the lines of a paragraph into one, keeping a hard line break
-// where the source has one, since that is content rather than layout.
-// Asciidoctor strips trailing whitespace before it looks for the break.
-func (s *stresser) paragraph(lines block.Span) {
-	var joined []string
-	for _, line := range strings.Split(strings.TrimSuffix(s.text(lines), s.eol), s.eol) {
-		if n := len(joined); n > 0 && !strings.HasSuffix(strings.TrimRight(joined[n-1], " \t"), " +") {
-			joined[n-1] += " " + line
-		} else {
-			joined = append(joined, line)
-		}
-	}
-	s.out.WriteString(strings.Join(joined, s.eol) + s.eol)
 }
 
 func (s *stresser) heading(frozen bool, level int, title, lines block.Span) {

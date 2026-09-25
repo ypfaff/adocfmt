@@ -8,5 +8,6 @@ testdata/golden/blank-lines/crlf-no-final-newline/* -text
 testdata/golden/block-delimiters/crlf/* -text
 testdata/golden/heading-markers/crlf/* -text
 testdata/golden/list-markers/crlf/* -text
+testdata/golden/one-sentence-per-line/crlf/* -text
 testdata/golden/setext-headings/crlf/* -text
 testdata/golden/trailing-whitespace/crlf/* -text
