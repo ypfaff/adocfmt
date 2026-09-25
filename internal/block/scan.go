@@ -604,7 +604,7 @@ func (s *scanner) textRun(b *base, closer []byte, ends func(shape) bool) {
 			s.track(sh)
 			directive = true
 		}
-		b.frozen = b.frozen || sh.kind == shapeDirective || pinsLine(sh, s.text(s.lines[s.at]))
+		b.frozen = b.frozen || sh.kind == shapeDirective || pinsLine(sh, s.text(s.lines[s.at]), s.inList())
 		s.at++
 	}
 	b.lines = Span{start, s.pos()}
