@@ -1,0 +1,102 @@
+package sentence
+
+import (
+	"bytes"
+	"testing"
+)
+
+// TestReflow pins where a sentence ends and what the reflow keeps. The input
+// and the result are lines joined with a line end, so a case reads like the
+// paragraph it stands for.
+func TestReflow(t *testing.T) {
+	tests := []struct {
+		name, src, want string
+	}{
+		{"one sentence", "One sentence.", "One sentence."},
+		{"joined", "First sentence\ncontinues here.", "First sentence continues here."},
+		{"split", "One. Two. Three.", "One.\nTwo.\nThree."},
+		{"joined and split", "First sentence\ncontinues here. Second one.", "First sentence continues here.\nSecond one."},
+		{"already split", "One.\nTwo.", "One.\nTwo."},
+		{"indented line", "One\n  two.", "One two."},
+		{"several spaces", "One.   Two.", "One.\nTwo."},
+		{"tab", "One.\tTwo.", "One.\nTwo."},
+		{"spaces inside a line", "One  two.", "One  two."},
+
+		{"exclamation", "Stop! Go.", "Stop!\nGo."},
+		{"question", "Why? Because.", "Why?\nBecause."},
+		{"lowercase after exclamation", "Wow! nice.", "Wow! nice."},
+		{"lowercase after question", "Why? because.", "Why? because."},
+		{"digit after exclamation", "Wow! 3 more.", "Wow! 3 more."},
+		{"lowercase after period", "See the file. next", "See the file. next"},
+		{"digit after period", "Step one. 2 more.", "Step one. 2 more."},
+		{"umlaut", "Eins. Ärger.", "Eins.\nÄrger."},
+		{"no whitespace after the mark", "Done.footnote:[One. Two.] Next.", "Done.footnote:[One. Two.] Next."},
+
+		{"closing quote", `He said "Stop." Then left.`, "He said \"Stop.\"\nThen left."},
+		{"closing curly quote", "Er sagte „Halt.“ Dann ging er.", "Er sagte „Halt.“\nDann ging er."},
+		{"closing bracket", "It works (mostly.) Next.", "It works (mostly.)\nNext."},
+		{"closing markup", "This is *important.* Next.", "This is *important.*\nNext."},
+		{"opening quote", `One. "Two."`, "One.\n\"Two.\""},
+		{"opening markup", "One. *Two.*", "One.\n*Two.*"},
+		{"opening bracket", "One. (Two.)", "One.\n(Two.)"},
+		{"opening german quote", "Eins. „Zwei.“", "Eins.\n„Zwei.“"},
+
+		{"ordinal", "Am 3. Oktober.", "Am 3. Oktober."},
+		{"initial", "By A. Smith.", "By A. Smith."},
+		{"lowercase initial", "Siehe S. 3 und z. B. Kapitel 2.", "Siehe S. 3 und z. B. Kapitel 2."},
+		{"latin abbreviation", "Some, e.g. Linux.", "Some, e.g. Linux."},
+		{"english abbreviation", "Ask Dr. Who.", "Ask Dr. Who."},
+		{"german abbreviation", "Siehe Nr. 5 bzw. Abb. Sieben.", "Siehe Nr. 5 bzw. Abb. Sieben."},
+		{"abbreviation any case", "Apples, pears ETC. More.", "Apples, pears ETC. More."},
+		{"ellipsis", "Wait... Then.", "Wait... Then."},
+		{"unicode ellipsis", "Wait… Then.", "Wait… Then."},
+		{"period after a bracket", "It works (see x). Next.", "It works (see x).\nNext."},
+
+		{"hard break", "One. +\nTwo. Three.", "One. +\nTwo.\nThree."},
+		{"hard break keeps indentation", "One +\n  two.", "One +\n  two."},
+		{"two hard breaks", "One +\nTwo. Three +\nFour. Five.", "One +\nTwo.\nThree +\nFour.\nFive."},
+		{"plus between words", "One + Two. Three.", "One + Two.\nThree."},
+
+		{"backtick span", "Run `a. B` now. Next.", "Run `a. B` now.\nNext."},
+		{"double backtick span", "Run ``a. B`` now.", "Run ``a. B`` now."},
+		{"period in a backtick span", "Run `make.` Next.", "Run `make.` Next."},
+		{"passthrough", "Use +a. B+ here.", "Use +a. B+ here."},
+		{"plus inside words", "Use x+y here. Then a+b works.", "Use x+y here.\nThen a+b works."},
+		{"backtick inside a word", "It`s here. Next `x` one.", "It`s here.\nNext `x` one."},
+		{"double passthrough", "Use ++a. B++ here.", "Use ++a. B++ here."},
+		{"triple passthrough", "Use +++<b>a. B</b>+++ here.", "Use +++<b>a. B</b>+++ here."},
+		{"line end in a backtick span", "Run `a\nb` now.", "Run `a\nb` now."},
+		{"line end in a passthrough", "Use +++<pre>a\nb</pre>+++ here.", "Use +++<pre>a\nb</pre>+++ here."},
+		{"pass macro", "Use pass:[a. B] here.", "Use pass:[a. B] here."},
+		{"link macro", "See link:x.html[Text. More] now.", "See link:x.html[Text. More] now."},
+		{"url macro", "See https://x.org[Text. More] now.", "See https://x.org[Text. More] now."},
+		{"nested brackets", "See image:a.png[Alt [x]. More] now.", "See image:a.png[Alt [x]. More] now."},
+		{"line end in a macro", "See link:x.html[Text\nmore] now.", "See link:x.html[Text\nmore] now."},
+		{"cross reference", "See <<id,Text. More>> now.", "See <<id,Text. More>> now."},
+		{"anchor", "Here [[id,Text. More]] now.", "Here [[id,Text. More]] now."},
+		{"index term", "Here ((Term. More)) now.", "Here ((Term. More)) now."},
+		{"escaped backtick", "A \\` bb. Cc.", "A \\` bb.\nCc."},
+		{"unclosed backtick", "A ` bb. Cc.", "A ` bb.\nCc."},
+		{"unclosed bracket", "See x[aa. Bb", "See x[aa.\nBb"},
+
+		{"empty", "", ""},
+		{"lone mark", ".", "."},
+		{"ending in an opener", "One. (", "One. ("},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := reflow(test.src); got != test.want {
+				t.Errorf("Reflow(%q) = %q, want %q", test.src, got, test.want)
+			}
+			// Formatting a formatted document changes nothing.
+			if got := reflow(test.want); got != test.want {
+				t.Errorf("Reflow(%q) = %q, want it unchanged", test.want, got)
+			}
+		})
+	}
+}
+
+func reflow(src string) string {
+	return string(bytes.Join(Reflow(bytes.Split([]byte(src), []byte("\n"))), []byte("\n")))
+}
