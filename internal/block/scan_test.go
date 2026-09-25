@@ -917,10 +917,10 @@ Opaque gap! "---\n"
 Paragraph "title: x\n---\n= Title\n"`,
 		},
 		{
-			name: "a blank line above a lone fence protects nothing",
+			name: "a blank line above a lone fence stays as well",
 			src:  "\n---\ntitle: x\n\n= Title\n",
 			want: `
-Opaque "---\n"
+Opaque gap! "---\n"
 Paragraph "title: x\n"
 Heading "= Title\n" title "Title"`,
 		},

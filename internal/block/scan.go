@@ -767,9 +767,16 @@ func (s *scanner) frontMatter() Node {
 	for !s.done() && s.shape().kind == shapeBlank {
 		s.at++
 	}
-	opensAt := s.pos()
 	if s.done() || !s.onFence() {
 		s.at = 0
+		return nil
+	}
+	if s.pos() > start {
+		// The fence opens front matter on the first line only, so the blank
+		// lines above it are what keeps this document from having any. They
+		// stay whether or not a closing fence follows, since a rule may move
+		// that line and the next run would decide otherwise.
+		s.at, s.freeze = 0, true
 		return nil
 	}
 	s.at++
@@ -781,12 +788,6 @@ func (s *scanner) frontMatter() Node {
 		return nil
 	}
 	s.at++
-	if opensAt > start {
-		// The fence opens front matter on the first line only, so the blank
-		// lines above it are what keeps this document from having any.
-		s.at, s.freeze = 0, true
-		return nil
-	}
 	s.freeze = true
 	b := base{gap: Gap{Span: Span{start, start}}, lines: Span{start, s.pos()}}
 	return &FrontMatter{base: b}
