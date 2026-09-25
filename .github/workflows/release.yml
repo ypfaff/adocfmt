@@ -110,6 +110,8 @@ jobs:
             --output HomebrewFormula/adocfmt.rb
           git add HomebrewFormula/adocfmt.rb
           git commit --message "chore(homebrew): update the formula to v${VERSION}"
+          # The branch may have moved on while GoReleaser ran.
+          git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       # Points at the tagged commit's SHA, not at HEAD: HEAD has since moved on
