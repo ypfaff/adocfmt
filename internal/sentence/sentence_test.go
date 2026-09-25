@@ -56,6 +56,9 @@ func TestReflow(t *testing.T) {
 		{"hard break keeps indentation", "One +\n  two.", "One +\n  two."},
 		{"two hard breaks", "One +\nTwo. Three +\nFour. Five.", "One +\nTwo.\nThree +\nFour.\nFive."},
 		{"plus between words", "One + Two. Three.", "One + Two.\nThree."},
+		{"plus alone on a line indented by a tab", "One\n\t+\ntwo.", "One + two."},
+		{"plus after a tab", "One\t+\ntwo.", "One\t+ two."},
+		{"plus alone on a line indented by spaces", "One\n  +\ntwo.", "One +\ntwo."},
 
 		{"backtick span", "Run `a. B` now. Next.", "Run `a. B` now.\nNext."},
 		{"double backtick span", "Run ``a. B`` now.", "Run ``a. B`` now."},

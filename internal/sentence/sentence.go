@@ -98,10 +98,10 @@ func (t *text) wordEnd(i int) int {
 }
 
 // hardBreak reports whether word i, at the end of a line, is the + of a hard
-// line break. The scanner ends a paragraph at a + standing alone on its line,
-// so one that ends a line always follows text.
+// line break, which Asciidoctor reads only after a space.
 func (t *text) hardBreak(i int) bool {
-	return i > 0 && string(t.word(i)) == "+"
+	start := t.words[i].start
+	return string(t.word(i)) == "+" && start > 0 && t.src[start-1] == ' '
 }
 
 // endsSentence reports whether a sentence ends after word i.
