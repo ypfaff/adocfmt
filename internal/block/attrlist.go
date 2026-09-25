@@ -102,12 +102,8 @@ func hasOption(src []byte, meta []Meta, option string) bool {
 // or opts= holding one name or a comma-separated list, and opt-option=, the
 // key it stores every one of them under.
 func blockOptions(s []byte) []string {
-	s = bytes.TrimSpace(s)
-	if len(s) < 2 || s[0] != '[' || s[len(s)-1] != ']' {
-		return nil
-	}
 	var opts []string
-	for i, attr := range splitAttrList(s[1 : len(s)-1]) {
+	for i, attr := range attrList(s) {
 		name, value, named := cutAttr(attr)
 		switch {
 		case !named && i == 0:
@@ -119,6 +115,37 @@ func blockOptions(s []byte) []string {
 		}
 	}
 	return opts
+}
+
+// substitutionsAttr sets which substitutions the text of a block goes through.
+// A paragraph that sets its own may pass raw HTML through, where a line break
+// shows, so its line breaks are content.
+const substitutionsAttr = "subs"
+
+// hasAttr reports whether an attribute line above the block sets the named
+// attribute.
+func hasAttr(src []byte, meta []Meta, attr string) bool {
+	for _, m := range meta {
+		if m.Kind != MetaAttributes {
+			continue
+		}
+		for _, a := range attrList(src[m.Lines.Start:m.Lines.End]) {
+			if name, _, named := cutAttr(a); named && name == attr {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// attrList returns the attributes of an attribute line, or none where s is no
+// attribute line.
+func attrList(s []byte) [][]byte {
+	s = bytes.TrimSpace(s)
+	if len(s) < 2 || s[0] != '[' || s[len(s)-1] != ']' {
+		return nil
+	}
+	return splitAttrList(s[1 : len(s)-1])
 }
 
 // splitAttrList cuts an attribute list at its commas. A quote shields a comma

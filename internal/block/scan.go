@@ -521,16 +521,18 @@ func (s *scanner) setext(b base, level int) Node {
 }
 
 // paragraph reads prose, unless its line breaks carry meaning: a verbatim
-// style, the hardbreaks option, or a document attribute in force that binds
-// lines makes it a Literal. A quoted paragraph is Opaque like the Markdown
-// quote, since Asciidoctor lifts its last line out as the attribution.
+// style, the hardbreaks option, substitutions of its own, or a document
+// attribute in force that binds lines makes it a Literal. A quoted paragraph
+// is Opaque like the Markdown quote, since Asciidoctor lifts its last line out
+// as the attribution. A label opening its first line makes it an Admonition.
 func (s *scanner) paragraph(b base, closer []byte) Node {
 	first := s.at
 	s.textRun(&b, closer, s.endsProse())
 	switch {
 	case !paragraphStyles[styleOf(s.src, b.meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
 		return &Opaque{base: b}
-	case styledVerbatim(s.src, b.meta) || hasOption(s.src, b.meta, hardbreaksOption) || len(s.lineBound) > 0:
+	case styledVerbatim(s.src, b.meta) || hasOption(s.src, b.meta, hardbreaksOption) ||
+		hasAttr(s.src, b.meta, substitutionsAttr) || len(s.lineBound) > 0:
 		return &Literal{base: b}
 	case admonition(s.text(s.lines[first])):
 		return &Admonition{base: b}
