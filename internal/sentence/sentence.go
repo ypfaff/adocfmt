@@ -204,6 +204,11 @@ func spanEnd(src []byte, i int) (int, bool) {
 			return closeAt(src, i+len(p.opener), p.closer)
 		}
 	}
+	for _, name := range spacedMacros {
+		if bytes.HasPrefix(rest, []byte(name)) {
+			return spacedMacro(src, i+len(name))
+		}
+	}
 	switch {
 	case rest[0] == '+' || rest[0] == '`':
 		return constrained(src, i)
@@ -239,6 +244,20 @@ func constrained(src []byte, i int) (int, bool) {
 		}
 	}
 	return 0, false
+}
+
+// spacedMacros are the inline macros whose target may hold spaces, so the
+// target runs on to its attribute list and is opaque like it.
+var spacedMacros = []string{"image:", "icon:", "xref:", "menu:"}
+
+// spacedMacro returns the end of such a macro whose target starts at i. A
+// target never starts with whitespace, which keeps a name in prose out.
+func spacedMacro(src []byte, i int) (int, bool) {
+	open := bytes.IndexByte(src[i:], '[')
+	if open < 1 || isSpace(src[i]) {
+		return 0, false
+	}
+	return bracket(src, i+open)
 }
 
 // bracket returns the end of the attribute list a macro opens at i, counting

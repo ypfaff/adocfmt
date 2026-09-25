@@ -1,3 +1,6 @@
 See link:x.html[Text. More] now. Run `make. Now` here. Use +++<b>a. B</b>+++ too.
 Keep +++<pre>a
 b</pre>+++ as it is.
+
+The image:Step one. Setup.png[] shows it. See image:my
+file.png[] now.
