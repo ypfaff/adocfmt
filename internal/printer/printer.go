@@ -108,6 +108,8 @@ func (p *printer) body(node block.Node) {
 		p.delimited(node, node.Delim)
 	case *block.Table:
 		p.delimited(node, node.Delim)
+	case *block.Paragraph, *block.Admonition:
+		p.prose(node)
 	case *block.List:
 		p.list(node)
 	case *block.ListItem:

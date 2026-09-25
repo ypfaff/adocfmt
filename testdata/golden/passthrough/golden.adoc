@@ -1,7 +1,7 @@
 = Passthrough
 :experimental:
 
-// Input and golden are identical here: no rule claims any of this yet.
+// Input and golden are identical here: all of it is already formatted.
 
 An opinionated formatter leaves alone what no rule claims.
 This paragraph is written one sentence per line.
