@@ -27,18 +27,15 @@ func canonical(marker string) (string, bool) {
 // the rule writes, and for no other, so an item left out of the map prints as
 // it stands.
 func listMarkers(doc *block.Document) map[block.Node]string {
-	k := picker{src: doc.Src, eol: string(doc.LineEnding), markers: map[block.Node]string{}}
+	k := picker{src: doc.Src, markers: map[block.Node]string{}}
 	k.nodes(doc.Nodes)
 	return k.markers
 }
 
 type picker struct {
 	src     []byte
-	eol     string
 	markers map[block.Node]string
 }
-
-func (k *picker) text(s block.Span) []byte { return k.src[s.Start:s.End] }
 
 // nodes walks a run of siblings. What a list among them stands in, it carries
 // itself, so the walk only has to hand it the node underneath, which a
@@ -127,7 +124,7 @@ func (k *picker) rewritable(list *block.List, marker string) bool {
 // rewrite would turn that line into one.
 func (k *picker) holds(list *block.List, marker string) bool {
 	for _, item := range list.Items {
-		if carries(k.text(item.Principal), marker) || k.heldBy(item.Children, marker) {
+		if k.carries(item.Principal, marker) || k.heldBy(item.Children, marker) {
 			return true
 		}
 	}
@@ -144,14 +141,8 @@ func (k *picker) heldBy(nodes []block.Node, marker string) bool {
 			if k.holds(node, marker) {
 				return true
 			}
-		case *block.Paragraph, *block.Admonition:
-			// The sentence rule moves their lines, so what counts is how it
-			// writes them.
-			if carries(reflowed(k.src, node, k.eol), marker) {
-				return true
-			}
 		default:
-			if carries(k.text(node.Lines()), marker) {
+			if k.carries(node.Lines(), marker) {
 				return true
 			}
 		}
@@ -159,9 +150,9 @@ func (k *picker) heldBy(nodes []block.Node, marker string) bool {
 	return false
 }
 
-// carries reports whether a line of src opens a list item with the marker.
-func carries(src []byte, marker string) bool {
-	for _, line := range block.Lines(src) {
+// carries reports whether a line of the span opens a list item with the marker.
+func (k *picker) carries(span block.Span, marker string) bool {
+	for _, line := range block.Lines(k.src[span.Start:span.End]) {
 		if on, ok := block.ListMarker(line); ok && on == marker {
 			return true
 		}
