@@ -779,6 +779,14 @@ List "*"
     Admonition "NOTE: Text.\n"`,
 		},
 		{
+			name: "substitutions of its own make a paragraph literal",
+			src:  "[subs=none]\n<pre>One. Two.</pre>\n\n[.lead,subs=\"-quotes\"]\nText.\n\n[.subs]\nText.\n",
+			want: `
+Literal meta("[subs=none]\n") "<pre>One. Two.</pre>\n"
+Literal meta("[.lead,subs=\"-quotes\"]\n") "Text.\n"
+Paragraph meta("[.subs]\n") "Text.\n"`,
+		},
+		{
 			name: "a Markdown quote is a quote block, not a paragraph",
 			src:  "> A famous quote.\n> -- Famous Person\n",
 			want: `

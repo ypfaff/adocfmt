@@ -184,8 +184,9 @@ type Paragraph struct{ base }
 type Admonition struct{ base }
 
 // Literal holds verbatim lines without a delimiter: an indented paragraph, one
-// an attribute line turned into code, or prose whose line breaks Asciidoctor
-// renders, because hardbreaks are on or a missing attribute drops its line.
+// an attribute line turned into code, or prose whose line breaks carry meaning,
+// because hardbreaks are on, a missing attribute drops its line, or it sets
+// substitutions of its own.
 type Literal struct{ base }
 
 // Verbatim is a delimited block whose content must stay byte-identical:
