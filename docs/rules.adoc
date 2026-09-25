@@ -471,3 +471,57 @@ a|
 ....
 |===
 ====
+
+[#one-sentence-per-line]
+== One sentence per line
+
+The lines of a paragraph are joined and split again, so that every sentence starts a line of its own.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+First sentence
+continues here. Second one.
+....
+a|
+....
+First sentence continues here.
+Second one.
+....
+|===
+
+A sentence ends at a `.`, `!` or `?` followed by whitespace and a word that starts with an uppercase letter.
+Closing quotes, brackets and formatting marks after it belong to the sentence.
+A period does not end a sentence after a digit, a single letter or a common English or German abbreviation such as `Dr.`, `e.g.`, `z. B.` or `Nr.`, and neither does an ellipsis.
+A hard line break stays where it is, and so does a line break inside code, a passthrough or the brackets of a macro.
+
+Left alone:
+
+* The text of a list item, a description list entry included.
+A paragraph attached to an item with a `{plus}` is reflowed like any other.
+* A paragraph whose line breaks carry meaning: a verse or literal paragraph, one with the `hardbreaks` option, and one that sets its own `subs`, which can pass raw HTML through where a line break shows.
+* A paragraph an include or a conditional reaches, or that holds a comment line.
+* A paragraph that a joined or a split line would turn into something else.
+A line that starts like a list item, an attribute line or an admonition label is syntax, not text.
++
+.What the joined line would become
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| A paragraph | An admonition
+
+a|
+....
+NOTE:
+the label stands alone.
+....
+a|
+....
+NOTE: the label stands alone.
+....
+|===
+====
