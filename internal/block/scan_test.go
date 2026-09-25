@@ -1121,3 +1121,29 @@ func TestScanLineEnding(t *testing.T) {
 		})
 	}
 }
+
+// TestReadsAs pins what a rewrite of a node's lines must not turn them into.
+func TestReadsAs(t *testing.T) {
+	tests := []struct {
+		name  string
+		node  Node
+		lines string
+		want  bool
+	}{
+		{"prose stays prose", &Paragraph{}, "One.\nTwo.\n", true},
+		{"a label stays an admonition", &Admonition{}, "NOTE: One.\nTwo.\n", true},
+		{"a join makes a label", &Paragraph{}, "NOTE: One.\n", false},
+		{"a split starts a list", &Paragraph{}, "* One.\n", false},
+		{"a later line starts an item", &Paragraph{}, "One.\n. Two.\n", false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := ReadsAs(test.node, []byte(test.lines)); got != test.want {
+				t.Errorf("ReadsAs(%T, %q) = %t, want %t", test.node, test.lines, got, test.want)
+			}
+		})
+	}
+}

@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"unicode/utf8"
 )
@@ -50,6 +51,25 @@ func Scan(src []byte) (*Document, error) {
 
 	doc.Findings = s.findings
 	return doc, nil
+}
+
+// ReadsAs reports whether lines that replace the node's own still read as a
+// node of its kind, so a rule that moves text between lines asks first: a join
+// or a split can turn text into syntax. The lines are read on their own,
+// without the lists open around the node, so a later line that starts like an
+// item of any list is refused as well.
+func ReadsAs(node Node, lines []byte) bool {
+	doc, err := Scan(lines)
+	if err != nil || len(doc.Nodes) != 1 || doc.Nodes[0].Frozen() ||
+		reflect.TypeOf(doc.Nodes[0]) != reflect.TypeOf(node) {
+		return false
+	}
+	for _, line := range Lines(lines)[1:] {
+		if _, ok := ListMarker(line); ok {
+			return false
+		}
+	}
+	return true
 }
 
 // lineEnding reports what ends a line in src, and fails on the endings the
