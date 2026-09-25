@@ -502,6 +502,8 @@ Left alone:
 
 * The text of a list item, a description list entry included.
 A paragraph attached to an item with a `{plus}` is reflowed like any other.
+* A paragraph in a list with a line that starts like a list item.
+Asciidoctor reads the lines below that line differently, even where it shows the line as text.
 * A paragraph whose line breaks carry meaning: a verse or literal paragraph, one with the `hardbreaks` option, and one that sets its own `subs`, which can pass raw HTML through where a line break shows.
 * A paragraph an include or a conditional reaches, or that holds a comment line.
 * A paragraph that a joined or a split line would turn into something else.

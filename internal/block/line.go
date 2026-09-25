@@ -411,11 +411,13 @@ func directiveShape(s []byte) (shape, bool) {
 
 // pinsLine reports whether a line inside a paragraph has to stay a line of its
 // own. A comment line joined into prose becomes prose; a description term
-// joined onto the line above makes a list of both; an escaped directive loses
-// its backslash only at the start of a line; and an inline {set:} makes
-// Asciidoctor drop the whole line it stands on.
-func pinsLine(sh shape, s []byte) bool {
-	if sh.kind == shapeComment || (sh.kind == shapeMarker && isTermMarker(sh.marker)) {
+// joined onto the line above makes a list of both; inside a list, a line that
+// starts like an item changes how Asciidoctor reads the lines below it, even
+// where it renders the line as text; an escaped directive loses its backslash
+// only at the start of a line; and an inline {set:} makes Asciidoctor drop the
+// whole line it stands on.
+func pinsLine(sh shape, s []byte, inList bool) bool {
+	if sh.kind == shapeComment || (sh.kind == shapeMarker && (inList || isTermMarker(sh.marker))) {
 		return true
 	}
 	if len(s) > 0 && s[0] == '\\' {
