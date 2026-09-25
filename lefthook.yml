@@ -5,6 +5,14 @@ pre-commit:
     - name: lint
       run: golangci-lint run
 
+    - name: shellcheck
+      glob: "*.sh"
+      run: shellcheck {staged_files}
+
+    - name: actionlint
+      glob: ".github/workflows/*.yml"
+      run: go tool -modfile=tools/actionlint/go.mod actionlint
+
 pre-push:
   jobs:
     - name: test

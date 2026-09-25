@@ -26,3 +26,17 @@ updates:
       modules:
         patterns: ["*"]
         update-types: [minor, patch]
+
+  - package-ecosystem: gomod
+    directory: /tools/actionlint
+    schedule:
+      interval: weekly
+    # Go marks a tool as indirect, and the default covers direct dependencies
+    # only, which would leave actionlint itself unwatched. Naming it keeps its
+    # own dependencies at the versions its release was tested with.
+    allow:
+      - dependency-name: github.com/rhysd/actionlint
+        dependency-type: all
+    commit-message:
+      prefix: ci
+      include: scope
