@@ -761,6 +761,24 @@ Paragraph "foo::bar[]\n"
 Paragraph "include::[]\n"`,
 		},
 		{
+			name: "a label, a colon and whitespace open an admonition paragraph",
+			src:  "NOTE: Text.\nMore.\n\nTIP:\tText.\n\nNOTE:\nText.\n\nNote: Text.\n",
+			want: `
+Admonition "NOTE: Text.\nMore.\n"
+Admonition "TIP:\tText.\n"
+Paragraph "NOTE:\nText.\n"
+Paragraph "Note: Text.\n"`,
+		},
+		{
+			name: "a paragraph an item carries can be an admonition, the item text cannot",
+			src:  "* NOTE: Text.\n+\nNOTE: Text.\n",
+			want: `
+List "*"
+  ListItem "* NOTE: Text.\n"
+    Continuation gap! "+\n"
+    Admonition "NOTE: Text.\n"`,
+		},
+		{
 			name: "a Markdown quote is a quote block, not a paragraph",
 			src:  "> A famous quote.\n> -- Famous Person\n",
 			want: `

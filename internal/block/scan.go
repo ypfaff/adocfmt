@@ -532,9 +532,26 @@ func (s *scanner) paragraph(b base, closer []byte) Node {
 		return &Opaque{base: b}
 	case styledVerbatim(s.src, b.meta) || hasOption(s.src, b.meta, hardbreaksOption) || len(s.lineBound) > 0:
 		return &Literal{base: b}
+	case admonition(s.text(s.lines[first])):
+		return &Admonition{base: b}
 	default:
 		return &Paragraph{base: b}
 	}
+}
+
+// admonitionLabels are the labels that open an admonition paragraph.
+var admonitionLabels = []string{"NOTE", "TIP", "IMPORTANT", "WARNING", "CAUTION"}
+
+// admonition reports whether a paragraph's first line opens with an admonition
+// label, a colon and whitespace, as Asciidoctor requires.
+func admonition(line []byte) bool {
+	for _, label := range admonitionLabels {
+		rest, ok := bytes.CutPrefix(line, []byte(label+":"))
+		if ok && len(rest) > 0 && (rest[0] == ' ' || rest[0] == '\t') {
+			return true
+		}
+	}
+	return false
 }
 
 // literal is an indented paragraph, which AsciiDoc reads as verbatim content.
