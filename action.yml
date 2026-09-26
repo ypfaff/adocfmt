@@ -7,7 +7,7 @@ inputs:
   version:
     description: The adocfmt version to install, such as 1.2.3 or v1.2.3.
     # Rewritten by the release pipeline for every tag; see
-    # .github/scripts/set-action-version.sh.
+    # tools/set-action-version.
     default: '0.0.0' # adocfmt-version-marker
   args:
     description: Arguments passed to adocfmt.
