@@ -104,7 +104,7 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          .github/scripts/generate-formula.sh \
+          go run ./tools/generate-formula \
             --version "${VERSION}" \
             --checksums dist/checksums.txt \
             --output HomebrewFormula/adocfmt.rb

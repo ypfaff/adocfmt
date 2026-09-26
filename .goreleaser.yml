@@ -34,8 +34,9 @@ builds:
 
 archives:
   # The same name the default builds for our targets, spelled out because
-  # generate-formula.sh builds the release URLs from it. Left implicit, adding a
-  # target such as GOAMD64=v3 would rename the archives and break the formula.
+  # tools/generate-formula builds the release URLs from it. Left implicit,
+  # adding a target such as GOAMD64=v3 would rename the archives and break the
+  # formula.
   - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     # Naming files replaces the default list, which covers LICENSE and README
     # but not NOTICE. The Apache License section 4 requires NOTICE to travel
@@ -45,7 +46,7 @@ archives:
       - NOTICE
       - README.adoc
 
-# The default carries the version in the name; generate-formula.sh reads one
+# The default carries the version in the name; tools/generate-formula reads one
 # fixed path.
 checksum:
   name_template: checksums.txt
