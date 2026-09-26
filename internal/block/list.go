@@ -50,7 +50,8 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	start := s.pos()
 	b := base{gap: gap}
 	item := &ListItem{base: b, Marker: sh.span}
-	bare := sh.span.End == s.lines[s.at].text.End
+	marker := s.at
+	bare := sh.span.End == s.lines[marker].text.End
 
 	s.at++
 	for !s.done() && !s.closes(closer) {
@@ -66,7 +67,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 		s.at++
 	}
 	item.Principal = Span{start, s.pos()}
-	if bare {
+	if bare && (s.at == marker+1 || item.frozen) {
 		s.fold(item, start, closer)
 	}
 
@@ -75,9 +76,12 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	return item
 }
 
-// fold takes the lines after a term that carries no text of its own onto that
-// term. Asciidoctor reads them as the term's text whatever they look like, so
-// a break or a heading among them is text, not a block of its own.
+// fold takes the lines under a blank line onto a term that has nothing on its
+// line and no line right under it, not even a comment. Asciidoctor reads them
+// as the term's text whatever they look like, so a break or a heading among
+// them is text, not a block of its own. A directive under the term leaves open
+// whether the term has text, so the lines fold into the frozen item then and
+// stay as they stand.
 func (s *scanner) fold(item *ListItem, start int, closer []byte) {
 	m := s.mark()
 	s.gap()

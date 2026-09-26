@@ -823,6 +823,17 @@ List "::"
   ListItem "term1::\n\n'''\ncontinued\n"`,
 		},
 		{
+			name: "a term with a line right under it takes nothing below a blank line",
+			src:  "term1::\ntext\n\n=== B\n\nterm2::\n// a comment\n\nmore\n",
+			want: `
+List "::"
+  ListItem "term1::\ntext\n"
+Heading "=== B\n" title "B"
+List "::"
+  ListItem "term2::\n// a comment\n"
+Paragraph "more\n"`,
+		},
+		{
 			name: "a + with no list around it opens a paragraph of its own",
 			src:  "text\n+\n- a\n+\n1. a\n",
 			want: `
