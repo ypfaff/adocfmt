@@ -4,7 +4,7 @@
 //
 //	adocfmt [flags] [path ...]
 //
-// docs/rules.adoc says what it changes.
+// docs/reference/rules.adoc says what it changes.
 package main
 
 import (

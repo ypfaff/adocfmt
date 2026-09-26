@@ -9,7 +9,7 @@ Beyond the unit tests of each package, the formatter is covered by checks that e
 <<refusal,Refusal>>:: A document the scanner cannot read safely is not touched.
 
 A new or changed rule brings golden cases with it.
-The other checks run over the corpus, the test inputs of the Asciidoctor test suite under link:../testdata/asciidoctor-cases[`testdata/asciidoctor-cases`], and find a rule's mistakes on their own.
+The other checks run over the corpus, the test inputs of the Asciidoctor test suite under link:../../testdata/asciidoctor-cases[`testdata/asciidoctor-cases`], and find a rule's mistakes on their own.
 
 [#identity]
 == Identity
@@ -20,9 +20,9 @@ Render equivalence cannot stand in for this check: a lost blank line renders the
 The printer has a raw mode for this, which walks the tree the way the formatting one does and emits every node as it stands.
 `Format` never offers it, because turning the rules off is a test instrument rather than a mode of the formatter.
 
-link:../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every corpus file and every golden file back and compares bytes.
-link:../internal/block/partition_test.go[`TestScanPartitions`] checks the same property span by span, so a failure names the node rather than the byte.
-link:../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`] searches for source the corpus does not cover.
+link:../../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every corpus file and every golden file back and compares bytes.
+link:../../internal/block/partition_test.go[`TestScanPartitions`] checks the same property span by span, so a failure names the node rather than the byte.
+link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`] searches for source the corpus does not cover.
 Its seeds are fixed inputs that run as ordinary cases with every `go test`; the search mutates them and runs on demand, and an input it breaks the test with is saved under `testdata/fuzz` and runs from then on:
 
 [source,shell]
@@ -37,7 +37,7 @@ The scanner decides what each block is, such as a heading, a list, or a code blo
 No test compares these decisions with Asciidoctor directly; the <<render-equivalence,render equivalence>> checks catch a wrong one wherever it would do harm.
 If a rule rewrites a block the scanner misread, for example a line of prose taken for a heading, the rendered document changes and the checks fail.
 A misread block that no rule rewrites is printed unchanged, so it cannot break the document.
-A fix for a misread brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
+A fix for a misread brings a case in link:../../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
 
 [#render-equivalence]
 == Render equivalence
@@ -59,12 +59,12 @@ Comments::
 The comment lines of both sources, in order, because Asciidoctor drops them before they reach the HTML.
 The check reads raw lines rather than the block tree, so a comment the scanner filed as prose still counts.
 
-While the rules change no corpus case, every case compares a document against itself, so link:../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] hands each check a document broken in the way it exists to catch.
+While the rules change no corpus case, every case compares a document against itself, so link:../../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] hands each check a document broken in the way it exists to catch.
 
 === Where the checks run
 
 Confidence comes from breadth, so the main input is the corpus, one file per test input of the Asciidoctor test suite.
-Those inputs sit inside the Ruby test files rather than in `.adoc` files, so link:../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] lifts them out.
+Those inputs sit inside the Ruby test files rather than in `.adoc` files, so link:../../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] lifts them out.
 The pinned tag tracks the Asciidoctor release the checks render with; regenerate the cases after changing it:
 
 [source,shell]
@@ -72,7 +72,7 @@ The pinned tag tracks the Asciidoctor release the checks render with; regenerate
 go run ./tools/fetch-asciidoctor-cases
 ----
 
-link:../internal/renderequivalence/cases_test.go[`TestAsciidoctorCases`] formats every case and compares; link:../internal/format/golden_test.go[`TestGoldenCasesRenderEquivalent`] does the same for every golden pair, input against expectation.
+link:../../internal/renderequivalence/cases_test.go[`TestAsciidoctorCases`] formats every case and compares; link:../../internal/format/golden_test.go[`TestGoldenCasesRenderEquivalent`] does the same for every golden pair, input against expectation.
 
 The corpus has two blind spots.
 Its cases are short snippets dense in syntax and short in prose, so they exercise block structure far more than sentences.
@@ -81,7 +81,7 @@ Asciidoctor renders each case once, with no attribute set and no include file pr
 [#golden-files]
 == Golden files
 
-A case is a directory under link:../testdata/golden[`testdata/golden`] holding two files:
+A case is a directory under link:../../testdata/golden[`testdata/golden`] holding two files:
 
 ....
 testdata/golden/
@@ -115,9 +115,9 @@ That case is what catches a rule that keeps reformatting its own output.
 [#refusal]
 == Refusal
 
-A document the scanner could not read safely comes back as an error naming every finding, and no output; link:../internal/format/format.go[`Format`] says why.
-link:../internal/format/format_test.go[`TestFormatRefuses` and `TestFormatRejects`] pin that shape.
-The `refused` list in link:../internal/renderequivalence/cases_test.go[`cases_test.go`] pins which corpus cases are turned down, by cause; one that formats after all fails the test.
+A document the scanner could not read safely comes back as an error naming every finding, and no output; link:../../internal/format/format.go[`Format`] says why.
+link:../../internal/format/format_test.go[`TestFormatRefuses` and `TestFormatRejects`] pin that shape.
+The `refused` list in link:../../internal/renderequivalence/cases_test.go[`cases_test.go`] pins which corpus cases are turned down, by cause; one that formats after all fails the test.
 
 == Running
 

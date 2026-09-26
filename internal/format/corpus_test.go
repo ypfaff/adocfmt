@@ -12,7 +12,7 @@ import (
 const corpusDir = "../../" + corpus.Dir
 
 // TestFormatIsIdempotent holds the guarantee that a second run has nothing
-// left to do, over every case in the corpus. See docs/rules.adoc.
+// left to do, over every case in the corpus. See docs/reference/rules.adoc.
 //
 // A refused document has no output to format a second time. Which cases those
 // are is pinned in internal/renderequivalence, so one that newly refuses fails

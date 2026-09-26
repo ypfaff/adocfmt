@@ -1,7 +1,8 @@
 // Package golden locates the golden file cases, which the tests compare against
 // and tools/update-golden rewrites.
 //
-// See docs/testing-strategy.adoc for what a case is and when to add one.
+// See docs/contributing/testing-strategy.adoc for what a case is and when to
+// add one.
 package golden
 
 import (
