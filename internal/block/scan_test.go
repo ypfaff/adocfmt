@@ -37,6 +37,20 @@ List "-"
   ListItem "- one\n"`,
 		},
 		{
+			name: "a directive under the title is not counted either, and freezes the header",
+			src:  "= Title\nAuthor Name\nifdef::env-github[]\n:tip-caption: :bulb:\nendif::[]\nv1, 2020\n\nText.\n",
+			want: `
+Header! gap! "= Title\nAuthor Name\nifdef::env-github[]\n:tip-caption: :bulb:\nendif::[]\nv1, 2020\n" title "Title"
+Paragraph gap! "Text.\n"`,
+		},
+		{
+			name: "a frozen header runs to the blank line, since which lines it counts is open",
+			src:  "= Title\nifdef::x[]\nJane Doe\nendif::[]\nifndef::x[]\nJohn Roe\nendif::[]\nv1, 2020\n\nText.\n",
+			want: `
+Header! gap! "= Title\nifdef::x[]\nJane Doe\nendif::[]\nifndef::x[]\nJohn Roe\nendif::[]\nv1, 2020\n" title "Title"
+Paragraph gap! "Text.\n"`,
+		},
+		{
 			name: "attribute entries and conditionals before the title do not end the header",
 			src:  ":a: b\n\nifdef::x[]\n:c: d\nendif::[]\n= Title\nAuthor Name\n\nText.\n",
 			want: `
