@@ -51,9 +51,9 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           if [[ -n "${VERSION}" ]]; then
-            version="$(.github/scripts/calculate-version.sh --explicit "${VERSION}")"
+            version="$(go run ./tools/calculate-version --explicit "${VERSION}")"
           else
-            version="$(.github/scripts/calculate-version.sh --bump "${BUMP}")"
+            version="$(go run ./tools/calculate-version --bump "${BUMP}")"
           fi
           echo "version=${version}" >>"${GITHUB_OUTPUT}"
           echo "### Releasing v${version}" >>"${GITHUB_STEP_SUMMARY}"
