@@ -205,6 +205,14 @@ func (s *scanner) track(sh shape) {
 	}
 }
 
+// reach follows the directive on the current line and freezes the block it
+// stands in, with the gaps on both sides: what the directive brings in decides
+// where that block really starts and ends.
+func (s *scanner) reach(b *base, sh shape) {
+	s.track(sh)
+	b.frozen, b.gap.Frozen, s.freeze = true, true, true
+}
+
 // region identifies the innermost open conditional region, or -1 outside any.
 func (s *scanner) region() int {
 	if len(s.regions) == 0 {
@@ -249,8 +257,7 @@ func (s *scanner) metaLine(b *base, closer []byte) bool {
 	var open bool
 	switch kind {
 	case MetaDirective:
-		s.track(sh)
-		b.frozen, b.gap.Frozen, s.freeze = true, true, true
+		s.reach(b, sh)
 		s.at++
 	case MetaAttrEntry:
 		open = s.entry(b)
@@ -498,8 +505,7 @@ func (s *scanner) entry(b *base) bool {
 			return true
 		}
 		if sh.kind == shapeDirective {
-			s.track(sh)
-			b.frozen, b.gap.Frozen, s.freeze = true, true, true
+			s.reach(b, sh)
 			continue
 		}
 		open = bytes.HasSuffix(bytes.TrimLeft(s.text(s.lines[s.at]), " \t"), []byte(e.wrap))
@@ -589,29 +595,22 @@ func (s *scanner) literal(b base, closer []byte) Node {
 
 // textRun consumes the lines of an undelimited block up to the first line ends
 // says is no longer part of it. A directive line inside the block does not end
-// it: what the directive pulls in decides where the block really ends, so the
-// block and the gaps around it freeze instead. A line that has to stay a line
-// of its own freezes the block too, see pinsLine.
+// it but freezes it, see reach. A line that has to stay a line of its own
+// freezes the block too, see pinsLine.
 func (s *scanner) textRun(b *base, closer []byte, ends func(shape) bool) {
 	start := s.pos()
-	directive := false
 	for !s.done() && !s.closes(closer) {
 		sh := s.shape()
 		if ends(sh) {
 			break
 		}
 		if sh.kind == shapeDirective {
-			s.track(sh)
-			directive = true
+			s.reach(b, sh)
 		}
-		b.frozen = b.frozen || sh.kind == shapeDirective || pinsLine(sh, s.text(s.lines[s.at]), s.inList())
+		b.frozen = b.frozen || pinsLine(sh, s.text(s.lines[s.at]), s.inList())
 		s.at++
 	}
 	b.lines = Span{start, s.pos()}
-	if directive {
-		b.gap.Frozen = true
-		s.freeze = true
-	}
 }
 
 // endsText reports whether a line of this shape ends the text of a paragraph
@@ -681,11 +680,8 @@ func (s *scanner) plusText(b base, closer []byte, ends func(shape) bool) Node {
 }
 
 func (s *scanner) directive(b base, sh shape) Node {
-	s.track(sh)
-	b.gap.Frozen = true
-	b.frozen = true
+	s.reach(&b, sh)
 	b.lines = s.take()
-	s.freeze = true
 	return &Directive{base: b}
 }
 
