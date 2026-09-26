@@ -33,11 +33,11 @@ go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 [#classification]
 == Classification
 
-While no rule moves a line, the printer emits every node where it stood, so a misread block never shows in the output.
-link:../internal/renderequivalence/stress_test.go[`TestStressedCases`] rewrites every corpus file as hard as any planned rule will and runs the <<render-equivalence,render equivalence>> checks on the result.
-A fix for a misread it finds brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
-A rule that moves more than the stresser does extends it first, and one that moves what the stresser moves takes that part out again, since `TestAsciidoctorCases` then does the same work for real.
-The text of a table cell and of a list item is not rewritten, so a rule for either extends it.
+The scanner decides what each block is, such as a heading, a list, or a code block, and the rules format each block according to that decision.
+No test compares these decisions with Asciidoctor directly; the <<render-equivalence,render equivalence>> checks catch a wrong one wherever it would do harm.
+If a rule rewrites a block the scanner misread, for example a line of prose taken for a heading, the rendered document changes and the checks fail.
+A misread block that no rule rewrites is printed unchanged, so it cannot break the document.
+A fix for a misread brings a case in link:../internal/block/scan_test.go[`scan_test.go`] pinning the tree the scanner now produces.
 
 [#render-equivalence]
 == Render equivalence
