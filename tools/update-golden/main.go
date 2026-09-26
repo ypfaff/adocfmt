@@ -5,7 +5,7 @@
 // Read the diff before committing it: the tool records whatever the formatter
 // produces, so an unreviewed update turns a bug into the expectation.
 //
-// See docs/testing-strategy.adoc for how the cases are used.
+// See docs/contributing/testing-strategy.adoc for how the cases are used.
 package main
 
 import (

@@ -12,7 +12,7 @@ adocfmt applies the rules on this page and leaves the rest of the document as it
 * A document that cannot be read reliably is refused: adocfmt reports what it found and writes nothing.
 * Formatting a formatted document changes nothing.
 * No rule changes what the rendered document shows.
-Asciidoctor decides what a document means, and link:testing-strategy.adoc[the testing strategy] describes how every rule is checked against it.
+Asciidoctor decides what a document means, and xref:../contributing/testing-strategy.adoc[the testing strategy] describes how every rule is checked against it.
 
 [#trailing-whitespace]
 == Trailing whitespace

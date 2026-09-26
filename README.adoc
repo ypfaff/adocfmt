@@ -3,8 +3,8 @@
 An opinionated AsciiDoc® formatter in Go.
 
 Early work in progress.
-See link:docs/rules.adoc[the formatting rules] for what it changes today.
-It is built from a block scanner, the printer it feeds, and a link:docs/testing-strategy.adoc[testing strategy] that every rule has to satisfy.
+See link:docs/reference/rules.adoc[the formatting rules] for what it changes today.
+It is built from a block scanner, the printer it feeds, and a link:docs/contributing/testing-strategy.adoc[testing strategy] that every rule has to satisfy.
 
 == Installation
 
