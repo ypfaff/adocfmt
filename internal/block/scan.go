@@ -453,8 +453,10 @@ const headerLines = 2
 
 // header is the document header, which stays compact: it runs to the first
 // blank line and takes headerLines under the title, with the attribute and
-// comment lines among them, which Asciidoctor reads without counting. twoLine
-// says the title is written as a title and an underline.
+// comment lines among them, which Asciidoctor reads without counting. It
+// resolves a directive before it counts, so which lines are the author and
+// the revision is unknown then: the header freezes and runs to the blank
+// line. twoLine says the title is written as a title and an underline.
 func (s *scanner) header(b base, title Span, twoLine bool) Node {
 	start := s.pos()
 	s.at++
@@ -463,15 +465,19 @@ func (s *scanner) header(b base, title Span, twoLine bool) Node {
 	}
 	titleLines := Span{start, s.pos()}
 	taken := 0
+loop:
 	for !s.done() && s.shape().kind != shapeBlank {
-		kind := s.shape().kind
-		if kind == shapeAttrEntry {
+		sh := s.shape()
+		switch sh.kind {
+		case shapeAttrEntry:
 			s.entry(&b)
 			continue
-		}
-		if kind != shapeComment {
-			if taken == headerLines {
-				break
+		case shapeDirective:
+			s.reach(&b, sh)
+		case shapeComment:
+		default:
+			if taken == headerLines && !b.frozen {
+				break loop
 			}
 			taken++
 		}

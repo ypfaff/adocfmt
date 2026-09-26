@@ -71,6 +71,8 @@ Left alone:
 It turns on https://docs.asciidoctor.org/asciidoctor/latest/migrate/asciidoc-py/#compatibility-mode[compat-mode], and the same document on one line would render its inline markup differently.
 * A title the rewrite would change.
 A closing marker counts only when it matches the one in front of it, so `## Title ==` has the title `Title ==`, while `== Title ==` would have the title `Title`.
+* A document header an include or a conditional reaches, its title included.
+Which lines are the author and the revision is known only once Asciidoctor has resolved the directive.
 
 [#setext-headings]
 == Setext headings
