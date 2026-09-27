@@ -1,0 +1,5 @@
+:Ⓐ-one: first
+
+:Ⓐ-two: second
+
+Value {Ⓐ-one} and {Ⓐ-two}.
