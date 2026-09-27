@@ -287,12 +287,12 @@ List meta("[pass]\n") "*"
 		},
 		{
 			name: "the hardbreaks option makes the line breaks content",
-			src:  "[%hardbreaks]\nread\nmy\nlips\n\n[quote%hardbreaks]\na\nb\n\n[.lead]\n[opts=hardbreaks]\na\nb\n\n[hardbreaks]\na\nb\n",
+			src:  "[%hardbreaks]\nread\nmy\nlips\n\n[quote%hardbreaks]\na\nb\n\n[.lead]\n[opts=hardbreaks]\na\nb\n\n[role=hardbreaks]\na\nb\n",
 			want: `
 Literal meta("[%hardbreaks]\n") "read\nmy\nlips\n"
 Literal meta("[quote%hardbreaks]\n") "a\nb\n"
 Literal meta("[.lead]\n") meta("[opts=hardbreaks]\n") "a\nb\n"
-Paragraph meta("[hardbreaks]\n") "a\nb\n"`,
+Paragraph meta("[role=hardbreaks]\n") "a\nb\n"`,
 		},
 		{
 			name: "the option on a container does not reach its paragraphs",
@@ -570,20 +570,20 @@ List "*"
 		},
 		{
 			name: "an attribute line right after an item binds to a block inside the item",
-			src:  "* a\n[x]\ntext\n* b\n",
+			src:  "* a\n[.x]\ntext\n* b\n",
 			want: `
 List "*"
   ListItem "* a\n"
-    Paragraph meta("[x]\n") "text\n"
+    Paragraph meta("[.x]\n") "text\n"
   ListItem "* b\n"`,
 		},
 		{
 			name: "and to no block when the next item follows it",
-			src:  "* a\n[x]\n* b\n",
+			src:  "* a\n[.x]\n* b\n",
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta("[.x]\n") ""
   ListItem "* b\n"`,
 		},
 		{
@@ -671,14 +671,14 @@ Paragraph! "Text.\nfoo:: bar\n"`,
 		},
 		{
 			name: "inside a carried list, a paragraph right after the item text ends at any item line again",
-			src:  "* a\n+\n- b\n[x]\npara\n. c\n",
+			src:  "* a\n+\n- b\n[.x]\npara\n. c\n",
 			want: `
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
     List "-"
       ListItem "- b\n"
-        Paragraph meta("[x]\n") "para\n"
+        Paragraph meta("[.x]\n") "para\n"
         List "."
           ListItem ". c\n"`,
 		},
@@ -781,13 +781,20 @@ Heading "## Section One\n" title "Section One"
 Paragraph "Text.\n"`,
 		},
 		{
-			name: "the block macros that need no extension are not prose",
+			name: "the block macros that need no extension are not prose, and any other stays as it is",
 			src:  "image::tiger.png[Tiger]\n\ntoc::[]\n\nfoo::bar[]\n\ninclude::[]\n",
 			want: `
 Opaque "image::tiger.png[Tiger]\n"
 Opaque "toc::[]\n"
-Paragraph "foo::bar[]\n"
-Paragraph "include::[]\n"`,
+Opaque "foo::bar[]\n"
+Opaque "include::[]\n"`,
+		},
+		{
+			name: "a style only an extension knows keeps the block as it is",
+			src:  "[mermaid]\ngraph TD\nA-->B\n\n[mermaid]\n--\ngraph TD\n--\n",
+			want: `
+Opaque meta("[mermaid]\n") "graph TD\nA-->B\n"
+Verbatim meta("[mermaid]\n") "--\ngraph TD\n--\n"`,
 		},
 		{
 			name: "a label, a colon and whitespace open an admonition paragraph",

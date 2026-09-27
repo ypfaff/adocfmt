@@ -1,0 +1,8 @@
+* a
++
+foo::bar[]
+* b
++
+[mermaid]
+graph TD
+* c

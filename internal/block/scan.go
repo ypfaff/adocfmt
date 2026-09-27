@@ -561,12 +561,16 @@ func (s *scanner) setext(b base, level int) Node {
 // style, the hardbreaks option, substitutions of its own, or a document
 // attribute in force that binds lines makes it a Literal. A quoted paragraph
 // is Opaque like the Markdown quote, since Asciidoctor lifts its last line out
-// as the attribution. A label opening its first line makes it an Admonition.
+// as the attribution. So is one with a style or a block macro on its first
+// line that only an extension knows, see extensionStyle and
+// isCustomBlockMacro. A label opening its first line makes it an Admonition.
 func (s *scanner) paragraph(b base, closer []byte) Node {
 	first := s.at
 	s.textRun(&b, closer, s.endsProse())
+	style := styleOf(s.src, b.meta)
 	switch {
-	case !paragraphStyles[styleOf(s.src, b.meta)] && quotedParagraph(s.src, s.lines[first:s.at]):
+	case !paragraphStyles[style] && quotedParagraph(s.src, s.lines[first:s.at]),
+		extensionStyle(style) || isCustomBlockMacro(s.text(s.lines[first])):
 		return &Opaque{base: b}
 	case styledVerbatim(s.src, b.meta) || hasOption(s.src, b.meta, hardbreaksOption) ||
 		hasAttr(s.src, b.meta, substitutionsAttr) || len(s.lineBound) > 0:
@@ -702,7 +706,7 @@ func (s *scanner) delimited(b base, sh shape) Node {
 	delim := Delimiter{Char: sh.char, Fill: sh.fill, Width: sh.width, Open: open.full}
 	style := styleOf(s.src, b.meta)
 	raw := readsRaw(sh, style)
-	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle) {
+	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle || extensionStyle(style)) {
 		sh.content = contentVerbatim
 	}
 	s.at++

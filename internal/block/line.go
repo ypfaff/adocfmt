@@ -344,7 +344,8 @@ func isBreak(s []byte) bool {
 }
 
 // isBlockMacro recognizes the block macros Asciidoctor knows without an
-// extension. Any other name::target[] is prose to it, and so to us.
+// extension. Any other name::target[] is prose to it unless an extension
+// registers the name, see isCustomBlockMacro.
 func isBlockMacro(s []byte) bool {
 	if len(s) == 0 || s[len(s)-1] != ']' {
 		return false
@@ -423,6 +424,30 @@ func isBlockTitle(s []byte) bool {
 		at++
 	}
 	return at < len(s) && !isSpaceByte(s[at]) && s[at] != '.'
+}
+
+// isCustomBlockMacro mirrors Asciidoctor's CustomBlockMacroRx, the shape of a
+// block macro an extension registers: name::target[attributes], where the
+// target neither starts nor ends with a space.
+func isCustomBlockMacro(s []byte) bool {
+	name, rest, ok := bytes.Cut(s, []byte("::"))
+	if !ok || len(name) == 0 || len(rest) < 2 || rest[len(rest)-1] != ']' {
+		return false
+	}
+	for i, r := range string(name) {
+		if !isWordRune(r) && (i == 0 || r != '-') {
+			return false
+		}
+	}
+	for open := range len(rest) - 1 {
+		if rest[open] != '[' {
+			continue
+		}
+		if target := rest[:open]; len(target) == 0 || (!isSpaceByte(target[0]) && !isSpaceByte(target[len(target)-1])) {
+			return true
+		}
+	}
+	return false
 }
 
 func isSpaceByte(c byte) bool { return c == ' ' || c == '\t' }

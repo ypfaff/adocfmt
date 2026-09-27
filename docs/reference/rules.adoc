@@ -636,6 +636,9 @@ are blue.
 Asciidoctor then drops every line that refers to a missing attribute, so the line breaks decide which sentences the page shows.
 * A paragraph that holds a comment line.
 Joining its lines would pull the comment into the text, where it shows.
+* A block that an extension may read in its own way.
+That is a block with a style Asciidoctor does not know, such as `[mermaid]`, and a paragraph that starts with a block macro it does not know, such as `plantuml::diagram.puml[]`.
+Which extensions are loaded depends on the build, which adocfmt cannot see.
 * A paragraph that a joined or a split line would turn into something else.
 A line that starts like a list item, an attribute line or an admonition label is syntax, not text.
 +
