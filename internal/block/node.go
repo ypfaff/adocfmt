@@ -190,7 +190,8 @@ type Admonition struct{ base }
 type Literal struct{ base }
 
 // Verbatim is a delimited block whose content must stay byte-identical:
-// listing, literal, passthrough and comment blocks, and fenced code.
+// listing, literal, passthrough and comment blocks, fenced code, and a block
+// with a style only an extension knows.
 type Verbatim struct {
 	base
 	Delim Delimiter
@@ -257,9 +258,9 @@ type FrontMatter struct{ base }
 
 // Opaque is a block the scanner delimits but does not model: a block macro, a
 // thematic or page break, a Markdown quote, a quoted paragraph with its
-// attribution line, or metadata that never found its block. It is neither
-// prose nor verbatim content, so no rule reflows it, and it passes through
-// unchanged.
+// attribution line, a paragraph an extension may read, or metadata that never
+// found its block. It is neither prose nor verbatim content, so no rule
+// reflows it, and it passes through unchanged.
 //
 // A construct leaves this type when a rule needs it told apart from the rest.
 type Opaque struct{ base }

@@ -82,6 +82,13 @@ var paragraphStyles = map[string]bool{
 	"note": true, "tip": true, "important": true, "warning": true, "caution": true,
 }
 
+// extensionStyle reports whether a style is one Asciidoctor knows only from an
+// extension, which reads the block in its own way. Without one loaded the
+// style is dropped, and the formatter cannot see which are.
+func extensionStyle(style string) bool {
+	return style != "" && style != "normal" && !paragraphStyles[style] && !verbatimStyles[style]
+}
+
 // hardbreaksOption makes every line break of a paragraph a <br>, so its lines
 // are content the way the lines of a verse are.
 const hardbreaksOption = "hardbreaks"

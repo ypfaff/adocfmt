@@ -1,0 +1,4 @@
+Intro.
+
+plantuml::diagram.puml[format=svg]
+Next line.
