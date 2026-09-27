@@ -70,6 +70,13 @@ Header "= Title\nAuthor Name\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "an attribute name may start with any character Ruby counts as a word character",
+			src:  ":Ⓐ-one: first\n:Ⓐ-two: second\n",
+			want: `
+Attribute ":Ⓐ-one: first\n"
+Attribute ":Ⓐ-two: second\n"`,
+		},
+		{
 			name: "a backslash after a space continues the value on the next line",
 			src:  ":a: one \\\ntwo\n\nText.\n",
 			want: `

@@ -747,7 +747,8 @@ func isCalloutNumber(s []byte) bool {
 // isWordRune is Ruby's \p{Word}, which is what Asciidoctor asks of the first
 // character of an attribute name and keeps of the rest.
 func isWordRune(r rune) bool {
-	return unicode.IsLetter(r) || unicode.IsMark(r) || unicode.IsDigit(r) || unicode.Is(unicode.Pc, r)
+	return isAlphaRune(r) || unicode.IsMark(r) || unicode.IsDigit(r) || unicode.Is(unicode.Pc, r) ||
+		unicode.Is(unicode.Join_Control, r)
 }
 
 // isAlphaRune is Ruby's \p{Alpha}, which is what Asciidoctor asks of the first
