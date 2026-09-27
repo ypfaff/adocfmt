@@ -543,6 +543,21 @@ Paragraph "normal text\n"
 Paragraph! gap! "+\n"`,
 		},
 		{
+			name: "a bracket line Asciidoctor does not read as an anchor or attribute list is prose",
+			src:  "[<foo>]\n\nText.\n\n[[a b]]\n\nMore.\n",
+			want: `
+Paragraph "[<foo>]\n"
+Paragraph "Text.\n"
+Paragraph "[[a b]]\n"
+Paragraph "More.\n"`,
+		},
+		{
+			name: "a second dot opens a block title",
+			src:  "..Title\nText.\n",
+			want: `
+Paragraph meta("..Title\n") "Text.\n"`,
+		},
+		{
 			name: "a lone + ends the paragraph a continuation carries as well",
 			src:  "* a\n+\nparagraph two\n+\n----\ncode\n----\n",
 			want: `

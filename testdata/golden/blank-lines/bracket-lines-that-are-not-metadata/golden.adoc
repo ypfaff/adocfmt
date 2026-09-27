@@ -1,0 +1,21 @@
+Intro.
+
+[<foo>]
+
+Text one.
+
+[ source]
+
+Text two.
+
+[[a b]]
+
+Text three.
+
+[[3-blind-mice]]
+
+Text four.
+
+[[[bib]]]
+
+Text five.
