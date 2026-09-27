@@ -237,11 +237,11 @@ func classify(src []byte, l line) shape {
 		return shape{kind: shapeContinuation}
 	case bytes.HasPrefix(s, []byte("//")):
 		return shape{kind: shapeComment}
-	case bytes.HasPrefix(s, []byte("[[")) && bytes.HasSuffix(s, []byte("]]")):
+	case isBlockAnchor(s):
 		return shape{kind: shapeAnchor}
-	case s[0] == '[' && s[len(s)-1] == ']':
+	case isBlockAttributeList(s):
 		return shape{kind: shapeAttributes}
-	case s[0] == '.' && len(s) > 1 && s[1] != ' ' && s[1] != '\t' && s[1] != '.':
+	case isBlockTitle(s):
 		return shape{kind: shapeTitle}
 	}
 	if bytes.HasPrefix(s, markdownQuote) {
@@ -365,6 +365,64 @@ func isBlockMacro(s []byte) bool {
 		return len(target) > 0 && !isSpaceByte(target[0]) && !isSpaceByte(target[len(target)-1])
 	}
 	return false
+}
+
+// isBlockAnchor mirrors Asciidoctor's BlockAnchorRx: an id that starts with a
+// letter, _ or :, and reftext after a comma if any. Any other [[...]] line is
+// prose to it, and it does not try one as an attribute list either.
+func isBlockAnchor(s []byte) bool {
+	inner, ok := bytes.CutPrefix(s, []byte("[["))
+	if !ok {
+		return false
+	}
+	if inner, ok = bytes.CutSuffix(inner, []byte("]]")); !ok {
+		return false
+	}
+	id, reftext, hasReftext := bytes.Cut(inner, []byte(","))
+	if len(id) == 0 {
+		return !hasReftext
+	}
+	if hasReftext && len(reftext) == 0 {
+		return false
+	}
+	for i, r := range string(id) {
+		ok := isWordRune(r) || r == '-' || r == ':' || r == '.'
+		if i == 0 {
+			ok = isAlphaRune(r) || r == '_' || r == ':'
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// isBlockAttributeList mirrors Asciidoctor's BlockAttributeListRx: the list is
+// empty or opens with a word character or one of .#%{,"' so [<foo>] and
+// [ source] are prose.
+func isBlockAttributeList(s []byte) bool {
+	if len(s) < 2 || s[0] != '[' || s[len(s)-1] != ']' {
+		return false
+	}
+	if len(s) == 2 {
+		return true
+	}
+	first, _ := utf8.DecodeRune(s[1:])
+	return isWordRune(first) || strings.ContainsRune(`.#%{,"'`, first)
+}
+
+// isBlockTitle mirrors Asciidoctor's BlockTitleRx: a dot and text that starts
+// with neither a space nor a dot, though one more dot may open it, so ..Title
+// is the title .Title.
+func isBlockTitle(s []byte) bool {
+	if len(s) < 2 || s[0] != '.' {
+		return false
+	}
+	at := 1
+	if s[at] == '.' {
+		at++
+	}
+	return at < len(s) && !isSpaceByte(s[at]) && s[at] != '.'
 }
 
 func isSpaceByte(c byte) bool { return c == ' ' || c == '\t' }
@@ -665,6 +723,12 @@ func isCalloutNumber(s []byte) bool {
 // character of an attribute name and keeps of the rest.
 func isWordRune(r rune) bool {
 	return unicode.IsLetter(r) || unicode.IsMark(r) || unicode.IsDigit(r) || unicode.Is(unicode.Pc, r)
+}
+
+// isAlphaRune is Ruby's \p{Alpha}, which is what Asciidoctor asks of the first
+// character of a block anchor's id.
+func isAlphaRune(r rune) bool {
+	return unicode.IsLetter(r) || unicode.Is(unicode.Nl, r) || unicode.Is(unicode.Other_Alphabetic, r)
 }
 
 func uniform(s []byte, c byte) bool {
