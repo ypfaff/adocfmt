@@ -3,9 +3,9 @@
 <div class="docs">
   {{ partial "sidebar.html" . }}
   <main class="article" id="main">
-    <article>
+    <article data-pagefind-body>
       {{ with (partial "section.html" .).title }}
-        <p class="eyebrow">{{ . }}</p>
+        <p class="eyebrow" data-pagefind-ignore>{{ . }}</p>
       {{ end }}
       <h1>{{ .Title }}</h1>
       <div class="adoc">

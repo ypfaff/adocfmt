@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "The tools the website build downloads. tools/build-website reads package-lock.json; it never runs npm.",
+  "dependencies": {
+    "pagefind": "1.5.2"
+  }
+}

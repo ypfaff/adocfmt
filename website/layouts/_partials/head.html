@@ -15,3 +15,4 @@
 <link rel="icon" href="{{ "images/adocfmt-icon.svg" | relURL }}" type="image/svg+xml">
 {{ $css := resources.Get "css/site.css" | minify | fingerprint }}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}">
+<link rel="stylesheet" href="{{ "pagefind/pagefind-component-ui.css" | relURL }}">

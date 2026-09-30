@@ -1,0 +1,7 @@
+{{- /*
+  Pagefind would look for its bundle at /pagefind/ and link results from /,
+  but the site lives under a base path.
+*/ -}}
+<pagefind-config bundle-path="{{ "pagefind/" | relURL }}" base-url="{{ "" | relURL }}"></pagefind-config>
+<pagefind-modal></pagefind-modal>
+<script src="{{ "pagefind/pagefind-component-ui.js" | relURL }}" type="module"></script>

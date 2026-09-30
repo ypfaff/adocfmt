@@ -52,3 +52,12 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+
+  # The website's tools, which tools/build-website takes from the lockfile.
+  - package-ecosystem: npm
+    directory: /website
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+      include: scope
