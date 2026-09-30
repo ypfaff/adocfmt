@@ -835,6 +835,12 @@ Opaque "foo::bar[]\n"
 Opaque "include::[]\n"`,
 		},
 		{
+			name: "a block macro target may hold a bracket",
+			src:  "image::[x][]\n",
+			want: `
+Opaque "image::[x][]\n"`,
+		},
+		{
 			name: "a style only an extension knows keeps the block as it is",
 			src:  "[mermaid]\ngraph TD\nA-->B\n\n[mermaid]\n--\ngraph TD\n--\n",
 			want: `
