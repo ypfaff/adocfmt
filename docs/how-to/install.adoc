@@ -1,0 +1,121 @@
+= Install adocfmt
+
+Install adocfmt with Homebrew, or download a release archive and put the binary on your `PATH`.
+
+[#homebrew]
+== Install with Homebrew
+
+Homebrew installs adocfmt on macOS and Linux, on both Intel and ARM processors.
+
+. Add the adocfmt repository as a tap:
++
+[source,shell]
+----
+brew tap ypfaff/adocfmt https://github.com/ypfaff/adocfmt
+----
++
+A tap is a repository that Homebrew reads formulas from.
+. Install adocfmt:
++
+[source,shell]
+----
+brew install ypfaff/adocfmt/adocfmt
+----
+
+[#archive]
+== Install from a release archive
+
+Every release on the link:https://github.com/ypfaff/adocfmt/releases[releases page] has one archive for each platform.
+In the archive names, `VERSION` stands for the version without the leading `v`, such as `1.2.3`.
+
+[cols="1,2"]
+|===
+| Platform | Archive
+
+| macOS, Apple silicon
+| `adocfmt_VERSION_darwin_arm64.tar.gz`
+
+| macOS, Intel
+| `adocfmt_VERSION_darwin_amd64.tar.gz`
+
+| Linux, ARM64
+| `adocfmt_VERSION_linux_arm64.tar.gz`
+
+| Linux, x86-64
+| `adocfmt_VERSION_linux_amd64.tar.gz`
+
+| Windows, ARM64
+| `adocfmt_VERSION_windows_arm64.tar.gz`
+
+| Windows, x86-64
+| `adocfmt_VERSION_windows_amd64.tar.gz`
+|===
+
+Each archive holds the binary, `LICENSE`, `NOTICE`, and `README.adoc`.
+The binary is `adocfmt`, or `adocfmt.exe` on Windows.
+The release also has a `checksums.txt` file with the SHA-256 checksum of every archive.
+
+On macOS and Linux:
+
+. Set the version and your platform, as in the archive name:
++
+[source,shell]
+----
+VERSION=1.2.3
+PLATFORM=linux_amd64
+----
+. Download the archive and the checksums:
++
+[source,shell]
+----
+curl --fail --location --remote-name "https://github.com/ypfaff/adocfmt/releases/download/v${VERSION}/adocfmt_${VERSION}_${PLATFORM}.tar.gz"
+curl --fail --location --remote-name "https://github.com/ypfaff/adocfmt/releases/download/v${VERSION}/checksums.txt"
+----
+. Verify the archive against its checksum.
+On Linux, run:
++
+[source,shell]
+----
+sha256sum --check --ignore-missing checksums.txt
+----
++
+On macOS, run:
++
+[source,shell]
+----
+shasum --algorithm 256 --check --ignore-missing checksums.txt
+----
++
+Both print the archive name followed by `OK`.
+. Extract the binary:
++
+[source,shell]
+----
+tar --extract --gzip --file "adocfmt_${VERSION}_${PLATFORM}.tar.gz" adocfmt
+----
+. Move the binary to a directory on your `PATH`, such as `/usr/local/bin`:
++
+[source,shell]
+----
+sudo mv adocfmt /usr/local/bin/
+----
+
+NOTE: Apple has not notarized the macOS binaries.
+If you download an archive with a browser, macOS may block `adocfmt` because it cannot verify the developer.
+Downloading with `curl`, as in the steps above, avoids this.
+For a binary that is already blocked, remove the quarantine attribute with `xattr -d com.apple.quarantine /usr/local/bin/adocfmt`.
+
+On Windows, extract `adocfmt.exe` from the archive and move it to a directory on your `PATH`.
+
+[#confirm]
+== Confirm the installation
+
+Print the version:
+
+[source,console]
+----
+$ adocfmt --version
+adocfmt 1.2.3 (8f5d227f9e15b7e91086180edb7ac054e5947864, 2026-09-26T12:02:14Z)
+----
+
+The output names the version, the commit it was built from, and the date of that commit.
