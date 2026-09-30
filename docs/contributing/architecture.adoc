@@ -1,0 +1,102 @@
+= Architecture
+
+This page explains how adocfmt turns a document into its formatted form, and which package holds each part.
+
+== Overview
+
+// workaround, because of GitHub rendering issues:
+// https://gist.github.com/plamentotev/be495e81abd52dc10e7dd51fbb71dd8c
+// https://github.com/orgs/community/discussions/106933
+// disable formating, because it breaks the directive
+// @formatter:off
+[mermaid]
+ifdef::env-github[[source,mermaid]]
+// @formatter:on
+----
+flowchart LR
+  source[Source] --> scanner[Scanner]
+  scanner --> tree[Block tree]
+  tree --> printer[Printer]
+  printer --> output[Formatted source]
+  scanner --> findings[Findings]
+  findings --> refusal[Refusal, no output]
+----
+
+The scanner reads the source into a block tree.
+If it reports findings, adocfmt refuses the document.
+Otherwise, the printer writes the tree back with the rules applied.
+
+xref:../decision-records/0002-block-tree-and-canonical-printer.adoc[Decision record 0002] explains why the formatter has this shape.
+xref:../decision-records/0003-refuse-what-the-scanner-cannot-read.adoc[Decision record 0003] explains why a document with findings is refused whole.
+
+[#terms]
+== Terms
+
+Block tree::
+The scanner's reading of the document.
+Each node is one block, such as a section title, a paragraph, a list or a delimited block.
+Metadata lines, such as `[source,go]`, `.Title` or a comment, belong to the block below them.
+The scanner is the only place that decides what kind of block a line belongs to.
+
+Span::
+The byte range of the source that a node covers.
+Every byte belongs to exactly one node, so printing the nodes in order gives back the source.
+
+Gap::
+The blank lines in front of a node.
+
+Frozen::
+A node or gap whose meaning depends on an include or a conditional, which the scanner does not resolve.
+No rule may add, remove, join or split lines in a frozen node, or change the blank lines of a frozen gap between two nodes.
+
+Finding::
+Structure the scanner cannot trust, such as a block that never closes, reported with its line number.
+
+== Printer and rules
+
+The printer walks the tree once, from top to bottom, with one function per node type.
+A rule is part of the function for the node type it formats.
+Some rules need to know more than the node in front of them.
+For example, the opening fence of a block can only be shortened once every line inside the block is known, but the printer writes the fence first.
+Such a rule decides for the whole tree in a pass before printing starts, and the printer looks up the decision for each node.
+A node that no rule formats is copied from the source unchanged, apart from its trailing whitespace.
+
+Rules live in files of `internal/printer` named after what they format.
+
+In raw mode, the printer walks the tree the same way with every rule off and reproduces the source byte for byte.
+Only the xref:testing-strategy.adoc#identity[identity check] uses it.
+
+== Packages
+
+[cols="2,5"]
+|===
+| Package | Holds
+
+| link:../../cmd/adocfmt[`cmd/adocfmt`]
+| The command: flags, which files it collects, check mode and writing files back.
+xref:../reference/cli.adoc[The CLI reference] describes its behavior.
+
+| link:../../internal/format[`internal/format`]
+| `Format`, which scans a document and then refuses or prints it.
+
+| link:../../internal/block[`internal/block`]
+| The scanner and the block tree.
+
+| link:../../internal/printer[`internal/printer`]
+| The printer and the rules.
+
+| link:../../internal/sentence[`internal/sentence`]
+| The sentence splitting behind the xref:../reference/rules.adoc#one-sentence-per-line[one sentence per line] rule.
+
+| link:../../internal/renderequivalence[`internal/renderequivalence`]
+| The xref:testing-strategy.adoc#render-equivalence[render equivalence] checks, used only by tests.
+
+| link:../../internal/golden[`internal/golden`]
+| Code that finds the golden cases.
+
+| link:../../internal/corpus[`internal/corpus`]
+| Code that finds the Asciidoctor cases.
+
+| link:../../internal/repo[`internal/repo`]
+| Code that finds the repository root, so the tools work from any directory inside it.
+|===

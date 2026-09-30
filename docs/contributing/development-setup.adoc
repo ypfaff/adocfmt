@@ -1,0 +1,92 @@
+= Development setup
+
+This page lists the tools you need to work on adocfmt and the commands that build, test and lint it.
+
+== Install the tools
+
+Go::
+Version 1.27 or later, as link:../../go.mod[`go.mod`] states.
+
+Asciidoctor::
+The release that the tests render with.
+link:../../tools/fetch-asciidoctor-cases/main.go[`tools/fetch-asciidoctor-cases`] pins it and prints it for you.
+Install it as a Ruby gem:
++
+[source,shell]
+----
+gem install asciidoctor --version "$(go run ./tools/fetch-asciidoctor-cases --print-version)" --no-document
+----
+
+golangci-lint::
+Version 2, which reads the configuration in link:../../.golangci.yml[`.golangci.yml`].
+
+ShellCheck::
+Lints the shell scripts.
+
+lefthook::
+Runs the Git hooks defined in link:../../lefthook.yml[`lefthook.yml`].
+
+You do not install actionlint, which lints the GitHub workflows.
+`go tool` builds it from the module in link:../../tools/actionlint/go.mod[`tools/actionlint`], at the version pinned there.
+
+== Build
+
+[source,shell]
+----
+go build ./...
+----
+
+[#test]
+== Test
+
+[source,shell]
+----
+go test ./...
+----
+
+The full run renders documents with Asciidoctor, so Asciidoctor has to be on your `PATH`.
+To run only the tests that need no Asciidoctor, add `-short`:
+
+[source,shell]
+----
+go test -short ./...
+----
+
+xref:testing-strategy.adoc[The testing strategy] describes what the tests check.
+
+TIP: With the <<git-hooks,Git hooks>> activated, every push runs `go test ./...` first.
+
+== Lint
+
+Lint the Go code:
+
+[source,shell]
+----
+golangci-lint run
+----
+
+Lint the shell scripts:
+
+[source,shell]
+----
+find . -name '*.sh' -not -path './.git/*' -exec shellcheck {} +
+----
+
+Lint the GitHub workflows:
+
+[source,shell]
+----
+go tool -modfile=tools/actionlint/go.mod actionlint
+----
+
+TIP: With the <<git-hooks,Git hooks>> activated, every commit runs these linters first.
+
+[#git-hooks]
+== Activate the Git hooks
+
+Run this once in your clone:
+
+[source,shell]
+----
+lefthook install
+----
