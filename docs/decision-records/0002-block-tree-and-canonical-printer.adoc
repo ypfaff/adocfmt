@@ -1,3 +1,8 @@
+---
+title: "0002: Block tree and canonical printer"
+weight: 2
+linkTitle: 0002 Block tree and printer
+---
 = 0002: Block tree and canonical printer
 
 *Status:* accepted +

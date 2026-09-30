@@ -1,3 +1,8 @@
+---
+title: "0005: Own scanner, not Asciidoctor's parser"
+weight: 5
+linkTitle: 0005 Own scanner
+---
 = 0005: Own scanner, not Asciidoctor's parser
 
 *Status:* accepted +

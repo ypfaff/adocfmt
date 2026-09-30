@@ -1,6 +1,12 @@
+---
+title: "NNNN: Short title of the decision"
+weight: NNNN
+linkTitle: NNNN Short title
+---
 = NNNN: Short title of the decision
 
 // Copy to docs/decision-records/NNNN-kebab-case-title.adoc, keep it concise.
+// weight is NNNN without its leading zeros, which YAML would read as an octal number.
 // Delete these comments.
 
 *Status:* proposed | accepted | superseded by <<NNNN>> +

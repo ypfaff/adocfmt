@@ -1,3 +1,8 @@
+---
+title: "0003: Refuse what the scanner cannot read"
+weight: 3
+linkTitle: 0003 Refuse unreadable input
+---
 = 0003: Refuse what the scanner cannot read
 
 *Status:* accepted +

@@ -1,3 +1,8 @@
+---
+title: Adopt adocfmt in a repository
+weight: 20
+linkTitle: Adopt in a repository
+---
 = Adopt adocfmt in a repository
 
 Introduce adocfmt into an existing repository with one formatting commit, and keep the repository formatted after that.

@@ -1,3 +1,8 @@
+---
+title: Architecture
+weight: 20
+linkTitle: Architecture
+---
 = Architecture
 
 This page explains how adocfmt turns a document into its formatted form, and which package holds each part.

@@ -1,3 +1,8 @@
+---
+title: Command-line interface
+weight: 20
+linkTitle: Command line
+---
 = Command-line interface
 :toc:
 

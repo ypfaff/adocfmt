@@ -1,3 +1,8 @@
+---
+title: "0001: A new formatter, not an existing one"
+weight: 1
+linkTitle: 0001 New formatter
+---
 = 0001: A new formatter, not an existing one
 
 *Status:* accepted +

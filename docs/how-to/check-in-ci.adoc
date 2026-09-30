@@ -1,3 +1,8 @@
+---
+title: Check formatting in CI
+weight: 30
+linkTitle: Check in CI
+---
 = Check formatting in CI
 
 Make a CI build fail when an AsciiDoc file in the repository is not formatted.

@@ -1,3 +1,8 @@
+---
+title: "0004: No formatting options"
+weight: 4
+linkTitle: 0004 No formatting options
+---
 = 0004: No formatting options
 
 *Status:* accepted +
