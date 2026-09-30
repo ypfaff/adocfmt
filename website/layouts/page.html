@@ -1,0 +1,26 @@
+{{ define "main" }}
+{{ partial "check-page.html" . }}
+<div class="docs">
+  {{ partial "sidebar.html" . }}
+  <main class="article" id="main">
+    <article>
+      {{ with (partial "section.html" .).title }}
+        <p class="eyebrow">{{ . }}</p>
+      {{ end }}
+      <h1>{{ .Title }}</h1>
+      <div class="adoc">
+        {{ partial "content.html" . }}
+      </div>
+    </article>
+    <p class="edit">
+      <a href="{{ site.Params.repo }}/blob/main/{{ path.Join "docs" .File.Path }}">View the source on GitHub</a>
+    </p>
+  </main>
+  <aside class="toc" aria-label="On this page">
+    {{ with .TableOfContents }}
+      <p class="toc-title">On this page</p>
+      {{ . }}
+    {{ end }}
+  </aside>
+</div>
+{{ end }}

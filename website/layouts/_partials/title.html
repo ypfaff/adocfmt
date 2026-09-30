@@ -1,0 +1,4 @@
+{{- /* A section's title comes from hugo.yml, as there is no _index.adoc. */ -}}
+{{- $title := .Title -}}
+{{- if .IsSection -}}{{- $title = (partial "section.html" .).title -}}{{- end -}}
+{{- return $title -}}

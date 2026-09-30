@@ -1,0 +1,9 @@
+{{- /* The text of the page's first paragraph, which stands in for a description. */ -}}
+{{- $summary := "" -}}
+{{- if ne (partial "section.html" .).summaries false -}}
+  {{- range first 1 (findRE `(?s)<p>.*?</p>` .Content) -}}
+    {{- /* plainify turns a newline into a space, but a <br> into a newline. */ -}}
+    {{- $summary = replace . "\n" "<br>" | plainify | htmlUnescape | strings.TrimSpace -}}
+  {{- end -}}
+{{- end -}}
+{{- return $summary -}}

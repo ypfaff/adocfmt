@@ -1,0 +1,46 @@
+baseURL: https://ypfaff.github.io/adocfmt/
+title: adocfmt
+locale: en
+# The output mirrors the source paths, so Asciidoctor's link to
+# ../reference/rules.html is right as it stands.
+uglyURLs: true
+disableKinds: [taxonomy, term, rss]
+
+module:
+  mounts:
+    - source: ../docs
+      target: content
+      files: ['! decision-records/0000-template.adoc', '! images/**']
+    - source: ../docs/images
+      target: static/images
+
+params:
+  description: An opinionated AsciiDoc formatter.
+  repo: https://github.com/ypfaff/adocfmt
+  # Section titles and order live here, not in _index.adoc files that GitHub
+  # would show as nearly empty pages.
+  sections:
+    - {dir: how-to, title: How-to guides, blurb: "Install adocfmt and use it in a repository and in CI."}
+    - {dir: reference, title: Reference, blurb: "Every rule, every flag, the GitHub Action."}
+    - {dir: explanation, title: Explanation, blurb: "How adocfmt keeps your document safe."}
+    - {dir: contributing, title: Contributing, blurb: "Set up, understand and test the code."}
+    # A record opens with its status line, which says nothing about it.
+    - {dir: decision-records, title: Decision records, blurb: "Why adocfmt is built the way it is.", summaries: false}
+
+security:
+  exec:
+    allow: ['^asciidoctor$']
+    # Hugo's default, plus what a gem installed with GEM_HOME needs to run.
+    osEnv: ['(?i)^((HTTPS?|NO)_PROXY|PATH(EXT)?|APPDATA|TE?MP|TERM|GO\w+|(XDG_CONFIG_)?HOME|USERPROFILE|SSH_AUTH_SOCK|DISPLAY|LANG|SYSTEMDRIVE|PROGRAMDATA|GEM_HOME|GEM_PATH)$']
+
+markup:
+  # Hugo's documentation names markup.asciidoc, but Hugo reads asciidocExt.
+  asciidocExt:
+    attributes:
+      # The ids GitHub uses, so an anchor works on both.
+      idprefix: ''
+      idseparator: '-'
+      # Always emit the TOC, so Hugo takes it into .TableOfContents for the
+      # right column; Hugo removes it from the page itself.
+      toc: auto
+      toclevels: 2
