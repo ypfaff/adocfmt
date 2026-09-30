@@ -70,6 +70,13 @@ Header "= Title\nAuthor Name\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "a comment block under the title is read without being counted",
+			src:  "= Title\n////\nnote\n////\nAuthor Name\nv1, 2020\n\nText.\n",
+			want: `
+Header "= Title\n////\nnote\n////\nAuthor Name\nv1, 2020\n" title "Title"
+Paragraph "Text.\n"`,
+		},
+		{
 			name: "an attribute name may start with any character Ruby counts as a word character",
 			src:  ":Ⓐ-one: first\n:Ⓐ-two: second\n",
 			want: `
@@ -1037,6 +1044,11 @@ func TestScanReports(t *testing.T) {
 			name: "a comment block among the metadata lines that never closes",
 			src:  "[source]\n////\nc\n",
 			want: []Finding{{Line: 2, Message: "block has no closing delimiter"}},
+		},
+		{
+			name: "a comment block in the header that never closes",
+			src:  "= Title\n:a: b\n////\nc\n\n* d\n",
+			want: []Finding{{Line: 3, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a delimiter that closes outside the region it opened in",

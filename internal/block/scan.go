@@ -452,11 +452,12 @@ func precedesTitle(sh shape) bool {
 const headerLines = 2
 
 // header is the document header, which stays compact: it runs to the first
-// blank line and takes headerLines under the title, with the attribute and
-// comment lines among them, which Asciidoctor reads without counting. It
-// resolves a directive before it counts, so which lines are the author and
-// the revision is unknown then: the header freezes and runs to the blank
-// line. twoLine says the title is written as a title and an underline.
+// blank line and takes headerLines under the title, with the attribute
+// entries, comment lines and comment blocks among them, which Asciidoctor
+// reads without counting. It resolves a directive before it counts, so which
+// lines are the author and the revision is unknown then: the header freezes
+// and runs to the blank line. twoLine says the title is written as a title and
+// an underline.
 func (s *scanner) header(b base, title Span, twoLine bool) Node {
 	start := s.pos()
 	s.at++
@@ -464,27 +465,32 @@ func (s *scanner) header(b base, title Span, twoLine bool) Node {
 		s.at++
 	}
 	titleLines := Span{start, s.pos()}
-	taken := 0
-loop:
-	for !s.done() && s.shape().kind != shapeBlank {
-		sh := s.shape()
-		switch sh.kind {
-		case shapeAttrEntry:
-			s.entry(&b)
-			continue
-		case shapeDirective:
-			s.reach(&b, sh)
-		case shapeComment:
-		default:
-			if taken == headerLines && !b.frozen {
-				break loop
-			}
-			taken++
-		}
-		s.at++
-	}
+	s.headerBody(&b)
 	b.lines = Span{start, s.pos()}
 	return &Header{base: b, Title: title, TitleLines: titleLines, TwoLine: twoLine}
+}
+
+// headerBody moves past the lines under the title that belong to the header.
+func (s *scanner) headerBody(b *base) {
+	for taken := 0; !s.done() && s.shape().kind != shapeBlank; {
+		sh := s.shape()
+		switch {
+		case sh.kind == shapeAttrEntry:
+			s.entry(b)
+		case sh.kind == shapeDelimiter && sh.char == '/':
+			s.commentBlock()
+		case sh.kind == shapeDirective:
+			s.reach(b, sh)
+			s.at++
+		case sh.kind == shapeComment:
+			s.at++
+		case taken < headerLines || b.frozen:
+			taken++
+			s.at++
+		default:
+			return
+		}
+	}
 }
 
 func (s *scanner) attribute(b base) Node {

@@ -25,6 +25,7 @@ var notRenderable = map[string]string{
 // formats after all fails the test, so the list tracks the scanner.
 var refused = byCase(map[string][]string{
 	"a block never closes": {
+		"attributes/0028-should-warn-if-unterminated-block-comment-is-detected-in-doc",
 		"blocks/0010-should-warn-if-unterminated-comment-block-is-detected-in-bod",
 		"blocks/0011-should-warn-if-unterminated-comment-block-is-detected-inside",
 		"blocks/0056-should-warn-if-example-block-is-not-terminated",
