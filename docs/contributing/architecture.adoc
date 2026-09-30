@@ -28,6 +28,7 @@ Otherwise, the printer writes the tree back with the rules applied.
 
 xref:../decision-records/0002-block-tree-and-canonical-printer.adoc[Decision record 0002] explains why the formatter has this shape.
 xref:../decision-records/0003-refuse-what-the-scanner-cannot-read.adoc[Decision record 0003] explains why a document with findings is refused whole.
+xref:../decision-records/0005-own-scanner-not-asciidoctor.adoc[Decision record 0005] explains why the scanner is adocfmt's own and not Asciidoctor's parser.
 
 [#terms]
 == Terms

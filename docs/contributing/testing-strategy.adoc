@@ -96,6 +96,9 @@ After you change it, regenerate the cases:
 go run ./tools/fetch-asciidoctor-cases
 ----
 
+The scanner mirrors some of Asciidoctor's patterns and constants, and its comments name each one, such as `BlockTitleRx` or `PARAGRAPH_STYLES`.
+Compare them between the two releases in `lib/asciidoctor/rx.rb` and `lib/asciidoctor.rb`, because the <<classification,classification check>> sees only the lines that the cases hold.
+
 link:../../internal/renderequivalence/cases_test.go[`TestAsciidoctorCases`] formats every case and compares the result with the original.
 link:../../internal/format/golden_test.go[`TestGoldenCasesRenderEquivalent`] does the same for every <<golden-files,golden case>>, comparing the input with the expectation.
 

@@ -19,7 +19,10 @@ So a block that the scanner misreads cannot change the page unless a rule rewrit
 Where a rule does rewrite a block, the tests hold it to Asciidoctor.
 They format the test inputs of the Asciidoctor test suite and adocfmt's own test cases, render each one before and after with Asciidoctor, and compare the results.
 A rule that changes the rendered page, the content of a code or literal block, or a comment fails the tests.
+The tests also xref:../contributing/testing-strategy.adoc#classification[compare how the scanner reads each line] with how Asciidoctor reads it, so a misread line shows up before any rule rewrites its block.
 The xref:../contributing/testing-strategy.adoc[testing strategy] describes these checks and what they cannot see.
+
+xref:../decision-records/0005-own-scanner-not-asciidoctor.adoc[Decision record 0005] explains why adocfmt reads your document with its own scanner.
 
 == Why includes and conditionals are left alone
 

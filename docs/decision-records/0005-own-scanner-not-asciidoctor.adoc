@@ -1,0 +1,42 @@
+= 0005: Own scanner, not Asciidoctor's parser
+
+*Status:* accepted +
+*Date:* 2026-09-30
+
+== Context
+
+xref:0002-block-tree-and-canonical-printer.adoc[Decision record 0002] has adocfmt read documents with its own scanner.
+Asciidoctor, the reference implementation of AsciiDoc, already has a parser, and the tests use Asciidoctor as their oracle.
+So why does adocfmt not let Asciidoctor read the document and format from its model?
+
+== Decision
+
+adocfmt reads documents with its own scanner.
+Asciidoctor never reads a document for the formatter; it stays what the tests measure against.
+
+== Consequences
+
+* The scanner can read a line differently from Asciidoctor.
+Such a difference goes unnoticed until a rule rewrites the block, and then it can change the rendered document.
+* To keep the two readings close, the scanner follows Asciidoctor's own patterns for what a line is.
+xref:../contributing/testing-strategy.adoc#classification[The classification check] compares both readings line by line.
+The render equivalence checks cover what depends on more than one line.
+* Every AsciiDoc edge case the scanner meets is this project's to handle, as xref:0001-new-formatter-not-an-existing-one.adoc[decision record 0001] already says.
+
+== Alternatives
+
+Asciidoctor's parser, with a layer that maps its model onto the block tree::
+Three things rule it out.
++
+. Asciidoctor resolves includes and conditionals before its model exists.
+The output would then depend on files and attributes that adocfmt cannot see.
+With that step turned off, the structure breaks: an `ifdef` line becomes text in a paragraph, and one around the author line becomes the author.
+. The model leaves out what a formatter has to write back.
+Comments and blank lines are gone.
+An attribute list keeps only its values, so `[source, ruby]` and `[source,ruby]` look the same.
+The length of a delimiter is gone, and so is whether a title uses `=` or `#`.
+. The layer would be a second scanner.
+Asciidoctor records only the line where the content of a block starts, and next to a conditional that line can be wrong.
+Which lines above the block belong to it, where it ends and which blank lines follow, the layer would have to work out itself.
+That means classifying every line again, on top of a parser whose behavior adocfmt would then depend on.
+An earlier attempt with the https://github.com/asciidoc-rs/asciidoc-parser[asciidoc-parser] crate ended this way: its layer kept growing, and the parser resolved includes too.
