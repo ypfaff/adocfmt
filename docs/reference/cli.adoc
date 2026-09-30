@@ -1,0 +1,234 @@
+= Command-line interface
+:toc:
+
+This page describes the `adocfmt` command: its flags, which files it reads, its exit codes, and the findings it reports.
+
+== Usage
+
+[source,console]
+----
+$ adocfmt --help
+adocfmt formats AsciiDoc files.
+
+Usage:
+  adocfmt [flags] [path ...]
+
+Flags:
+  -w, --write      Write the result back to the file.
+  -c, --check      Name the files that are not formatted; exit 1 if any.
+      --version    Print the version.
+  -h, --help       Print this help.
+
+With no path adocfmt reads stdin and writes the result to stdout.
+----
+
+Flags come before the paths.
+A flag after a path is an error.
+A flag works with one dash as well as with two, so `-check` is the same as `--check`.
+
+== Flags
+
+`-w`, `--write`::
+Writes the formatted result back to every file that changes.
+A file that is already formatted is not touched.
+It needs at least one path.
+It prints nothing for the files it writes.
+For a symlink, it writes the file that the link points to and leaves the link in place.
+
+`-c`, `--check`::
+Changes no file.
+Lists on stdout every file that is not formatted, one path per line, and exits with 1 if it lists any.
+A file that is formatted is not listed.
+Without a path, it reads stdin and prints `<stdin>` if the input is not formatted.
+You cannot combine it with `--write`.
++
+[source,console]
+----
+$ adocfmt --check docs
+docs/setup.adoc
+----
+
+`--version`::
+Prints the version.
+
+`-h`, `--help`::
+Prints the help shown above.
+
+== Formatting to stdout
+
+Without `--write` or `--check`, adocfmt formats one document and writes the result to stdout.
+
+* With no path, it reads stdin.
+* With one file, it reads that file and leaves it unchanged.
+* A directory or a second path is an error.
+To format several files, use `--write`.
+
+[source,console]
+----
+$ printf '## Title\n' | adocfmt
+== Title
+----
+
+Stdout carries the formatted document, the file names from `--check`, and the output of `--help` and `--version`.
+Everything else goes to stderr.
+
+[#files]
+== Which files are collected
+
+A file you name on the command line is formatted whatever its extension.
+
+A directory you name is walked, including its subdirectories.
+The walk collects every regular file whose name ends in `.adoc` or `.asciidoc`, in any letter case, so `OLD.ASCIIDOC` is collected too.
+Directories whose names start with a dot are walked like any other.
+
+Symlinks::
+A symlink you name on the command line is followed, whether it points to a file or a directory.
+A symlink the walk finds inside a directory is skipped, whether it points to a file or a directory.
+So no file is formatted twice through a link.
+
+Order::
+Paths are processed in the order you name them.
+Inside a directory, the walk visits the entries in byte order of their names, so `Z.adoc` comes before `a.adoc`.
+A subdirectory is walked at its place in that order.
+
+Names::
+adocfmt reports each file under the path you typed.
+Here `site-link` is a symlink to the directory `site`:
++
+[source,console]
+----
+$ adocfmt --check site-link
+site-link/index.adoc
+----
+
+Errors::
+A path or file that cannot be read is reported and skipped, and the run goes on with the rest.
+If a subdirectory cannot be read, only the files inside it are skipped.
+In this example, `p/locked` cannot be read:
++
+[source,console]
+----
+$ adocfmt --check p
+adocfmt: p: open p/locked: permission denied
+p/open/a.adoc
+----
+
+[#exit-codes]
+== Exit codes
+
+`0`::
+Success.
+The document was written to stdout, the files were written, or `--check` found every file formatted.
+`--help` and `--version` exit with 0 too.
+
+`1`::
+`--check` found at least one file that is not formatted.
+Only `--check` exits with 1.
+
+`2`::
+An error.
+Either the command line is wrong, a path or file cannot be read or written, or adocfmt refused a document.
+
+If a run finds both an error and a file that is not formatted, it exits with 2.
+
+adocfmt goes on after an error, so one run reports every file that is not formatted and every error.
+A wrong command line is the exception: adocfmt reports it and stops before it reads any file.
+
+In this example, adocfmt refuses `docs/broken.adoc` and still lists the two other files that are not formatted:
+
+[source,console]
+----
+$ adocfmt --check docs
+docs/OLD.ASCIIDOC
+docs/broken.adoc:3: block has no closing delimiter
+docs/guide/setup.adoc
+$ echo $?
+2
+----
+
+[#refusal]
+== Refusal findings
+
+adocfmt refuses a document when it meets structure it cannot read reliably.
+It reports every finding in the document, writes no output for it, and leaves the file as it is.
+With `--write`, the other files of the run are still written.
+For the reasons, see xref:../explanation/safety.adoc#refusal[Why a document with findings is refused whole].
+
+Each finding is reported on stderr as `<path>:<line>: <message>`, the form that editors such as Vim read to jump to the line.
+When adocfmt reads stdin, `<path>` is `<stdin>`.
+Fix the document, then run adocfmt again.
+
+`block has no closing delimiter`::
+The reported line is an opening delimiter, such as `----` or `====`, and no later line matches it.
+The block runs to the end of the file.
+Add a closing line equal to the opening one.
+A fenced code block that opens with a language, such as `++```ruby++`, closes with the bare fence `++```++`.
+
+`closes the block opened above it`::
+The reported line equals the opening delimiter of an enclosing block, but it stands inside a nested block.
+Asciidoctor ends the enclosing block at this line, which is not what the nesting suggests.
+In this example, the `====` on line 3 ends the example block, not a line of code:
++
+....
+====
+----
+====
+----
+====
+....
++
+Make the two delimiters differ, for example by lengthening the outer one to `=====`.
+
+`delimiter opens and closes in different conditional regions`::
+A block opens inside a conditional region and closes outside it, or the other way around.
+A conditional region is the part between an `ifdef`, `ifndef`, or `ifeval` directive and its `endif`.
+The reported line is the opening delimiter.
+Move the delimiters so that both are inside the region, or both outside it.
+This block opens inside the region and closes outside it:
++
+....
+\ifdef::extra[]
+----
+\endif::[]
+code
+----
+....
+
+`conditional region has no endif`::
+The directive on the reported line opens a conditional region, and no `endif::[]` closes it.
+Add the `endif::[]` where the region ends.
+
+`endif closes no conditional region`::
+The `endif` on the reported line has no open region to close.
+Remove it, or add the directive that opens the region.
+
+`malformed preprocessor directive`::
+Asciidoctor rejects the directive on the reported line.
+An `ifdef` or `ifndef` needs an attribute name, as in `ifdef::name[]`.
+An `ifeval` needs an expression in the brackets and nothing before them, as in `ifeval::[{level} > 1]`.
+A malformed directive opens no region, so its `endif` is reported as well:
++
+[source,console]
+----
+$ printf 'ifdef::[]\nText.\nendif::[]\n' | adocfmt --check
+<stdin>:1: malformed preprocessor directive
+<stdin>:3: endif closes no conditional region
+----
+
+[#unreadable]
+=== Documents adocfmt cannot read
+
+Three problems concern the whole file, so their message has no line: `<path>: <message>`.
+adocfmt refuses the document in the same way.
+
+`source is not valid UTF-8`::
+Convert the file to UTF-8.
+
+`source has mixed line endings: 1 CRLF, 1 LF`::
+Some lines end with a carriage return and a line feed, as on Windows, and others with a line feed alone.
+The message counts both.
+Convert the file to one of the two.
+
+`source has carriage returns that end no line`::
+The file holds a carriage return that is not followed by a line feed.
+Remove it, or replace it with a line ending.
