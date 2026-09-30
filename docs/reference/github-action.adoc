@@ -1,0 +1,63 @@
+= GitHub Action
+
+The adocfmt action installs adocfmt on a GitHub Actions runner and, by default, runs `adocfmt --check .` on the repository.
+
+[source,yaml]
+----
+- uses: ypfaff/adocfmt@v0
+----
+
+It runs on GitHub-hosted Linux, macOS and Windows runners.
+The step exits with the exit code of adocfmt.
+For exit code 1 or 2, the action also adds an error annotation to the run.
+For what each exit code means, see xref:cli.adoc#exit-codes[Exit codes].
+
+The action is defined in link:../../action.yml[`action.yml`].
+
+[#inputs]
+== Inputs
+
+[cols="1,1,3"]
+|===
+| Input | Default | Description
+
+| `version`
+| The release that the `uses:` ref belongs to
+| The adocfmt release to install, such as `1.2.3` or `v1.2.3`.
+See <<versioning>> for the default.
+
+| `args`
+| `--check .`
+| The arguments passed to adocfmt.
+The action splits them at whitespace and does not honor quotes, so an argument cannot contain a space.
+
+| `install-only`
+| `false`
+| Set to `true` to install adocfmt without running it.
+Later steps in the job can run it from the `PATH`.
+|===
+
+[#outputs]
+== Outputs
+
+[cols="1,4"]
+|===
+| Output | Description
+
+| `version`
+| The adocfmt version that was installed, without the leading `v`, such as `1.2.3`.
+|===
+
+[#versioning]
+== Versioning
+
+One tag releases both the binary and the action, and the action installs the binary of its own release.
+So `uses: ypfaff/adocfmt@v1.2.3` installs adocfmt 1.2.3.
+
+Each release also moves the major version tag, such as `v1`, to its commit.
+So `uses: ypfaff/adocfmt@v1` installs the newest 1.x.y release.
+
+Pin the version with the ref in `uses:` and leave the `version` input unset.
+Dependency update tools such as Dependabot and Renovate update the ref in `uses:`, but by default not a `with:` input.
+So a version set in `with:` stays where it is while the tool moves the ref forward.
+Set `version` only to install a release other than the one the ref names.

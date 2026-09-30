@@ -1,0 +1,63 @@
+= Check formatting in CI
+
+Make a CI build fail when an AsciiDoc file in the repository is not formatted.
+
+[#github-actions]
+== Check with GitHub Actions
+
+. Add a workflow file, such as `.github/workflows/adocfmt.yml`:
++
+[source,yaml]
+----
+name: adocfmt
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  adocfmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ypfaff/adocfmt@v0
+----
++
+The action runs `adocfmt --check .`.
+The job fails when a file is not formatted, when a document is refused, or when adocfmt reports another error.
+To check other paths, set the `args` input; see xref:../reference/github-action.adoc#inputs[Inputs].
+. Choose the ref in `uses:`, which also picks the adocfmt version:
++
+--
+* `ypfaff/adocfmt@v0` follows every new 0.x.y release.
+* `ypfaff/adocfmt@v0.1.0` stays on release 0.1.0.
+
+Leave the `version` input unset.
+xref:../reference/github-action.adoc#versioning[Versioning] explains why.
+To keep the ref up to date, let a dependency update tool such as https://docs.github.com/en/code-security/dependabot/working-with-dependabot/keeping-your-actions-up-to-date-with-dependabot[Dependabot] or https://docs.renovatebot.com/modules/manager/github-actions/[Renovate] update it.
+
+TIP: For supply chain security, GitHub recommends pinning an action to a full commit SHA, because a tag can be moved: `uses: ypfaff/adocfmt@<sha> # v0.1.0`.
+See https://docs.github.com/en/actions/reference/security/secure-use#using-third-party-actions[Using third-party actions].
+--
+
+[#other-ci]
+== Check in another CI system
+
+. Install adocfmt on the build machine, as described in xref:install.adoc[Install adocfmt].
+. Add a build step that runs adocfmt with `--check` on the repository:
++
+[source,shell]
+----
+adocfmt --check .
+----
++
+adocfmt prints the name of each file that is not formatted and exits with a code other than 0.
+The build fails on that code.
+For what each exit code means, see xref:../reference/cli.adoc#exit-codes[Exit codes].
+
+[#fix]
+== Fix a failed check
+
+Run `adocfmt --write .` locally and commit the result.
+If adocfmt refuses a document, see xref:../reference/cli.adoc#refusal[Refusal findings].
