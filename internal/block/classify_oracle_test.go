@@ -21,7 +21,7 @@ import (
 // a list item, a quote, an escaped or an indented line; after the first char,
 // where a name starts, a space or a letter that Ruby counts and ASCII does not;
 // a tab for the first space, and a space after the first ::, where a target
-// starts.
+// starts; and at the end, each char that Ruby strips there.
 var (
 	prefixes = []string{".", "[", "[[", "//", "///", ":", "*", "> ", "\\", " "}
 	inserts  = []string{" ", "é", "Ⓐ", "Ⅰ"}
@@ -51,11 +51,12 @@ func TestClassifyAgreesWithAsciidoctor(t *testing.T) {
 	disagree := map[pair][]string{}
 	for i, l := range lines {
 		src := []byte(l)
+		ln := splitLines(src, 0)[0]
 		// A lone + continues a list item only inside a list.
-		if l == "+" {
+		if string(src[ln.text.Start:ln.text.End]) == "+" {
 			continue
 		}
-		if got := kindName(classify(src, line{Span{0, len(src)}, Span{0, len(src)}})); got != want[i] {
+		if got := kindName(classify(src, ln)); got != want[i] {
 			p := pair{want[i], got}
 			disagree[p] = append(disagree[p], l)
 		}
@@ -99,8 +100,9 @@ var kindNames = map[shapeKind]string{
 }
 
 // oracleLines returns every distinct line of the corpus and its edits, in
-// corpus order. Blank lines are left out, since Asciidoctor skips them before
-// it reads a block.
+// corpus order. They keep their trailing whitespace, so each side strips it
+// itself. Blank lines are left out, since Asciidoctor skips them before it
+// reads a block.
 func oracleLines() ([]string, error) {
 	files, err := corpus.Files(corpusDir)
 	if err != nil {
@@ -115,8 +117,7 @@ func oracleLines() ([]string, error) {
 		}
 		for _, l := range Lines(src) {
 			for _, edit := range edits(string(l)) {
-				edit = edit[:textEnd([]byte(edit), 0, len(edit))]
-				if strings.TrimLeft(edit, " \t") != "" && !seen[edit] {
+				if strings.Trim(edit, rubySpace) != "" && !seen[edit] {
 					seen[edit] = true
 					lines = append(lines, edit)
 				}
@@ -127,7 +128,7 @@ func oracleLines() ([]string, error) {
 }
 
 func edits(l string) []string {
-	out := []string{l, strings.Replace(l, " ", "\t", 1), strings.Replace(l, "::", ":: ", 1)}
+	out := []string{l, strings.Replace(l, " ", "\t", 1), strings.Replace(l, "::", ":: ", 1), l + " \t\v\f\r\x00"}
 	for _, prefix := range prefixes {
 		out = append(out, prefix+l)
 	}

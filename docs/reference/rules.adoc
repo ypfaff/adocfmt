@@ -25,6 +25,7 @@ xref:../explanation/safety.adoc[How adocfmt keeps your document safe] gives the 
 == Trailing whitespace
 
 Spaces and tabs at the end of a line are removed, including inside code and literal blocks.
+So are the rarer characters that Asciidoctor strips there too, such as a form feed.
 A line that holds nothing but whitespace becomes empty.
 
 `·` marks a space.
