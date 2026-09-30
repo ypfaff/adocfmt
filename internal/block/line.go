@@ -99,7 +99,8 @@ func ListMarker(line []byte) (string, bool) {
 		return "", false
 	}
 	_, key, ok := markerOf(body)
-	return key, ok
+	// An indented callout is no item, as in classify.
+	return key, ok && (key != calloutMarker || len(body) == len(line))
 }
 
 // LineBelow returns the content of the line under the one at points into, its
@@ -206,10 +207,11 @@ func classify(src []byte, l line) shape {
 
 	if indent > l.text.Start {
 		// Markdown allows a thematic break to sit up to three spaces in.
-		if spaces := indent - l.text.Start; spaces <= 3 && uniform(s[:spaces], ' ') && isBreak(body) {
+		if spaces := indent - l.text.Start; spaces <= 3 && uniform(s[:spaces], ' ') && isMarkdownBreak(body) {
 			return shape{kind: shapeBreak}
 		}
-		if sh, ok := markerShape(body, indent); ok {
+		// Asciidoctor reads a callout only at the start of a line.
+		if sh, ok := markerShape(body, indent); ok && sh.marker != calloutMarker {
 			return sh
 		}
 		return shape{kind: shapeIndented}
@@ -235,7 +237,8 @@ func classify(src []byte, l line) shape {
 	switch {
 	case len(s) == 1 && s[0] == '+':
 		return shape{kind: shapeContinuation}
-	case bytes.HasPrefix(s, []byte("//")):
+	// A third slash makes the line no comment to Asciidoctor.
+	case bytes.HasPrefix(s, []byte("//")) && !bytes.HasPrefix(s, []byte("///")):
 		return shape{kind: shapeComment}
 	case isBlockAnchor(s):
 		return shape{kind: shapeAnchor}
@@ -244,11 +247,12 @@ func classify(src []byte, l line) shape {
 	case isBlockTitle(s):
 		return shape{kind: shapeTitle}
 	}
-	if bytes.HasPrefix(s, markdownQuote) {
-		return shape{kind: shapeQuote}
-	}
+	// Asciidoctor tries a list item before a quote, so > term:: opens a list.
 	if sh, ok := markerShape(s, l.text.Start); ok {
 		return sh
+	}
+	if bytes.HasPrefix(s, markdownQuote) {
+		return shape{kind: shapeQuote}
 	}
 	return shape{kind: shapeText}
 }
@@ -322,15 +326,14 @@ func trimTrailingMarker(title, marker []byte) int {
 }
 
 // isBreak recognizes a thematic or page break: three or more apostrophes or
-// angle brackets, or exactly three of - * _ spaced evenly.
+// angle brackets, or a Markdown break.
 func isBreak(s []byte) bool {
-	if len(s) < 3 {
-		return false
-	}
-	if (s[0] == '\'' || s[0] == '<') && uniform(s, s[0]) {
-		return true
-	}
-	if s[0] != '-' && s[0] != '*' && s[0] != '_' {
+	return len(s) >= 3 && (s[0] == '\'' || s[0] == '<') && uniform(s, s[0]) || isMarkdownBreak(s)
+}
+
+// isMarkdownBreak recognizes exactly three of - * _ spaced evenly.
+func isMarkdownBreak(s []byte) bool {
+	if len(s) < 3 || s[0] != '-' && s[0] != '*' && s[0] != '_' {
 		return false
 	}
 	gap := 0
@@ -638,7 +641,7 @@ func markerOf(s []byte) (int, string, bool) {
 		}
 	case '<':
 		if end := bytes.IndexByte(s, '>'); end > 1 && isCalloutNumber(s[1:end]) && followsSpace(s, end+1) {
-			return end + 1, "<>", true
+			return end + 1, calloutMarker, true
 		}
 	}
 	if bytes.HasPrefix(s, bullet) && followsSpace(s, len(bullet)) {
@@ -649,6 +652,9 @@ func markerOf(s []byte) (int, string, bool) {
 	}
 	return descriptionMarker(s)
 }
+
+// calloutMarker is the key every callout number shares.
+const calloutMarker = "<>"
 
 // bullet is the one non-ASCII list marker Asciidoctor knows.
 var bullet = []byte("\u2022")

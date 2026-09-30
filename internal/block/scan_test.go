@@ -475,6 +475,14 @@ List "*"
   ListItem "* b\n"`,
 		},
 		{
+			name: "an indented callout is a literal block, not an item",
+			src:  "<1> a\n\n <2> b\n",
+			want: `
+List "<>"
+  ListItem "<1> a\n"
+    Literal " <2> b\n"`,
+		},
+		{
 			name: "a literal paragraph runs to the blank line, an item line included",
 			src:  "* a\n\n  code\n* b\n\n* c\n\nText.\n\n  more\n* d\n",
 			want: `
@@ -760,6 +768,14 @@ Paragraph! "Text.\n\\include::x.adoc[]\nMore.\n"
 Paragraph! "One.\nTwo {set:a!} gone.\nThree.\n"`,
 		},
 		{
+			name: "a third slash makes a line no comment",
+			src:  "///\nText.\n\n///term:: More.\n",
+			want: `
+Paragraph "///\nText.\n"
+List "::"
+  ListItem "///term:: More.\n"`,
+		},
+		{
 			name: "a thematic break is not prose",
 			src:  "Text.\n\n---\n\nMore.\n",
 			want: `
@@ -773,6 +789,13 @@ Paragraph "More.\n"`,
 			want: `
 Opaque "* * *\n"
 Opaque "<<<\n"`,
+		},
+		{
+			name: "only a Markdown break may be indented",
+			src:  " ---\n\n '''\n",
+			want: `
+Opaque " ---\n"
+Literal " '''\n"`,
 		},
 		{
 			name: "four of the same char is a delimiter, not a break",
@@ -864,6 +887,13 @@ Paragraph "“A quote.”\n-- Author\n"
 Paragraph "\"A quote.\"\n--Author\n"
 Paragraph meta("[quote]\n") "\"A quote.\"\n-- Author\n"
 Opaque! meta("[.lead]\n") "\"A quote.\"\n// a comment\n-- Author\n"`,
+		},
+		{
+			name: "a Markdown quote that opens with a term is a list",
+			src:  "> term:: Text.\n",
+			want: `
+List "::"
+  ListItem "> term:: Text.\n"`,
 		},
 		{
 			name: "a term with no text of its own takes the lines below it",
