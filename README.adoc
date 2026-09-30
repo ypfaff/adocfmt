@@ -1,17 +1,20 @@
-= adocfmt
+= image:docs/images/adocfmt-icon.svg[adocfmt icon,40] adocfmt
 
-An opinionated AsciiDoc® formatter in Go.
+An opinionated AsciiDoc® formatter.
 
-Early work in progress.
+CAUTION: adocfmt is early work in progress.
+Its rules and their output can still change between releases.
 
 == Documentation
 
-The documentation is also published as a website at https://ypfaff.github.io/adocfmt/.
+The documentation is published at https://ypfaff.github.io/adocfmt/.
 
 * xref:docs/getting-started.adoc[Get started with adocfmt]
 * xref:docs/how-to/install.adoc[Install adocfmt]
 * xref:docs/reference/rules.adoc[Formatting rules]
 * link:docs[All documentation]
+
+== Contributing
 
 xref:CONTRIBUTING.adoc[Contributing] explains how to work on adocfmt.
 
