@@ -1,0 +1,53 @@
+= Adopt adocfmt in a repository
+
+Introduce adocfmt into an existing repository with one formatting commit, and keep the repository formatted after that.
+
+== Before you begin
+
+* xref:install.adoc[Install adocfmt].
+* Start on a new branch with a clean working tree, so the formatting commit holds nothing else.
+
+[#format]
+== Format the repository
+
+. Format every AsciiDoc file in the repository:
++
+[source,shell]
+----
+adocfmt --write .
+----
++
+adocfmt walks the directory and formats every file that ends in `.adoc` or `.asciidoc`.
+This includes files you do not maintain yourself, such as vendored dependencies.
+To format only some of the repository, name those paths instead of `.`, for example `adocfmt --write docs README.adoc`.
+For the details of the walk, see xref:../reference/cli.adoc#files[Which files are collected].
+. Fix the documents that adocfmt refuses.
+adocfmt leaves a refused document unchanged and prints one line on stderr for each finding:
++
+....
+docs/broken.adoc:1: block has no closing delimiter
+....
++
+For what each message means and how to fix it, see xref:../reference/cli.adoc#refusal[Refusal findings].
+Run `adocfmt --write .` again until it reports nothing.
+Every refused document makes `adocfmt --check` fail, so fix them all before you enforce the format in CI.
+. Review the changes with `git diff --word-diff`, which shows changed words rather than changed lines.
+The xref:../reference/rules.adoc[formatting rules] describe what adocfmt changes and what it leaves alone.
+. Commit the result as one commit, for example:
++
+[source,shell]
+----
+git commit --all --message "style: format AsciiDoc files with adocfmt"
+----
+. Optional: Hide the formatting commit from `git blame`.
+Add its full hash to a `.git-blame-ignore-revs` file in the repository root and point Git at it; see https://git-scm.com/docs/git-blame#Documentation/git-blame.txt---ignore-revs-filefile[`--ignore-revs-file`].
+GitHub reads that file without any setting; see https://docs.github.com/en/repositories/working-with-files/using-files/viewing-and-understanding-files#ignore-commits-in-the-blame-view[Ignore commits in the blame view].
+If your repository squashes or rebases changes when it merges them, use the hash the commit gets on the default branch.
+
+[#keep-formatted]
+== Keep the repository formatted
+
+. Run adocfmt on the staged AsciiDoc files before every commit, with a https://git-scm.com/docs/githooks[Git hook] or a hook manager such as https://lefthook.dev/[lefthook] or https://pre-commit.com/[pre-commit].
+Pass only AsciiDoc files, because adocfmt formats every file you name, whatever its extension.
+. Make CI fail when a file is not formatted.
+For the steps, see xref:check-in-ci.adoc[Check formatting in CI].
