@@ -61,3 +61,16 @@ updates:
     commit-message:
       prefix: chore
       include: scope
+
+  - package-ecosystem: gomod
+    directory: /tools/htmltest
+    schedule:
+      interval: weekly
+    # Unlike for actionlint, every dependency stays current, not only the tool:
+    # htmltest's last release, from 2022, pins a golang.org/x/net with known
+    # vulnerabilities.
+    allow:
+      - dependency-type: all
+    commit-message:
+      prefix: ci
+      include: scope

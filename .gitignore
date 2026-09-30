@@ -24,3 +24,4 @@ website/public/
 website/resources/
 website/.hugo_build.lock
 website/node_modules/
+website/.htmltest/
