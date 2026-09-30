@@ -3,42 +3,15 @@
 An opinionated AsciiDoc® formatter in Go.
 
 Early work in progress.
-See link:docs/reference/rules.adoc[the formatting rules] for what it changes today.
-It is built from a block scanner, the printer it feeds, and a link:docs/contributing/testing-strategy.adoc[testing strategy] that every rule has to satisfy.
 
-== Installation
+== Documentation
 
-With Homebrew, on macOS and Linux:
+* xref:docs/getting-started.adoc[Get started with adocfmt]
+* xref:docs/how-to/install.adoc[Install adocfmt]
+* xref:docs/reference/rules.adoc[Formatting rules]
+* link:docs[All documentation]
 
-[source,shell]
-----
-brew tap ypfaff/adocfmt https://github.com/ypfaff/adocfmt
-brew install ypfaff/adocfmt/adocfmt
-----
-
-Otherwise take the archive for your platform from link:https://github.com/ypfaff/adocfmt/releases[the releases] and put the binary on your `PATH`.
-
-== GitHub Action
-
-[source,yaml]
-----
-- uses: ypfaff/adocfmt@v0
-----
-
-Installs `adocfmt` and runs `adocfmt --check .`, failing the step if a file needs formatting or a document is refused.
-See link:action.yml[`action.yml`] for the inputs.
-
-== Development
-
-[source,shell]
-----
-go build ./...
-go test ./...          # needs Asciidoctor on the PATH
-go test -short ./...   # skips whatever needs Asciidoctor
-golangci-lint run
-----
-
-Run `lefthook install` once to activate the Git hooks from link:lefthook.yml[`lefthook.yml`].
+xref:CONTRIBUTING.adoc[Contributing] explains how to work on adocfmt.
 
 == License
 
