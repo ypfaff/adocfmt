@@ -30,12 +30,14 @@ params:
 security:
   exec:
     allow: ['^asciidoctor$']
-    # Hugo's default, plus what a gem installed with GEM_HOME needs to run.
-    osEnv: ['(?i)^((HTTPS?|NO)_PROXY|PATH(EXT)?|APPDATA|TE?MP|TERM|GO\w+|(XDG_CONFIG_)?HOME|USERPROFILE|SSH_AUTH_SOCK|DISPLAY|LANG|SYSTEMDRIVE|PROGRAMDATA|GEM_HOME|GEM_PATH)$']
+    # Hugo's default, plus what a gem installed with GEM_HOME needs to run and
+    # RUBYLIB, where the build puts the extensions in asciidoctor/.
+    osEnv: ['(?i)^((HTTPS?|NO)_PROXY|PATH(EXT)?|APPDATA|TE?MP|TERM|GO\w+|(XDG_CONFIG_)?HOME|USERPROFILE|SSH_AUTH_SOCK|DISPLAY|LANG|SYSTEMDRIVE|PROGRAMDATA|GEM_HOME|GEM_PATH|RUBYLIB)$']
 
 markup:
   # Hugo's documentation names markup.asciidoc, but Hugo reads asciidocExt.
   asciidocExt:
+    extensions: [mermaid-block]
     attributes:
       # The ids GitHub uses, so an anchor works on both.
       idprefix: ''
@@ -44,3 +46,4 @@ markup:
       # right column; Hugo removes it from the page itself.
       toc: auto
       toclevels: 2
+      source-highlighter: highlight.js
