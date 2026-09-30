@@ -51,6 +51,16 @@ func run(serve bool) error {
 		return errors.New("asciidoctor is not on the PATH; see docs/contributing/development-setup.adoc")
 	}
 
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return err
+	}
+	cacheDir = filepath.Join(cacheDir, "adocfmt-website")
+	packages, err := readLockfile(filepath.Join(root, lockfile))
+	if err != nil {
+		return err
+	}
+
 	out := filepath.Join(root, outDir)
 	if err := os.RemoveAll(out); err != nil {
 		return err
@@ -66,6 +76,16 @@ func run(serve bool) error {
 	}
 	if err := runIn(root, "go", args...); err != nil {
 		return fmt.Errorf("building with Hugo: %w", err)
+	}
+
+	// Pagefind indexes the built pages and writes its search bundle next to
+	// them. It reads pagefind.yml from the website directory.
+	pagefindBin, err := pagefind(cacheDir, packages)
+	if err != nil {
+		return err
+	}
+	if err := runIn(filepath.Join(root, siteDir), pagefindBin, "--site", filepath.Join(out, basePath)); err != nil {
+		return fmt.Errorf("indexing with Pagefind: %w", err)
 	}
 
 	if !serve {

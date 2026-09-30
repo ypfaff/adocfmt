@@ -1,3 +1,33 @@
+// Search: Pagefind's modal opens with the header button and Cmd/Ctrl+K on its
+// own; / and ?q=term are added here.
+const modal = document.querySelector("pagefind-modal");
+const trigger = document.querySelector("pagefind-modal-trigger");
+document.addEventListener("keydown", (event) => {
+  const typing = event.target.closest("input, textarea, [contenteditable]");
+  if (event.key === "/" && !typing && !modal.isOpen) {
+    event.preventDefault();
+    modal.open();
+  }
+});
+// ?q=term opens the search with that term, so a search can be linked.
+const term = new URLSearchParams(location.search).get("q");
+if (term) {
+  customElements.whenDefined("pagefind-modal").then(() => {
+    modal.open();
+    const input = modal.querySelector("input");
+    input.value = term;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+// The trigger shows only its icon on narrow screens, which rarely have a keyboard.
+const narrow = matchMedia("(max-width: 820px)");
+const compact = () => {
+  trigger?.toggleAttribute("compact", narrow.matches);
+  trigger?.toggleAttribute("hide-shortcut", narrow.matches);
+};
+narrow.addEventListener("change", compact);
+compact();
+
 // Navigation on narrow screens.
 const menuButton = document.querySelector(".menu-button");
 const sidebar = document.getElementById("sidebar");

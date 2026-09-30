@@ -1,0 +1,7 @@
+# The before and after examples are AsciiDoc source, not prose; indexed, they
+# would turn every search for a word like "Section" into a list of rule
+# examples. Their header rows go too, as exclude_selectors does not support
+# :has to pick only those tables.
+exclude_selectors:
+  - ".tableblock .literalblock"
+  - ".tableblock thead"
