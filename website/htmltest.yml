@@ -1,0 +1,8 @@
+# Only the links inside the site: a link to GitHub may point at a file that
+# lands with the same pull request.
+DirectoryPath: website/public
+CheckExternal: false
+# The hero icon is decorative, and an empty alt says so.
+IgnoreAltEmpty: true
+# Its cache and log, which the check writes into the working directory otherwise.
+OutputDir: website/.htmltest
