@@ -3,7 +3,7 @@
   "description": "The tools the website build downloads. tools/build-website reads package-lock.json; it never runs npm.",
   "dependencies": {
     "@highlightjs/cdn-assets": "11.12.0",
-    "mermaid": "11.17.2",
+    "mermaid": "12.0.0",
     "pagefind": "1.5.2"
   }
 }
