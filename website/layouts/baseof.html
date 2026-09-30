@@ -10,5 +10,12 @@
   {{ partial "search.html" . }}
   {{ $js := resources.Get "js/site.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" defer></script>
+  {{/* Mermaid alone is 3.5 MB, so each script loads only where it is needed. */}}
+  {{ if strings.Contains .Content `class="mermaid"` }}
+    <script src="{{ "vendor/mermaid.min.js" | relURL }}" defer></script>
+  {{ end }}
+  {{ if strings.Contains .Content `class="highlightjs` }}
+    <script src="{{ "vendor/highlight.min.js" | relURL }}" defer></script>
+  {{ end }}
 </body>
 </html>

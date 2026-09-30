@@ -163,6 +163,24 @@ h1 { margin: 0 0 24px; font-size: 2.1rem; letter-spacing: -.02em; }
   text-align: left;
 }
 
+.copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 2px 8px;
+  font: 12px var(--font);
+  color: var(--text-muted);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .15s;
+}
+/* Anchored to the code, not to a title above it. */
+.adoc .listingblock > .content { position: relative; }
+.listingblock:hover .copy, .copy:focus-visible { opacity: 1; }
+
 /* Admonitions: Asciidoctor writes them as a one-row table. */
 .adoc .admonitionblock { margin: 0 0 20px; }
 .adoc .admonitionblock > table, .adoc .admonitionblock tbody, .adoc .admonitionblock tr,
@@ -225,6 +243,18 @@ h1 { margin: 0 0 24px; font-size: 2.1rem; letter-spacing: -.02em; }
 .adoc .exampleblock > .content { padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); }
 
 .adoc hr { border: 0; border-top: 1px solid var(--border); margin: 32px 0; }
+
+/* Mermaid */
+.adoc pre.mermaid { display: flex; justify-content: center; margin-bottom: 20px; padding: 24px; background: var(--bg-raised); }
+.adoc pre.mermaid:not([data-processed]) { color: transparent; min-height: 160px; }
+
+/* highlight.js, in the palette above */
+.hljs-comment, .hljs-meta { color: #6b7483; }
+.hljs-keyword, .hljs-built_in, .hljs-selector-tag { color: #8ab4f8; }
+.hljs-string, .hljs-attr + .hljs-string { color: #a5d6a7; }
+.hljs-attr, .hljs-variable, .hljs-template-variable { color: #f0b37e; }
+.hljs-number, .hljs-literal { color: #d7a6f5; }
+.hljs-title, .hljs-section { color: var(--heading); font-weight: 600; }
 
 /* Section pages */
 .page-list { list-style: none; margin: 0; padding: 0; }

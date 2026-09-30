@@ -46,6 +46,20 @@ document.querySelectorAll(".adoc table.tableblock").forEach((table) => {
   });
 });
 
+// Copy buttons on code listings.
+document.querySelectorAll(".adoc .listingblock pre:not(.mermaid)").forEach((pre) => {
+  const button = document.createElement("button");
+  button.className = "copy";
+  button.type = "button";
+  button.textContent = "Copy";
+  button.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(pre.innerText);
+    button.textContent = "Copied";
+    setTimeout(() => (button.textContent = "Copy"), 1500);
+  });
+  pre.parentElement.append(button);
+});
+
 // Highlight the table of contents entry of the section being read.
 const tocLinks = [...document.querySelectorAll(".toc a")];
 if (tocLinks.length) {
@@ -61,3 +75,22 @@ if (tocLinks.length) {
   document.addEventListener("scroll", update, { passive: true });
   update();
 }
+
+// highlight.js and Mermaid load only on pages that need them.
+window.addEventListener("load", () => {
+  window.hljs?.highlightAll();
+  window.mermaid?.initialize({
+    startOnLoad: false,
+    theme: "base",
+    themeVariables: {
+      darkMode: true,
+      background: "#16191e",
+      primaryColor: "#1a1d23",
+      primaryBorderColor: "#3a86f0",
+      primaryTextColor: "#f0f3f6",
+      lineColor: "#969fab",
+      fontFamily: "system-ui, sans-serif",
+    },
+  });
+  window.mermaid?.run({ querySelector: "pre.mermaid" });
+});

@@ -65,17 +65,30 @@ func run(serve bool) error {
 	if err := os.RemoveAll(out); err != nil {
 		return err
 	}
+	site := filepath.Join(out, basePath)
+
+	// Hugo lets Asciidoctor load extensions only from Ruby's load path.
+	rubyLib := filepath.Join(root, siteDir, "asciidoctor")
+	if existing := os.Getenv("RUBYLIB"); existing != "" {
+		rubyLib += string(os.PathListSeparator) + existing
+	}
+	if err := os.Setenv("RUBYLIB", rubyLib); err != nil {
+		return err
+	}
 
 	// A warning fails the build, so a missing layout or a broken page cannot
 	// slip through to the deployed site. Not --quiet: it drops the errors too.
 	args := []string{"tool", "-modfile=tools/hugo/go.mod", "hugo", "build",
-		"--source", siteDir, "--destination", filepath.Join(out, basePath),
+		"--source", siteDir, "--destination", site,
 		"--minify", "--panicOnWarning"}
 	if serve {
 		args = append(args, "--baseURL", fmt.Sprintf("http://%s/%s/", address, basePath))
 	}
 	if err := runIn(root, "go", args...); err != nil {
 		return fmt.Errorf("building with Hugo: %w", err)
+	}
+	if err := vendor(cacheDir, packages, site); err != nil {
+		return err
 	}
 
 	// Pagefind indexes the built pages and writes its search bundle next to
@@ -84,7 +97,7 @@ func run(serve bool) error {
 	if err != nil {
 		return err
 	}
-	if err := runIn(filepath.Join(root, siteDir), pagefindBin, "--site", filepath.Join(out, basePath)); err != nil {
+	if err := runIn(filepath.Join(root, siteDir), pagefindBin, "--site", site); err != nil {
 		return fmt.Errorf("indexing with Pagefind: %w", err)
 	}
 
