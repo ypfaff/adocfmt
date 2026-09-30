@@ -30,6 +30,8 @@ def kind(line)
   # way the header does.
   doc = Asciidoctor.load '', safe: :safe
   Asciidoctor::LoggerManager.logger = logger = Asciidoctor::MemoryLogger.new
+  # Stripped the way Document strips every source line.
+  line = Asciidoctor::Helpers.prepare_source_array([line])[0]
   if (read = Asciidoctor::PreprocessorReader.new(doc, [line]).peek_line) != line
     unless line.start_with?('\\') && read == line.slice(1..)
       return logger.messages.any? { |m| m[:message].to_s.include? 'malformed' } ? 'bad-directive' : 'directive'

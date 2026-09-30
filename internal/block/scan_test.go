@@ -991,9 +991,9 @@ List "::"
 		},
 		{
 			name: "trailing whitespace does not hide a delimiter",
-			src:  "----  \ncode\n----\n\nAfter.\n",
+			src:  "----  \ncode\n----\f\n\nAfter.\n",
 			want: `
-Verbatim "----  \ncode\n----\n"
+Verbatim "----  \ncode\n----\f\n"
 Paragraph "After.\n"`,
 		},
 		{
@@ -1166,6 +1166,14 @@ func TestScanReports(t *testing.T) {
 				{Line: 4, Message: "malformed preprocessor directive"},
 				{Line: 5, Message: "malformed preprocessor directive"},
 				{Line: 6, Message: "endif closes no conditional region"},
+			},
+		},
+		{
+			name: "an ifeval expression is stripped the way Ruby strips it",
+			src:  "ifeval::[a <\u00a0]\nendif::[]\nifeval::[a <\x00]\nendif::[]\n",
+			want: []Finding{
+				{Line: 3, Message: "malformed preprocessor directive"},
+				{Line: 4, Message: "endif closes no conditional region"},
 			},
 		},
 	}

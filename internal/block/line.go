@@ -30,8 +30,14 @@ func splitLines(src []byte, from int) []line {
 	return lines
 }
 
+// rubySpace is what Ruby's String#strip strips: not only spaces and tabs, but
+// also \v, \f, \r and NUL. A line holds no \n.
+const rubySpace = " \t\v\f\r\x00"
+
+// textEnd strips the rubySpace at the end of a line, as Asciidoctor does to
+// every line.
 func textEnd(src []byte, start, end int) int {
-	for end > start && isSpaceByte(src[end-1]) {
+	for end > start && strings.IndexByte(rubySpace, src[end-1]) >= 0 {
 		end--
 	}
 	return end
@@ -50,8 +56,8 @@ func terminator(src []byte, full Span) int {
 	return end
 }
 
-// TrimTrailing returns src without the spaces and tabs at the end of its
-// lines. The terminators stay as they are, so a CRLF source keeps its CRLF and
+// TrimTrailing returns src without the whitespace at the end of its lines, see
+// textEnd. The terminators stay as they are, so a CRLF source keeps its CRLF and
 // a last line without one gains none.
 //
 // It lives beside the scanner because both ask the same question: the scanner
@@ -491,7 +497,7 @@ func directiveShape(s []byte) (shape, bool) {
 			sh.cond = 1
 		}
 	case "ifeval":
-		sh.bad = len(target) > 0 || !isEvalExpression(bytes.TrimSpace(text))
+		sh.bad = len(target) > 0 || !isEvalExpression(bytes.Trim(text, rubySpace))
 		if !sh.bad {
 			sh.cond = 1
 		}
