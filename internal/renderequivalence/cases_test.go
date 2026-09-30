@@ -36,7 +36,6 @@ var refused = byCase(map[string][]string{
 		"tables/0099-should-warn-if-table-block-is-not-terminated",
 	},
 	"a conditional region never closes": {
-		"reader/0095-should-warn-if-ifeval-has-invalid-expression",
 		"reader/0100-should-log-error-with-end-position-if-preprocessor-condition",
 		"reader/0101-should-log-error-with-start-location-if-preprocessor-conditi",
 		"reader/0102-should-log-error-if-multiple-preprocessor-conditional-direct",
@@ -45,7 +44,9 @@ var refused = byCase(map[string][]string{
 		"reader/0078-should-log-warning-if-endif-is-unmatched",
 	},
 	"a directive is malformed": {
+		"reader/0080-should-log-warning-if-endif-contains-text",
 		"reader/0094-should-warn-if-ifeval-has-target",
+		"reader/0095-should-warn-if-ifeval-has-invalid-expression",
 		"reader/0096-should-warn-if-ifeval-is-missing-expression",
 		"reader/0097-ifdef-with-no-target-is-ignored",
 		"reader/0098-should-not-warn-about-invalid-ifdef-preprocessor-directive-i",

@@ -455,11 +455,13 @@ func isCustomBlockMacro(s []byte) bool {
 
 func isSpaceByte(c byte) bool { return c == ' ' || c == '\t' }
 
-// directiveShape recognizes a preprocessor directive, name::target[text].
-// ifdef and ifndef with text in the brackets apply to that text alone and open
-// no region; ifeval carries its expression there and always opens one. What
-// Asciidoctor rejects as malformed is still a directive line, marked bad so
-// the scanner reports it.
+// directiveShape recognizes a preprocessor directive, name::target[text],
+// mirroring Asciidoctor's ConditionalDirectiveRx and IncludeDirectiveRx: the
+// target of a conditional holds no space, and that of an include neither starts
+// nor ends with one. ifdef and ifndef with text in the brackets apply to that
+// text alone and open no region; ifeval carries its expression there and always
+// opens one. What Asciidoctor rejects as malformed is still a directive line,
+// marked bad so the scanner reports it.
 func directiveShape(s []byte) (shape, bool) {
 	name, rest, ok := bytes.Cut(s, []byte("::"))
 	if !ok || len(rest) == 0 || rest[len(rest)-1] != ']' {
@@ -472,6 +474,15 @@ func directiveShape(s []byte) (shape, bool) {
 	target, text := rest[:open], rest[open+1:len(rest)-1]
 
 	sh := shape{kind: shapeDirective}
+	if string(name) == "include" {
+		if len(target) == 0 || isSpaceByte(target[0]) || isSpaceByte(target[len(target)-1]) {
+			return shape{}, false
+		}
+		return sh, true
+	}
+	if bytes.ContainsAny(target, " \t") {
+		return shape{}, false
+	}
 	switch string(name) {
 	case "ifdef", "ifndef":
 		sh.bad = len(target) == 0
@@ -479,20 +490,32 @@ func directiveShape(s []byte) (shape, bool) {
 			sh.cond = 1
 		}
 	case "ifeval":
-		sh.bad = len(target) > 0 || len(text) == 0
+		sh.bad = len(target) > 0 || !isEvalExpression(bytes.TrimSpace(text))
 		if !sh.bad {
 			sh.cond = 1
 		}
 	case "endif":
-		sh.cond = -1
-	case "include":
-		if len(target) == 0 {
-			return shape{}, false
+		sh.bad = len(text) > 0
+		if !sh.bad {
+			sh.cond = -1
 		}
 	default:
 		return shape{}, false
 	}
 	return sh, true
+}
+
+// isEvalExpression mirrors Asciidoctor's EvalExpressionRx: a comparison with
+// something on either side of the operator.
+func isEvalExpression(s []byte) bool {
+	for i := 1; i < len(s)-1; i++ {
+		single := s[i] == '<' || s[i] == '>'
+		double := (s[i] == '=' || s[i] == '!') && s[i+1] == '=' && i < len(s)-2
+		if single || double {
+			return true
+		}
+	}
+	return false
 }
 
 // pinsLine reports whether a line inside a paragraph has to stay a line of its

@@ -494,6 +494,14 @@ Paragraph "Text.\n"
 Literal "  more\n* d\n"`,
 		},
 		{
+			name: "a space in a conditional target or at the edge of an include target makes no directive",
+			src:  "ifdef::a b[]\n\ninclude:: part.adoc[]\n",
+			want: `
+Opaque "ifdef::a b[]\n"
+List "::"
+  ListItem "include:: part.adoc[]\n"`,
+		},
+		{
 			name: "a directive freezes its own gap and the next one",
 			src:  "Text.\n\ninclude::part.adoc[]\n\nMore.\n",
 			want: `
@@ -1144,12 +1152,14 @@ func TestScanReports(t *testing.T) {
 		},
 		{
 			name: "a malformed directive is a finding, as it is an error in Asciidoctor",
-			src:  "ifdef::[]\nifeval::target[1 == 1]\nifeval::[]\nendif::[]\n",
+			src:  "ifdef::[]\nifeval::target[1 == 1]\nifeval::[]\nifeval::[1 | 2]\nendif::a[x]\nendif::[]\n",
 			want: []Finding{
 				{Line: 1, Message: "malformed preprocessor directive"},
 				{Line: 2, Message: "malformed preprocessor directive"},
 				{Line: 3, Message: "malformed preprocessor directive"},
-				{Line: 4, Message: "endif closes no conditional region"},
+				{Line: 4, Message: "malformed preprocessor directive"},
+				{Line: 5, Message: "malformed preprocessor directive"},
+				{Line: 6, Message: "endif closes no conditional region"},
 			},
 		},
 	}
