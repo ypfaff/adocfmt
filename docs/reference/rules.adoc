@@ -3,16 +3,23 @@
 
 adocfmt applies the rules on this page and leaves the rest of the document as it is.
 
+[#guarantees]
 == Guarantees
 
 * A byte that no rule covers is written back unchanged.
-* Line endings keep their form, so a file written with Windows line endings keeps them, and a line a rule writes ends the same way.
-* Front matter is left alone, the block of YAML that some static site generators put at the top of a file.
-* Lines whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional] are left alone, because what they hold is known only once Asciidoctor has resolved the directive.
-* A document that cannot be read reliably is refused: adocfmt reports what it found and writes nothing.
+* Line endings keep their form: a file with Windows line endings keeps them.
+A line that a rule writes ends the same way as the rest of the file.
+* Front matter, the block of YAML that some static site generators put at the top of a file, is left alone.
+* Lines whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional] lose only their trailing whitespace.
+No other rule changes them, because their content is known only after Asciidoctor resolves the directive.
+* adocfmt refuses a document that it cannot read reliably.
+It reports what it found and writes nothing.
 * Formatting a formatted document changes nothing.
 * No rule changes what the rendered document shows.
-Asciidoctor decides what a document means, and xref:../contributing/testing-strategy.adoc[the testing strategy] describes how every rule is checked against it.
+The rendering that counts is Asciidoctor's, the reference implementation of AsciiDoc.
+xref:../contributing/testing-strategy.adoc[The testing strategy] describes how every rule is checked against Asciidoctor.
+
+xref:../explanation/safety.adoc[How adocfmt keeps your document safe] gives the reasons.
 
 [#trailing-whitespace]
 == Trailing whitespace
@@ -29,22 +36,28 @@ A line that holds nothing but whitespace becomes empty.
 a|
 ....
 Text.··
-line +··
+Line +··
 ....
 a|
 ....
 Text.
-line +
+Line +
 ....
 |===
 
 AsciiDoc forces a https://docs.asciidoctor.org/asciidoc/latest/blocks/hard-line-breaks/[line break] by ending a line with a space and a `{plus}`.
-That space is part of the break and stays; only the whitespace after the `{plus}` is removed.
+That space is part of the break and stays.
+Only the whitespace after the `{plus}` is removed.
+
+Left alone:
+
+* Front matter.
+It is YAML, where trailing whitespace can be part of a value.
 
 [#heading-markers]
 == Heading markers
 
-A one-line https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/[section title] is written with `=` signs and a single space.
+A one-line https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/[section title] is written with `=` signs followed by a single space.
 A closing marker at the end of the line is removed.
 
 [cols="1,1"]
@@ -54,25 +67,30 @@ A closing marker at the end of the line is removed.
 a|
 ....
 ## Section ##
+
 ==   Other
 ....
 a|
 ....
 == Section
+
 == Other
 ....
 |===
 
-The https://docs.asciidoctor.org/asciidoc/latest/document/header/[document title] is written the same way, and the author, revision and attribute lines below it stay as they are.
+The https://docs.asciidoctor.org/asciidoc/latest/document/header/[document title] is written the same way.
+The author, revision and attribute lines below it keep their content.
 
 Left alone:
 
 * A document title written on two lines.
-It turns on https://docs.asciidoctor.org/asciidoctor/latest/migrate/asciidoc-py/#compatibility-mode[compat-mode], and the same document on one line would render its inline markup differently.
-* A title the rewrite would change.
-A closing marker counts only when it matches the one in front of it, so `## Title ==` has the title `Title ==`, while `== Title ==` would have the title `Title`.
-* A document header an include or a conditional reaches, its title included.
-Which lines are the author and the revision is known only once Asciidoctor has resolved the directive.
+It turns on https://docs.asciidoctor.org/asciidoctor/latest/migrate/asciidoc-py/#compatibility-mode[compat-mode].
+With a one-line title, the same document would render its inline markup differently.
+* A title that the rewrite would change.
+A closing marker counts only when it matches the opening marker.
+So `## Title ==` has the title `Title ==`, but `== Title ==` would have the title `Title`.
+* A document header that an include or a conditional reaches, including its title.
+Which lines are the author and revision lines is known only after Asciidoctor resolves the directive.
 
 [#setext-headings]
 == Setext headings
@@ -99,14 +117,16 @@ The underline character sets the level: `=` is level 0, `-` is level 1, `~` is l
 Left alone:
 
 * An indented title.
-A one-line title cannot carry the indentation, because Asciidoctor skips the whitespace between the marker and the title.
+A one-line title cannot keep the indentation, because Asciidoctor skips the whitespace between the marker and the title.
 * A two-line title at the very top of a document.
-That one is the document title rather than a section title, and it stays on two lines; see <<heading-markers>>.
+That title is the document title, not a section title.
+It stays on two lines; see <<heading-markers>>.
 
 [#blank-lines]
 == Blank lines
 
-One blank line separates two blocks, and none binds a metadata line to its block or one list item to the next.
+One blank line separates two blocks.
+No blank line stands between a metadata line and its block, or between one list item and the next.
 The file starts with no blank line and ends with a single line ending.
 
 [cols="1,1"]
@@ -151,20 +171,25 @@ text
 ....
 |===
 
-Asciidoctor renders a block the same with and without a blank line in front of it, which is what makes the separating line free to insert.
-In a few places a blank line is syntax rather than spacing, and there adocfmt keeps what it finds.
+Asciidoctor renders a block the same with or without a blank line in front of it.
+That is why adocfmt can insert the separating line safely.
+In a few places, a blank line is syntax, not spacing.
+There, adocfmt keeps the blank lines it finds.
 
 Left alone:
 
 * Blank lines inside a list item.
-One there decides what still belongs to the item, so adocfmt neither adds nor removes one.
+A blank line there decides what still belongs to the item, so adocfmt neither adds nor removes one.
 +
-.Where the note ends up
+.Example
 [%collapsible]
 ====
+A https://docs.asciidoctor.org/asciidoc/latest/verbatim/callouts/[callout list], the `<1>` line, directly under a listing in an item belongs to that item.
+After a blank line, it becomes a list of its own below the item list.
+
 [cols="1,1"]
 |===
-| Part of the item | A block of its own
+| Part of the item | A list of its own
 
 a|
 ....
@@ -188,14 +213,18 @@ code <1>
 |===
 ====
 * The blank line after an item that ends in indented text.
-Indented text runs on to the next blank line, so without it the marker of the next item is read as part of that text.
+Indented text in an item is a literal paragraph, which runs on to the next blank line.
+Without that blank line, the next item becomes part of the literal paragraph.
 +
-.Where the second item ends up
+.Example
 [%collapsible]
 ====
+On the left, `* two` shows as text inside the literal paragraph.
+On the right, the blank line ends the paragraph, and `* two` is a second item.
+
 [cols="1,1"]
 |===
-| Inside the indented text | An item of its own
+| Part of the indented text | An item of its own
 
 a|
 ....
@@ -214,13 +243,17 @@ a|
 ....
 |===
 ====
-* The blank lines around a lone `+`.
-The run above it picks which list level the block below attaches to, the run under it whether that block attaches at all: at most one blank line attaches it, two or more end the list.
-Outside a list the `+` attaches nothing, and Asciidoctor reads it and everything under it down to the next blank line as one paragraph.
+* The blank lines around a `{plus}` on a line of its own.
+In a list, such a `{plus}` is a https://docs.asciidoctor.org/asciidoc/latest/lists/continuation/[list continuation]: it attaches the block below it to a list item.
+The blank lines above it decide which item the block attaches to, and the blank lines below it decide whether the block attaches at all.
+Outside a list, the `{plus}` attaches nothing, and a blank line below it splits one paragraph into two.
 +
-.What a lone `+` joins
+.Example
 [%collapsible]
 ====
+Outside a list, Asciidoctor reads the `{plus}` and the text below it as one paragraph.
+With a blank line below the `{plus}`, they are two paragraphs.
+
 [cols="1,1"]
 |===
 | One paragraph | Two paragraphs
@@ -243,13 +276,17 @@ More text.
 |===
 ====
 * The blank line under a comment.
-Asciidoctor throws comments away before it renders, so nothing ties a comment to the block beneath it, and pulling it down would only change how the source reads.
+Asciidoctor drops comments before it renders, so nothing ties a comment to the block beneath it.
+Removing that blank line would make a comment that stands on its own read as a comment about the block below it.
 * The blank line under an attribute entry whose last line still ends in `{backslash}` or `{plus}`.
-The value reads on to the next blank line, so removing that line would feed the block below into the attribute instead of rendering it.
-* Whatever stands under front matter, down to the first blank line.
-Asciidoctor does not skip front matter unless it is told to, and reads everything from the opening fence to that blank line as one paragraph, so a blank line there changes what the document title below it becomes.
+The value runs on to the next blank line.
+Removing that blank line would make the block below part of the attribute value instead of rendering it.
+* The lines below front matter, down to the first blank line: adocfmt adds no blank line between them.
+Asciidoctor skips front matter only when it is told to.
+Otherwise, it reads everything from the opening fence to that blank line as one paragraph.
+So a blank line there changes what the document title below the front matter becomes.
 +
-.What the title below front matter becomes
+.Example
 [%collapsible]
 ====
 [cols="1,1"]
@@ -274,14 +311,16 @@ layout: post
 |===
 ====
 * A blank line at the top of a file whose first line of content is a `---`.
-Front matter counts only when the fence is the very first line, so removing that blank line would make front matter out of lines that are none.
-* Blank lines next to an include or a conditional, and the ones inside a block whose content one of them decides.
-* Blank lines inside a listing, a literal block or a table, which count as one block each.
+Front matter counts only when its fence is the very first line.
+Removing that blank line would turn lines that are not front matter into front matter.
+* Blank lines inside a listing, a literal block or a table.
+Each of these counts as one block.
 
 [#block-delimiters]
 == Block delimiters
 
-The two lines fencing a https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/[delimited block] are written as short as the block allows, which is four characters wherever no line inside asks for more.
+A https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/[delimited block] opens and closes with a delimiter line, its fence.
+Both fences are written as short as the block allows: four characters, unless a line inside the block needs a longer fence.
 
 [cols="1,1"]
 |===
@@ -301,9 +340,11 @@ code
 ....
 |===
 
-A table is fenced the same way, except that its first character picks https://docs.asciidoctor.org/asciidoc/latest/tables/data-format/[how the rows are read] and therefore stays: `{vbar}=======` becomes `{vbar}===`, and `,=======` becomes `,===`.
+A table fence is shortened the same way.
+Its first character picks https://docs.asciidoctor.org/asciidoc/latest/tables/data-format/[how the rows are read], so that character stays: `{vbar}=======` becomes `{vbar}===`, and `,=======` becomes `,===`.
 
-A block closes on a line equal to the one that opened it, so a fence may only shrink to a width no line inside the block ends up with.
+A block ends at the first line that matches its opening fence.
+So the new fence is the shortest one that matches no line inside the formatted block.
 
 [cols="1,1"]
 |===
@@ -325,13 +366,13 @@ code
 ....
 |===
 
-A line counts however deep inside the block it sits, because Asciidoctor carries the closing line of a block into the blocks nested in it.
+This includes lines inside nested blocks, because a line that matches the outer fence closes the outer block even there.
 
-.Where a line inside a nested block ends the block around it
+.Example
 [%collapsible]
 =======
-The `====` sits in a listing, and closes the example block around it all the same.
-The fence of that example block therefore stops at five characters rather than four.
+The `====` sits inside a listing, but it would still close an example block fenced with `====`.
+So the fence of the example block shrinks only to five characters, not four.
 
 [cols="1,1"]
 |===
@@ -359,17 +400,22 @@ a|
 Left alone:
 
 * An https://docs.asciidoctor.org/asciidoc/latest/blocks/open-blocks/[open block] and a Markdown fence.
-Each has one legal width, two dashes and three backticks, so there is nothing to shorten.
-* A https://docs.asciidoctor.org/asciidoc/latest/comments/[comment block], the one `////` opens.
-It is a block of its own only where it stands alone, and part of the metadata of the block below it otherwise, so rewriting it would turn on where it sits rather than on what it holds.
-A `[comment]` over a wider fence makes no comment block: Asciidoctor drops the style there and reads the block its delimiter names.
-* A block an include or a conditional reaches, inside its body or on the line above it.
-What the directive brings in may hold the very line a shorter fence would close on.
+Each has only one valid length: two dashes for an open block and three backticks for a Markdown fence.
+So there is nothing to shorten.
+* A https://docs.asciidoctor.org/asciidoc/latest/comments/[comment block], which `////` opens.
+A comment block is a block of its own only where it stands alone.
+Otherwise, it is part of the metadata of the block below it.
+So a rewrite would depend on where the comment block sits rather than on what it holds.
+A `[comment]` makes a comment block only out of an open block.
+Above any other fence, Asciidoctor drops the style and reads the block that the delimiter names.
+* A block that an include or a conditional reaches, inside its body or on the line above it.
+The directive may bring in exactly the line that a shorter fence would close on.
 
 [#list-markers]
 == List markers
 
-A https://docs.asciidoctor.org/asciidoc/latest/lists/[list] is written with one marker per kind, `{asterisk}` for a bullet and `.` for a number, and with one space between the marker and the text.
+A https://docs.asciidoctor.org/asciidoc/latest/lists/unordered/[list] is written with one marker per kind: `{asterisk}` for a bullet and `.` for a number.
+One space separates the marker from the text.
 
 [cols="1,1"]
 |===
@@ -393,19 +439,22 @@ a|
 ....
 |===
 
-The numbers themselves carry nothing: Asciidoctor counts the items and only warns where the numbers say something else, so `3. 4. 5.` renders like `. . .`.
-To start at another number, set the https://docs.asciidoctor.org/asciidoc/latest/lists/ordered/#start[`start`] attribute, which this rule leaves alone.
+The numbers themselves carry no meaning.
+Asciidoctor counts the items and only warns where the numbers differ from that count.
+So `3. 4. 5.` renders like `. . .`.
+To start at another number, set the https://docs.asciidoctor.org/asciidoc/latest/lists/ordered/#basic-ordered-list[`start`] attribute, which this rule leaves alone.
 
 Left alone:
 
-* A list whose new marker another list already uses, one around it or one inside it.
-AsciiDoc nests a list on its marker, so the two would end up as one.
+* A list whose new marker is already used by a list around it or a list inside it.
+AsciiDoc tells nested lists apart by their markers, so the two lists would become one.
 +
-.Where the items would end up
+.Example
 [%collapsible]
 ====
-The `{asterisk}` list sits inside the `-` list because the marker changes, and would be a second item of it once both read the same.
-A https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/[delimited block] ends the search in both directions, since no list open outside it is open within.
+The `{asterisk}` list is nested inside the `-` list because the marker changes.
+Once both lists use the same marker, `nested` becomes a second item of the outer list.
+Lists on the other side of a delimited block's fence do not count, because a list that is open outside the block is not open inside it.
 
 [cols="1,1"]
 |===
@@ -424,9 +473,9 @@ a|
 |===
 ====
 * `a.`, `A.`, `i)`, `I)`, the `•` bullet, description terms and callouts.
-Each of them picks something a `{asterisk}` or a `.` cannot say.
+Each of them expresses something that a `{asterisk}` or a `.` cannot.
 +
-.What the rule still writes there
+.Example
 [%collapsible]
 ====
 [cols="1,1"]
@@ -447,15 +496,17 @@ term:: text
 ....
 |===
 ====
-* A list an include or a conditional reaches, next to it or inside one of its items.
-Nothing marks the end of a list, so the items a directive brings in may still belong to it, and which marker they carry is known only once Asciidoctor has resolved it.
+* A list that an include or a conditional reaches, next to the list or inside one of its items.
+Nothing marks the end of a list, so the items that a directive brings in may still belong to it.
+Their markers are known only after Asciidoctor resolves the directive.
 * The first line of a list, where a shorter line would read as a section title.
 The rest of the list keeps that line's marker.
 +
-.What the line would become
+.Example
 [%collapsible]
 ====
-A https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/[section title] can be written over two lines, and Asciidoctor takes the second one as the underline while it is within one character of the first.
+A https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/[section title] can be written over two lines.
+Asciidoctor takes the second line as the underline when its length is within one character of the first line.
 
 [cols="1,1"]
 |===
@@ -477,7 +528,7 @@ a|
 [#one-sentence-per-line]
 == One sentence per line
 
-The lines of a paragraph are joined and split again, so that every sentence starts a line of its own.
+The lines of a paragraph are joined and split again, so that every sentence starts on a line of its own.
 
 [cols="1,1"]
 |===
@@ -497,21 +548,98 @@ Second one.
 
 A sentence ends at a `.`, `!` or `?` followed by whitespace and a word that starts with an uppercase letter.
 Closing quotes, brackets and formatting marks after it belong to the sentence.
-A period does not end a sentence after a digit, a single letter or a common English or German abbreviation such as `Dr.`, `e.g.`, `z. B.` or `Nr.`, and neither does an ellipsis.
-A hard line break stays where it is, and so does a line break inside code, a passthrough or a macro.
+A period does not end a sentence after a digit, a single letter or a common English or German abbreviation such as `Dr.`, `e.g.`, `z. B.` or `Nr.`.
+An ellipsis does not end a sentence either.
+A hard line break stays where it is.
+So does a line break inside code, a passthrough or a macro.
 
 Left alone:
 
-* The text of a list item, a description list entry included.
+* The text of a list item, including a description list entry.
 A paragraph attached to an item with a `{plus}` is reflowed like any other.
-* A paragraph in a list with a line that starts like a list item.
-Asciidoctor reads the lines below that line differently, even where it shows the line as text.
-* A paragraph whose line breaks carry meaning: a verse or literal paragraph, one with the `hardbreaks` option, and one that sets its own `subs`, which can pass raw HTML through where a line break shows.
-* A paragraph an include or a conditional reaches, or that holds a comment line.
++
+.Example
+[%collapsible]
+====
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+* This item has
+two lines. They stay.
++
+This paragraph
+is attached. It is reflowed.
+....
+a|
+....
+* This item has
+two lines. They stay.
++
+This paragraph is attached.
+It is reflowed.
+....
+|===
+====
+* A paragraph in a list, when one of its lines starts like a list item.
+Asciidoctor takes that line for the start of a nested list and leaves a `{plus}` below it to that list, so the page shows the `{plus}` as text.
+Joined into the line above, the `{plus}` would attach the next paragraph again.
++
+.Example
+[%collapsible]
+====
+The `- or` line keeps the `{plus}` below it on the page.
+Reflowed, the `{plus}` would disappear from the page.
+
+[cols="1,1"]
+|===
+| Left alone | Reflowed
+
+a|
+....
+* Install the tool.
++
+Pass the path as an argument
+- or set it in the config file.
++
+Then run it.
+....
+a|
+....
+* Install the tool.
++
+Pass the path as an argument - or set it in the config file.
++
+Then run it.
+....
+|===
+====
+* A paragraph whose line breaks show on the page.
+https://docs.asciidoctor.org/asciidoc/latest/blocks/verses/[Verse] and https://docs.asciidoctor.org/asciidoc/latest/verbatim/literal-blocks/[literal] paragraphs show every line break.
+So does a paragraph with the https://docs.asciidoctor.org/asciidoc/latest/blocks/hard-line-breaks/[`hardbreaks` option], set on the paragraph or for the whole document.
+A paragraph with its own https://docs.asciidoctor.org/asciidoc/latest/subs/apply-subs-to-blocks/[`subs`] can pass raw HTML through, and raw HTML can show a line break.
++
+.Example
+[%collapsible]
+====
+A verse paragraph keeps its line breaks on the page, so joining its lines would change what the page shows.
+
+....
+[verse]
+Roses are red. Violets
+are blue.
+....
+====
+* A paragraph below `:attribute-missing: drop-line`, which sets how Asciidoctor treats https://docs.asciidoctor.org/asciidoc/latest/attributes/unresolved-references/[missing attributes].
+Asciidoctor then drops every line that refers to a missing attribute, so the line breaks decide which sentences the page shows.
+* A paragraph that holds a comment line.
+Joining its lines would pull the comment into the text, where it shows.
 * A paragraph that a joined or a split line would turn into something else.
 A line that starts like a list item, an attribute line or an admonition label is syntax, not text.
 +
-.What the joined line would become
+.Example
 [%collapsible]
 ====
 [cols="1,1"]
