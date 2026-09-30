@@ -87,6 +87,27 @@ go tool -modfile=tools/actionlint/go.mod actionlint
 
 TIP: With the <<git-hooks,Git hooks>> activated, every commit runs these linters first.
 
+[#website]
+== Build the website
+
+The website is built from `docs/` with Hugo, which `go tool` builds from the module in link:../../tools/hugo/go.mod[`tools/hugo`].
+Build it and serve it at `http://localhost:8080/adocfmt/`:
+
+[source,shell]
+----
+go run ./tools/build-website --serve
+----
+
+The build downloads Pagefind, Mermaid and highlight.js in the versions that link:../../website/package-lock.json[`website/package-lock.json`] pins, so you do not need npm.
+It fails when the front matter of a page does not match its title or lacks a field.
+
+Check the links of the built website:
+
+[source,shell]
+----
+go tool -modfile=tools/htmltest/go.mod htmltest --conf website/htmltest.yml
+----
+
 [#git-hooks]
 == Activate the Git hooks
 
