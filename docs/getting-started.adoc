@@ -1,0 +1,180 @@
+= Get started with adocfmt
+
+In this tutorial, you install adocfmt, format a small AsciiDoc file with it, and fix a document that adocfmt refuses to format.
+
+== Before you begin
+
+You need a shell, such as bash or zsh.
+You also need Git, which this tutorial uses to compare files.
+
+== Install adocfmt
+
+Install adocfmt and confirm the installation, as described in xref:how-to/install.adoc[Install adocfmt].
+
+== Create a sample document
+
+. Create a directory for the tutorial and change to it:
++
+[source,shell]
+----
+mkdir adocfmt-tutorial
+cd adocfmt-tutorial
+----
+. Create the file `guide.adoc`:
++
+[source,shell]
+----
+cat > guide.adoc <<'EOF'
+= Tea guide
+
+##  Brewing
+Green tea turns bitter in boiling water. Heat the water
+to 80 degrees.
+
+- Use one teaspoon per cup.
+
+- Steep for two minutes.
+
+
+
+## Serving ##
+1. Pour the tea.
+2. Serve it hot.
+EOF
+----
++
+The file is valid AsciiDoc, but it mixes styles, such as Markdown-style `##` headings and `-` bullets.
+. Copy the file, so that you can compare the formatted version with the original later:
++
+[source,shell]
+----
+cp guide.adoc original.adoc
+----
+
+== Format the document
+
+. Format `guide.adoc`:
++
+[source,shell]
+----
+adocfmt --write guide.adoc
+----
++
+The `--write` flag writes the result back to the file.
+When it succeeds, adocfmt prints nothing.
+. Compare the original with the formatted file:
++
+[source,shell]
+----
+git diff --no-index original.adoc guide.adoc
+----
++
+A line that starts with `-` is from the original file.
+A line that starts with `{plus}` is from the formatted file.
+
+== Read the changes
+
+Each change in the diff comes from one of the xref:reference/rules.adoc[formatting rules]:
+
+* Each section title starts with `==` and one space, and the closing `##` is gone.
+This is the xref:reference/rules.adoc#heading-markers[heading markers] rule.
+* One blank line separates each block from the next, and the list items have no blank line between them.
+This is the xref:reference/rules.adoc#blank-lines[blank lines] rule.
+* The bulleted list uses `{asterisk}` and the numbered list uses `.`.
+This is the xref:reference/rules.adoc#list-markers[list markers] rule.
+* Each sentence of the paragraph starts on a line of its own.
+This is the xref:reference/rules.adoc#one-sentence-per-line[one sentence per line] rule.
+
+These changes affect only the source.
+Asciidoctor renders both files to pages that show the same content.
+This is one of the xref:reference/rules.adoc#guarantees[guarantees] that adocfmt gives.
+
+== Check the formatting
+
+The `--check` flag changes no file.
+It prints the name of each file that is not formatted.
+
+Check both files, then print the exit code of the check:
+
+[source,console]
+----
+$ adocfmt --check original.adoc guide.adoc
+original.adoc
+$ echo $?
+1
+----
+
+adocfmt names `original.adoc`, because that file is not formatted.
+It does not name `guide.adoc`, because you formatted that file in the previous section.
+The exit code `1` means that at least one file is not formatted.
+A CI job uses this exit code to fail the build.
+For every exit code, see xref:reference/cli.adoc#exit-codes[Exit codes].
+
+== Fix a refused document
+
+adocfmt refuses a document when it finds structure that it cannot read reliably.
+It then leaves the file unchanged and reports each problem it found, called a finding.
+
+. Create the file `recipe.adoc`:
++
+[source,shell]
+-----
+cat > recipe.adoc <<'EOF'
+= Matcha
+
+Whisk the powder with the water.
+----
+2 g matcha
+70 ml water
+EOF
+-----
++
+The `----` line opens a listing block, which shows code or other text exactly as written.
+No line closes this block.
+. Format the file, then print the exit code:
++
+[source,console]
+----
+$ adocfmt --write recipe.adoc
+recipe.adoc:4: block has no closing delimiter
+$ echo $?
+2
+----
++
+The message names the file, the line to look at, and the problem.
+The exit code `2` means an error.
+The file `recipe.adoc` is unchanged.
+For what each message means and how to fix it, see xref:reference/cli.adoc#refusal[Refusal findings].
+. Close the block by adding a `----` line at the end of the file:
++
+[source,shell]
+----
+echo '----' >> recipe.adoc
+----
+. Format the file again, then print the exit code and the file:
++
+[source,console]
+-----
+$ adocfmt --write recipe.adoc
+$ echo $?
+0
+$ cat recipe.adoc
+= Matcha
+
+Whisk the powder with the water.
+
+----
+2 g matcha
+70 ml water
+----
+-----
++
+adocfmt formatted the document and added a blank line above the listing block.
+
+To learn why adocfmt refuses the whole document instead of formatting the parts it can read, see xref:explanation/safety.adoc#refusal[Why a document with findings is refused whole].
+
+== Next steps
+
+* xref:how-to/check-in-ci.adoc[Check formatting in CI], so that a build fails when a file is not formatted.
+* xref:how-to/adopt-in-a-repository.adoc[Adopt adocfmt in a repository] with one formatting commit and a pre-commit hook.
+* Read the xref:reference/rules.adoc[formatting rules] to see what adocfmt changes and what it leaves alone.
