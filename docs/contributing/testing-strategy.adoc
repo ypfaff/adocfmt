@@ -135,6 +135,7 @@ Directories can nest, so cases can be grouped by rule.
 The path below `testdata/golden` is the test name.
 
 The cases run with every rule on, so cut the input until only the rule under test has anything to do.
+The exception is link:../../testdata/golden/website/home-example[`website/home-example`], the before and after example on the home page of the website, which shows several rules at once.
 
 To add a case, write `input.adoc`, then let the formatter write the expectation:
 

@@ -16,3 +16,7 @@ trim_trailing_whitespace = false
 
 [testdata/golden/block-delimiters/body-fence-with-trailing-whitespace/**]
 trim_trailing_whitespace = false
+
+# The home page of the website shows the trailing whitespace this case removes.
+[testdata/golden/website/home-example/**]
+trim_trailing_whitespace = false
