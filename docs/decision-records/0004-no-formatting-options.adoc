@@ -1,0 +1,30 @@
+= 0004: No formatting options
+
+*Status:* accepted +
+*Date:* 2026-09-27
+
+== Context
+
+Formatters differ in how much of their style users can configure.
+For example, gofmt offers no style options, while rustfmt offers many.
+Whether adocfmt's rules take options should be decided before the first release, to reduce the chance of breaking changes.
+
+== Decision
+
+adocfmt has no formatting options.
+Every rule is always on and writes one style.
+
+== Consequences
+
+* The formatter stays simpler.
+In the printer from xref:0002-block-tree-and-canonical-printer.adoc[decision record 0002], every option would be another branch in the functions that write the nodes.
+It would also multiply the combinations in which the rules run.
+Each rule would have to be correct in all of them, and the tests would have to cover each one.
+With one style, a rule knows what the other rules write and does not have to handle every output they could produce.
+* One style ends the debate about which style a project uses.
+* A project whose documents follow another style, such as prose wrapped at a fixed width, gets one large diff when it adopts adocfmt.
+
+== Alternatives
+
+A few options, as Black and Prettier have::
+Each of them brings the costs above, for the few projects that need it.
