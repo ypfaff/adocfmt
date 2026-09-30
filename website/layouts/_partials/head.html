@@ -11,6 +11,9 @@
 <meta property="og:title" content="{{ $title }}">
 <meta property="og:description" content="{{ $description }}">
 <meta property="og:url" content="{{ .Permalink }}">
+<meta property="og:image" content="{{ "images/adocfmt-og.png" | absURL }}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <link rel="canonical" href="{{ .Permalink }}">
 <link rel="icon" href="{{ "images/adocfmt-icon.svg" | relURL }}" type="image/svg+xml">
 {{ $css := resources.Get "css/site.css" | minify | fingerprint }}

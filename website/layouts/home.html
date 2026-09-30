@@ -8,6 +8,22 @@
     {{ end }}
   </section>
 
+  <section class="example" aria-label="Example">
+    {{ range slice (dict "file" "input.adoc" "caption" "Before") (dict "file" "golden.adoc" "caption" "After") }}
+      {{ $source := (resources.Get (printf "example/%s" .file)).Content }}
+      {{/* Trailing whitespace is what the formatter removes, so it shows as a dot. */}}
+      {{ $lines := slice }}
+      {{ range split (strings.TrimSuffix "\n" $source) "\n" }}
+        {{ $trimmed := strings.TrimRight " " . }}
+        {{ $lines = $lines | append (printf "%s%s" $trimmed (strings.Repeat (sub (len .) (len $trimmed)) "·")) }}
+      {{ end }}
+      <figure>
+        <figcaption>{{ .caption }}</figcaption>
+        <pre>{{ delimit $lines "\n" }}</pre>
+      </figure>
+    {{ end }}
+  </section>
+
   <section class="entries" aria-label="Documentation">
     {{ range site.Params.sections }}
       {{ $blurb := .blurb }}

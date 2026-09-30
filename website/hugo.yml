@@ -13,6 +13,12 @@ module:
       files: ['! decision-records/0000-template.adoc', '! images/**']
     - source: ../docs/images
       target: static/images
+    # The home page example is a golden case, so the tests keep it in step
+    # with the rules. A mount of assets replaces the default one, hence both.
+    - source: ../testdata/golden/website/home-example
+      target: assets/example
+    - source: assets
+      target: assets
 
 params:
   description: An opinionated AsciiDoc formatter.
