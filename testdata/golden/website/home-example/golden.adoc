@@ -1,0 +1,17 @@
+= My Project
+
+== Build
+
+The project needs Go 1.24 or later.
+It builds on these platforms:
+
+* Linux and macOS
+* Windows
+
+== Test
+
+Run the tests before you open a pull request.
+
+----
+$ make test
+----
