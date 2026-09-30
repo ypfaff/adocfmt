@@ -14,6 +14,10 @@ import (
 // Dir holds the cases, relative to the repository root.
 const Dir = "testdata/asciidoctor-cases"
 
+// Version is the Asciidoctor release the cases come from. It pins them so
+// regenerating them is reproducible, and tracks the release the checks run with.
+const Version = "2.0.26"
+
 // Files returns every case below root, in path order. The README the generator
 // leaves next to them is not a case.
 func Files(root string) ([]string, error) {

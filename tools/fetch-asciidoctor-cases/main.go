@@ -25,9 +25,7 @@ import (
 )
 
 const (
-	// asciidoctorTag pins the cases so regenerating them is reproducible. It
-	// tracks the Asciidoctor release the checks render with.
-	asciidoctorTag = "v2.0.26"
+	asciidoctorTag = "v" + corpus.Version
 	asciidoctorURL = "https://github.com/asciidoctor/asciidoctor"
 )
 
@@ -38,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Println(strings.TrimPrefix(asciidoctorTag, "v"))
+		fmt.Println(corpus.Version)
 		return
 	}
 
