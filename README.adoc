@@ -6,6 +6,8 @@ Early work in progress.
 
 == Documentation
 
+The documentation is also published as a website at https://ypfaff.github.io/adocfmt/.
+
 * xref:docs/getting-started.adoc[Get started with adocfmt]
 * xref:docs/how-to/install.adoc[Install adocfmt]
 * xref:docs/reference/rules.adoc[Formatting rules]
