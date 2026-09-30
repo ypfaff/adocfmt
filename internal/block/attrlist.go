@@ -52,7 +52,8 @@ func styleOf(src []byte, meta []Meta) string {
 
 // blockStyle reads the style out of an attribute line, which is the first
 // positional value: [source,go] is source, ["source"] too, [#id] and
-// [role=x] are nothing.
+// [role=x] are nothing. It keeps its case, since Asciidoctor matches a style
+// in its case: [Quote] is no quote.
 func blockStyle(s []byte) string {
 	s = bytes.TrimSpace(s)
 	if len(s) < 2 || s[0] != '[' {
@@ -69,7 +70,7 @@ func blockStyle(s []byte) string {
 	if len(s) >= 2 && (s[0] == '"' || s[0] == '\'') && s[len(s)-1] == s[0] {
 		s = s[1 : len(s)-1]
 	}
-	return string(bytes.ToLower(s))
+	return string(s)
 }
 
 // paragraphStyles hand a paragraph to block parsing, where Asciidoctor never
@@ -79,7 +80,7 @@ var paragraphStyles = map[string]bool{
 	"comment": true, "example": true, "literal": true, "listing": true, "open": true,
 	"pass": true, "quote": true, "sidebar": true, "source": true, "verse": true,
 	"abstract": true, "partintro": true,
-	"note": true, "tip": true, "important": true, "warning": true, "caution": true,
+	"NOTE": true, "TIP": true, "IMPORTANT": true, "WARNING": true, "CAUTION": true,
 }
 
 // extensionStyle reports whether a style is one Asciidoctor knows only from an

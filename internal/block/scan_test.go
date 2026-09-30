@@ -848,6 +848,14 @@ Opaque meta("[mermaid]\n") "graph TD\nA-->B\n"
 Verbatim meta("[mermaid]\n") "--\ngraph TD\n--\n"`,
 		},
 		{
+			name: "a style counts only in its case, as in Asciidoctor",
+			src:  "[Quote]\n\"A quote.\"\n-- Author\n\n[NOTE]\nText.\n\n[note]\nText.\n",
+			want: `
+Opaque meta("[Quote]\n") "\"A quote.\"\n-- Author\n"
+Paragraph meta("[NOTE]\n") "Text.\n"
+Opaque meta("[note]\n") "Text.\n"`,
+		},
+		{
 			name: "a label, a colon and whitespace open an admonition paragraph",
 			src:  "NOTE: Text.\nMore.\n\nTIP:\tText.\n\nNOTE:\nText.\n\nNote: Text.\n",
 			want: `
