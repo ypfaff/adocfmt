@@ -195,7 +195,7 @@ var markdownQuote = []byte("> ")
 
 var tocMacro = []byte("toc::")
 
-var blockMacros = [][]byte{[]byte("image::"), []byte("video::"), []byte("audio::"), tocMacro}
+var mediaMacros = [][]byte{[]byte("image::"), []byte("video::"), []byte("audio::")}
 
 func classify(src []byte, l line) shape {
 	s := src[l.text.Start:l.text.End]
@@ -350,23 +350,13 @@ func isMarkdownBreak(s []byte) bool {
 // extension. Any other name::target[] is prose to it unless an extension
 // registers the name, see isCustomBlockMacro.
 func isBlockMacro(s []byte) bool {
-	if len(s) == 0 || s[len(s)-1] != ']' {
-		return false
+	if rest, ok := bytes.CutPrefix(s, tocMacro); ok {
+		return len(rest) >= 2 && rest[0] == '[' && rest[len(rest)-1] == ']'
 	}
-	for _, name := range blockMacros {
-		rest, ok := bytes.CutPrefix(s, name)
-		if !ok {
-			continue
+	for _, name := range mediaMacros {
+		if rest, ok := bytes.CutPrefix(s, name); ok {
+			return isMacroTarget(rest, 1)
 		}
-		open := bytes.IndexByte(rest, '[')
-		if open < 0 {
-			return false
-		}
-		target := rest[:open]
-		if bytes.Equal(name, tocMacro) {
-			return len(target) == 0
-		}
-		return len(target) > 0 && !isSpaceByte(target[0]) && !isSpaceByte(target[len(target)-1])
 	}
 	return false
 }
@@ -430,11 +420,11 @@ func isBlockTitle(s []byte) bool {
 }
 
 // isCustomBlockMacro mirrors Asciidoctor's CustomBlockMacroRx, the shape of a
-// block macro an extension registers: name::target[attributes], where the
-// target neither starts nor ends with a space.
+// block macro an extension registers: name::target[attributes], see
+// isMacroTarget.
 func isCustomBlockMacro(s []byte) bool {
 	name, rest, ok := bytes.Cut(s, []byte("::"))
-	if !ok || len(name) == 0 || len(rest) < 2 || rest[len(rest)-1] != ']' {
+	if !ok || len(name) == 0 {
 		return false
 	}
 	for i, r := range string(name) {
@@ -442,7 +432,18 @@ func isCustomBlockMacro(s []byte) bool {
 			return false
 		}
 	}
-	for open := range len(rest) - 1 {
+	return isMacroTarget(rest, 0)
+}
+
+// isMacroTarget reports whether rest, what follows the name:: of a block macro,
+// reads as target[attributes] the way Asciidoctor's macro patterns read it: a
+// target of at least shortest bytes that neither starts nor ends with a space.
+// The attributes may open at any [, so image::[x][] has the target [x].
+func isMacroTarget(rest []byte, shortest int) bool {
+	if len(rest) < 2 || rest[len(rest)-1] != ']' {
+		return false
+	}
+	for open := shortest; open < len(rest)-1; open++ {
 		if rest[open] != '[' {
 			continue
 		}
