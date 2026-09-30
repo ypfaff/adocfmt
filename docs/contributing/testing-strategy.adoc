@@ -1,8 +1,9 @@
 = Testing strategy
 
-Besides the unit tests of each package, three checks each guard one property of the formatter.
+Besides the unit tests of each package, four checks each guard one property of the formatter.
 
 <<identity,Identity>>:: With every rule off, the tree gives the source back byte for byte.
+<<classification,Classification>>:: The scanner reads the first line of a block the way Asciidoctor does.
 <<render-equivalence,Render equivalence>>:: No rule changes what the rendered document shows.
 <<golden-files,Golden files>>:: A rule does what its cases say.
 
@@ -36,6 +37,27 @@ go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 
 An input that the search finds breaking the test is saved under `testdata/fuzz` and runs from then on.
 
+[#classification]
+== Classification
+
+The scanner decides what each block is, such as a heading, a list or a code block, and every rule builds on that decision.
+Asciidoctor decides what kind of block starts from the first line of the block, and so does the scanner.
+link:../../internal/block/classify_oracle_test.go[`TestClassifyAgreesWithAsciidoctor`] compares that decision line by line.
+
+The test collects every distinct line of the Asciidoctor cases.
+It also edits each line in a few ways that can move it from one kind to another, such as a leading `//` or a tab instead of a space.
+The scanner reads each line as the first line of a block.
+So does link:../../internal/block/testdata/line_kinds.rb[`line_kinds.rb`], which asks Asciidoctor's own parser what block the line starts.
+The test fails on every line where the two disagree, and on any Asciidoctor release other than the pinned one.
+
+So a misread line shows up before any rule rewrites its block, not only once a rule does and the rendering changes.
+
+What depends on more than one line is out of the test's reach, such as where a list ends or whether two lines form a title.
+A wrong decision there does harm only where a rule rewrites the misread block, and there the <<render-equivalence,render equivalence>> checks fail.
+A misread block that no rule rewrites cannot change the rendered document.
+
+TIP: When you fix a misread block, add a case to link:../../internal/block/scan_test.go[`scan_test.go`] that pins the tree the scanner now produces.
+
 [#render-equivalence]
 == Render equivalence
 
@@ -61,19 +83,13 @@ So a comment that the scanner took for prose still counts.
 
 link:../../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] feeds each check a document broken in the way the check is meant to catch, to prove that the check can fail at all.
 
-The scanner decides what each block is, and no test compares that decision with Asciidoctor directly.
-A wrong decision does harm only where a rule rewrites the misread block, and there the checks above fail.
-A misread block that no rule rewrites cannot change the rendered document.
-
-TIP: When you fix a misread block, add a case to link:../../internal/block/scan_test.go[`scan_test.go`] that pins the tree the scanner now produces.
-
 === Where the checks run
 
 The Asciidoctor cases are the main input, because breadth gives confidence.
 There is one file per test input of the Asciidoctor test suite.
 Those inputs sit inside Ruby test files, so link:../../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] extracts them.
-The tool pins the Asciidoctor tag it extracts from, which matches the release that the checks render with.
-After you change the tag, regenerate the cases:
+link:../../internal/corpus/corpus.go[`corpus.go`] pins the Asciidoctor release that the tool extracts from, which is also the release that the checks run with.
+After you change it, regenerate the cases:
 
 [source,shell]
 ----

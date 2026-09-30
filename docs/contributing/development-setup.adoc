@@ -8,8 +8,8 @@ Go::
 Version 1.27 or later, as link:../../go.mod[`go.mod`] states.
 
 Asciidoctor::
-The release that the tests render with.
-link:../../tools/fetch-asciidoctor-cases/main.go[`tools/fetch-asciidoctor-cases`] pins it and prints it for you.
+The release that the tests run with.
+link:../../internal/corpus/corpus.go[`internal/corpus`] pins it, and link:../../tools/fetch-asciidoctor-cases/main.go[`tools/fetch-asciidoctor-cases`] prints it for you.
 Install it as a Ruby gem:
 +
 [source,shell]
@@ -44,7 +44,8 @@ go build ./...
 go test ./...
 ----
 
-The full run renders documents with Asciidoctor, so Asciidoctor has to be on your `PATH`.
+The full run renders documents with Asciidoctor and loads it from Ruby, so Asciidoctor has to be on your `PATH` and `ruby` has to find the gem.
+The `gem install` above sets up both.
 To run only the tests that need no Asciidoctor, add `-short`:
 
 [source,shell]

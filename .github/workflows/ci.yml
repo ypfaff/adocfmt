@@ -56,8 +56,9 @@ jobs:
         with:
           ruby-version: '4.0'
 
-      # The render equivalence checks shell out to Asciidoctor, and the version
-      # they render with is pinned in tools/fetch-asciidoctor-cases.
+      # The render equivalence checks shell out to Asciidoctor, and the line
+      # comparison loads it through ruby; both need the version pinned in
+      # internal/corpus.
       - name: Install Asciidoctor
         run: gem install asciidoctor --version "$(go run ./tools/fetch-asciidoctor-cases --print-version)" --no-document
 
