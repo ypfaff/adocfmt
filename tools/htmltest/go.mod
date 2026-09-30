@@ -5,7 +5,7 @@ go 1.27
 tool github.com/wjdp/htmltest
 
 require (
-	github.com/badoux/checkmail v1.2.1 // indirect
+	github.com/badoux/checkmail v1.2.4 // indirect
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815 // indirect
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
