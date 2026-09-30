@@ -56,7 +56,7 @@ func (t *text) between(i int) []byte {
 	switch {
 	case lineBreak && t.hardBreak(i):
 		return gap
-	case t.endsSentence(i):
+	case t.endsSentence(i), lineBreak && t.keepsLineEnd(i):
 		return lineEnd
 	case lineBreak:
 		return []byte(" ")
@@ -106,16 +106,8 @@ func (t *text) hardBreak(i int) bool {
 
 // endsSentence reports whether a sentence ends after word i.
 func (t *text) endsSentence(i int) bool {
-	return t.endsInMark(t.words[i]) && startsSentence(t.word(i+1))
-}
-
-// endsInMark reports whether w ends in a mark that ends a sentence, past any
-// closing quotes, brackets and markup. A mark inside an opaque span ends none,
-// so neither does the period that ends the text of a footnote or of a backtick
-// span.
-func (t *text) endsInMark(w span) bool {
-	body := bytes.TrimRight(t.src[w.start:w.end], closers)
-	if len(body) == 0 || t.inOpaque(w.start+len(body)-1) {
+	body := t.markBody(t.words[i])
+	if len(body) == 0 || !startsSentence(t.word(i+1)) {
 		return false
 	}
 	switch body[len(body)-1] {
@@ -126,6 +118,29 @@ func (t *text) endsInMark(w span) bool {
 	default:
 		return false
 	}
+}
+
+// keepsLineEnd reports whether the line end after word i stays. Within a line
+// only an uppercase letter after the mark tells a sentence end, but a sentence
+// may start with a lowercase word, code or a macro, and end in a number or an
+// abbreviation. Where the line already ends in a period, a ! or ?, or a colon,
+// the break stays.
+func (t *text) keepsLineEnd(i int) bool {
+	body := t.markBody(t.words[i])
+	return len(body) > 0 && strings.IndexByte(".!?:", body[len(body)-1]) >= 0
+}
+
+// markBody returns w without the closing quotes, brackets and markup at its
+// end, so that its last byte is the mark that may end a sentence. It returns
+// nothing where that byte lies in an opaque span: a mark there ends no
+// sentence, so neither does the period that ends the text of a footnote or of
+// a backtick span.
+func (t *text) markBody(w span) []byte {
+	body := bytes.TrimRight(t.src[w.start:w.end], closers)
+	if len(body) == 0 || t.inOpaque(w.start+len(body)-1) {
+		return nil
+	}
+	return body
 }
 
 func (t *text) inOpaque(i int) bool {

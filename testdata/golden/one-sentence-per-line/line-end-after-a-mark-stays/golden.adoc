@@ -1,0 +1,5 @@
+The first sentence ends here.
+link:next.adoc[The next page] starts the second one.
+
+The tool offers three modes:
+check, write and list.

@@ -551,6 +551,8 @@ A sentence ends at a `.`, `!` or `?` followed by whitespace and a word that star
 Closing quotes, brackets and formatting marks after it belong to the sentence.
 A period does not end a sentence after a digit, a single letter or a common English or German abbreviation such as `Dr.`, `e.g.`, `z. B.` or `Nr.`.
 An ellipsis does not end a sentence either.
+A line that ends in a `.`, `!`, `?` or `:` keeps its line break, even after a number, an abbreviation or `...`.
+So a sentence may start with a lowercase word, code or a macro such as `link:`.
 A hard line break stays where it is.
 So does a line break inside code, a passthrough or a macro.
 
