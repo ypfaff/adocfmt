@@ -1,0 +1,18 @@
+{{- /*
+  Hugo does not read the = Title line, so the front matter repeats it. Both
+  have to agree, and a page without weight or linkTitle would drop out of order
+  or show its full title in the navigation.
+*/ -}}
+{{- $heading := "" -}}
+{{- range first 1 (findRESubmatch `\A= (.*)` .RawContent) -}}{{- $heading = index . 1 -}}{{- end -}}
+{{- if ne .Title $heading -}}
+  {{- errorf "docs/%s: front matter title %q differs from the = Title line %q" .File.Path .Title $heading -}}
+{{- end -}}
+{{- range slice "weight" "linkTitle" -}}
+  {{- if not (isset $.Params (lower .)) -}}
+    {{- errorf "docs/%s: front matter has no %s" $.File.Path . -}}
+  {{- end -}}
+{{- end -}}
+{{- if and .Section (not (partial "section.html" .).dir) -}}
+  {{- errorf "docs/%s: section %q is missing from params.sections in website/hugo.yml" .File.Path .Section -}}
+{{- end -}}

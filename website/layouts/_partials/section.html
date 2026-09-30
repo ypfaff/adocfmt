@@ -1,0 +1,6 @@
+{{- /* The entry of params.sections in hugo.yml for the page's section. */ -}}
+{{- $entry := dict -}}
+{{- range site.Params.sections -}}
+  {{- if eq .dir $.Section -}}{{- $entry = . -}}{{- end -}}
+{{- end -}}
+{{- return $entry -}}

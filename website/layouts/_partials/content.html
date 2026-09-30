@@ -1,0 +1,11 @@
+{{- /*
+  A link that leaves docs/, such as link:../../internal/block in
+  contributing/architecture.adoc, points at code that only GitHub has. A page
+  n directories deep leaves docs/ with n+1 "../", so that prefix becomes the
+  repository URL. Such a link has to be link:, not xref:, which Asciidoctor
+  would give an .html suffix that GitHub does not have.
+*/ -}}
+{{- $depth := len (split (path.Join .File.Dir "page") "/") -}}
+{{- $escape := strings.Repeat $depth "../" -}}
+{{- $repo := printf "%s/blob/main/" site.Params.repo -}}
+{{- replace .Content (printf `href="%s` $escape) (printf `href="%s` $repo) | safeHTML -}}

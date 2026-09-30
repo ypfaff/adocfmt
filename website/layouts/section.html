@@ -1,0 +1,20 @@
+{{ define "main" }}
+<div class="docs">
+  {{ partial "sidebar.html" . }}
+  <main class="article" id="main">
+    <h1>{{ partial "title.html" . }}</h1>
+    <ul class="page-list">
+      {{ range .Pages }}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+          {{ with partial "summary.html" . }}
+            {{/* One sentence per line, so the first line is the first sentence. */}}
+            <p>{{ index (split . "\n") 0 }}</p>
+          {{ end }}
+        </li>
+      {{ end }}
+    </ul>
+  </main>
+  <aside class="toc"></aside>
+</div>
+{{ end }}

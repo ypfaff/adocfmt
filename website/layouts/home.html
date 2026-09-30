@@ -1,0 +1,23 @@
+{{ define "main" }}
+<main class="home" id="main">
+  <section class="hero">
+    <img class="hero-icon" src="{{ "images/adocfmt-icon.svg" | relURL }}" alt="" width="72" height="72">
+    <h1>An opinionated AsciiDoc formatter</h1>
+    {{ with site.GetPage "/getting-started" }}
+      <p><a class="button" href="{{ .RelPermalink }}">Get started</a></p>
+    {{ end }}
+  </section>
+
+  <section class="entries" aria-label="Documentation">
+    {{ range site.Params.sections }}
+      {{ $blurb := .blurb }}
+      {{ with site.GetPage (printf "/%s" .dir) }}
+        <a class="entry" href="{{ .RelPermalink }}">
+          <span class="entry-title">{{ partial "title.html" . }}</span>
+          <span class="entry-blurb">{{ $blurb }}</span>
+        </a>
+      {{ end }}
+    {{ end }}
+  </section>
+</main>
+{{ end }}

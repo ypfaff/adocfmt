@@ -1,0 +1,18 @@
+{{ $current := . }}
+<nav class="sidebar" id="sidebar" aria-label="Documentation">
+  {{ range site.Home.RegularPages }}
+    <a class="nav-start{{ if eq . $current }} active{{ end }}" href="{{ .RelPermalink }}"{{ if eq . $current }} aria-current="page"{{ end }}>{{ .LinkTitle }}</a>
+  {{ end }}
+  {{ range site.Params.sections }}
+    {{ with site.GetPage (printf "/%s" .dir) }}
+      <div class="nav-group">
+        <a class="nav-heading{{ if eq . $current }} active{{ end }}" href="{{ .RelPermalink }}"{{ if eq . $current }} aria-current="page"{{ end }}>{{ partial "title.html" . }}</a>
+        <ul>
+          {{ range .Pages }}
+            <li><a href="{{ .RelPermalink }}"{{ if eq . $current }} class="active" aria-current="page"{{ end }}>{{ .LinkTitle }}</a></li>
+          {{ end }}
+        </ul>
+      </div>
+    {{ end }}
+  {{ end }}
+</nav>

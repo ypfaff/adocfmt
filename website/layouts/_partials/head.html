@@ -1,0 +1,17 @@
+{{- $title := site.Title -}}
+{{- if not .IsHome -}}{{- $title = printf "%s · %s" (partial "title.html" .) site.Title -}}{{- end -}}
+{{- $description := or (partial "summary.html" .) site.Params.description | replaceRE `\s+` " " -}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ $title }}</title>
+<meta name="description" content="{{ $description }}">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#111317">
+<meta property="og:type" content="website">
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $description }}">
+<meta property="og:url" content="{{ .Permalink }}">
+<link rel="canonical" href="{{ .Permalink }}">
+<link rel="icon" href="{{ "images/adocfmt-icon.svg" | relURL }}" type="image/svg+xml">
+{{ $css := resources.Get "css/site.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}">

@@ -40,3 +40,15 @@ updates:
     commit-message:
       prefix: ci
       include: scope
+
+  - package-ecosystem: gomod
+    directory: /tools/hugo
+    schedule:
+      interval: weekly
+    # As for actionlint: naming Hugo keeps the tool itself watched.
+    allow:
+      - dependency-name: github.com/gohugoio/hugo
+        dependency-type: all
+    commit-message:
+      prefix: chore
+      include: scope
