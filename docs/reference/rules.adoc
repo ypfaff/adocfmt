@@ -1,3 +1,8 @@
+---
+title: Formatting rules
+weight: 10
+linkTitle: Formatting rules
+---
 = Formatting rules
 :toc:
 

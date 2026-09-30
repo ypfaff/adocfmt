@@ -1,3 +1,8 @@
+---
+title: Development setup
+weight: 10
+linkTitle: Development setup
+---
 = Development setup
 
 This page lists the tools you need to work on adocfmt and the commands that build, test and lint it.

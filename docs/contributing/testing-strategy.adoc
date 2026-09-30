@@ -1,3 +1,8 @@
+---
+title: Testing strategy
+weight: 30
+linkTitle: Testing strategy
+---
 = Testing strategy
 
 Besides the unit tests of each package, four checks each guard one property of the formatter.

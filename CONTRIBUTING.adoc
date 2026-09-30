@@ -49,4 +49,5 @@ AI tools are welcome, but the author stays fully responsible for the result.
 
 * All documentation is AsciiDoc, except files that agent tools require in Markdown, such as `AGENTS.md`.
 * One sentence per line, so diffs stay readable.
+* Every page in `docs/` starts with YAML front matter for the website: `title` repeats the `= Title` line, `weight` orders the page within its section, and `linkTitle` is its name in the navigation.
 * Prose follows the https://developers.google.com/style[Google developer documentation style guide].

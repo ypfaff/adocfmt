@@ -1,3 +1,8 @@
+---
+title: Get started with adocfmt
+weight: 10
+linkTitle: Get started
+---
 = Get started with adocfmt
 
 In this tutorial, you install adocfmt, format a small AsciiDoc file with it, and fix a document that adocfmt refuses to format.

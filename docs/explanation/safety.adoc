@@ -1,3 +1,8 @@
+---
+title: How adocfmt keeps your document safe
+weight: 10
+linkTitle: Safety
+---
 = How adocfmt keeps your document safe
 
 This page explains how adocfmt makes sure that formatting does not change what your document shows, and what it does when it cannot be sure.

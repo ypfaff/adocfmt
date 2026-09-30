@@ -1,3 +1,8 @@
+---
+title: GitHub Action
+weight: 30
+linkTitle: GitHub Action
+---
 = GitHub Action
 
 The adocfmt action installs adocfmt on a GitHub Actions runner and, by default, runs `adocfmt --check .` on the repository.
