@@ -8,8 +8,11 @@ linkTitle: Testing strategy
 Besides the unit tests of each package, four checks each guard one property of the formatter.
 
 <<identity,Identity>>:: With every rule off, the tree gives the source back byte for byte.
+
 <<classification,Classification>>:: The scanner reads the first line of a block the way Asciidoctor does.
+
 <<render-equivalence,Render equivalence>>:: No rule changes what the rendered document shows.
+
 <<golden-files,Golden files>>:: A rule does what its cases say.
 
 The checks run over two sets of cases.
