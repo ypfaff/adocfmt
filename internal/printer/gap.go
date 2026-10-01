@@ -1,6 +1,10 @@
 package printer
 
-import "github.com/ypfaff/adocfmt/internal/block"
+import (
+	"bytes"
+
+	"github.com/ypfaff/adocfmt/internal/block"
+)
 
 // where names which gap policy holds, since the two sides of a gap decide it
 // together with what encloses them.
@@ -9,15 +13,19 @@ type where int
 const (
 	betweenSiblings where = iota
 	betweenItems
+	betweenTerms
 	insideItem
 )
 
 // gap emits the blank lines in front of a node.
 //
 // Asciidoctor renders every block type the same with and without a blank line
-// in front of it, so one between siblings costs nothing. Inside a list item it
-// would cost: adjacency is what binds a block to the item, and a blank line can
-// push a later block out of it, so the rule only collapses a run there.
+// in front of it, so one between siblings costs nothing. Neither does one
+// between two description list terms, where it makes a term easy to find,
+// since its marker trails it instead of leading the line. Inside a list item a
+// blank line would cost: adjacency is what binds a block to the item, and a
+// blank line can push a later block out of it, so the rule only collapses a run
+// there.
 func (p *printer) gap(g block.Gap, prev block.Node, w where) {
 	if p.raw || g.Frozen || isContinuation(prev) {
 		p.span(g.Span)
@@ -32,6 +40,10 @@ func (p *printer) gap(g block.Gap, prev block.Node, w where) {
 		p.collapse(g)
 	case betweenItems:
 		if endsInLiteral(prev) {
+			p.blank()
+		}
+	case betweenTerms:
+		if !bareTerm(p.src, prev) {
 			p.blank()
 		}
 	default:
@@ -107,4 +119,14 @@ func endsInLiteral(prev block.Node) bool {
 	default:
 		return false
 	}
+}
+
+// bareTerm reports whether the item is a term with no text and no blocks of its
+// own. Asciidoctor gives such a term the description of the term below.
+func bareTerm(src []byte, prev block.Node) bool {
+	item, ok := prev.(*block.ListItem)
+	if !ok || len(item.Children) > 0 {
+		return false
+	}
+	return len(bytes.TrimSpace(src[item.Marker.End:item.Principal.End])) == 0
 }

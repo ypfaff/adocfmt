@@ -230,6 +230,10 @@ type List struct {
 	Items      []*ListItem
 }
 
+// Description reports whether the list is a description list, whose items are
+// terms.
+func (l *List) Description() bool { return isTermMarker(l.Marker) }
+
 // ListItem is one entry. Principal is its own text, Children are the blocks
 // attached to it.
 type ListItem struct {

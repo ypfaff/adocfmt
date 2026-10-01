@@ -1,0 +1,7 @@
+systems::
+linux:::
+Free.
+macos:::
+Apple.
+hardware::
+Tangible.

@@ -201,9 +201,13 @@ func (p *printer) list(node *block.List) {
 	if p.frozen(node) {
 		return
 	}
+	w := betweenItems
+	if node.Description() {
+		w = betweenTerms
+	}
 	var prev block.Node
 	for _, item := range node.Items {
-		p.node(item, prev, betweenItems)
+		p.node(item, prev, w)
 		prev = item
 	}
 }
