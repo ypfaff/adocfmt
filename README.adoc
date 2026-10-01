@@ -24,4 +24,6 @@ Apache License 2.0; see link:LICENSE[`LICENSE`] and link:NOTICE[`NOTICE`].
 
 The cases under link:testdata/asciidoctor-cases[`testdata/asciidoctor-cases`] are test inputs of the Asciidoctor test suite and stay under its MIT license, which sits next to them.
 
+The link:CODE_OF_CONDUCT.adoc[Code of Conduct] is adapted from the Contributor Covenant and stays under its CC BY-SA 4.0 license.
+
 AsciiDoc® and AsciiDoc Language™ are trademarks of the Eclipse Foundation, Inc.

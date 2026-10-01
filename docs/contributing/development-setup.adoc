@@ -94,7 +94,7 @@ Check the formatting of the documentation, leaving out the cases under `testdata
 
 [source,shell]
 ----
-adocfmt --check README.adoc CONTRIBUTING.adoc docs
+adocfmt --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
 ----
 
 TIP: With the <<git-hooks,Git hooks>> activated, every commit runs these linters first.
