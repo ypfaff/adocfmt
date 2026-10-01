@@ -13,6 +13,13 @@ pre-commit:
       glob: ".github/workflows/*.yml"
       run: go tool -modfile=tools/actionlint/go.mod actionlint
 
+    # The cases under testdata are meant to be unformatted.
+    - name: adocfmt
+      glob: "*.{adoc,asciidoc}"
+      exclude:
+        - "testdata/**"
+      run: adocfmt --check {staged_files}
+
 pre-push:
   jobs:
     - name: test

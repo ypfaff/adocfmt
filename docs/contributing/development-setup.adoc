@@ -31,6 +31,10 @@ Lints the shell scripts.
 lefthook::
 Runs the Git hooks defined in link:../../lefthook.yml[`lefthook.yml`].
 
+adocfmt::
+The latest release, which formats the documentation.
+xref:../how-to/install.adoc[Install adocfmt] lists the ways to install it.
+
 You do not install actionlint, which lints the GitHub workflows.
 `go tool` builds it from the module in link:../../tools/actionlint/go.mod[`tools/actionlint`], at the version pinned there.
 
@@ -62,6 +66,7 @@ xref:testing-strategy.adoc[The testing strategy] describes what the tests check.
 
 TIP: With the <<git-hooks,Git hooks>> activated, every push runs `go test ./...` first.
 
+[#lint]
 == Lint
 
 Lint the Go code:
@@ -83,6 +88,13 @@ Lint the GitHub workflows:
 [source,shell]
 ----
 go tool -modfile=tools/actionlint/go.mod actionlint
+----
+
+Check the formatting of the documentation, leaving out the cases under `testdata`, which are meant to be unformatted:
+
+[source,shell]
+----
+adocfmt --check README.adoc CONTRIBUTING.adoc docs
 ----
 
 TIP: With the <<git-hooks,Git hooks>> activated, every commit runs these linters first.
