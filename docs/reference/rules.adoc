@@ -131,8 +131,8 @@ It stays on two lines; see <<heading-markers>>.
 [#blank-lines]
 == Blank lines
 
-One blank line separates two blocks.
-No blank line stands between a metadata line and its block, or between one list item and the next.
+One blank line separates two blocks, and two terms of a description list.
+No blank line stands between a metadata line and its block, or between the items of any other list.
 The file starts with no blank line and ends with a single line ending.
 
 [cols="1,1"]
@@ -150,6 +150,9 @@ a|
 ----
 code
 ----
+term:: one
+other:: two
+
 text
 
 
@@ -170,6 +173,10 @@ a|
 code
 ----
 
+term:: one
+
+other:: two
+
 text
 
 * one
@@ -177,14 +184,42 @@ text
 ....
 |===
 
-Asciidoctor renders a block the same with or without a blank line in front of it.
+Two terms on consecutive lines share one description, so no blank line goes between them.
+
+.Example
+[%collapsible]
+====
+Asciidoctor renders `colour` and `color` above the one description.
+With a blank line between them, `colour` would look as if it had no description.
+
+[cols="1,1"]
+|===
+| Before | After
+
+a|
+....
+colour::
+color:: The wavelength.
+next:: Text.
+....
+a|
+....
+colour::
+color:: The wavelength.
+
+next:: Text.
+....
+|===
+====
+
+Asciidoctor renders a block, or a description list term, the same with or without a blank line in front of it.
 That is why adocfmt can insert the separating line safely.
 In a few places, a blank line is syntax, not spacing.
 There, adocfmt keeps the blank lines it finds.
 
 Left alone:
 
-* Blank lines inside a list item.
+* Blank lines between a list item and the blocks attached to it.
 A blank line there decides what still belongs to the item, so adocfmt neither adds nor removes one.
 +
 .Example

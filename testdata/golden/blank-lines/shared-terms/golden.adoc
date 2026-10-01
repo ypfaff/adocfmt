@@ -1,0 +1,8 @@
+colour::
+color:: The wavelength.
+
+next:: Text.
+
+spread::
+apart::
+Text.

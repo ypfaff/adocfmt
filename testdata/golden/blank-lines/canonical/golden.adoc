@@ -7,3 +7,8 @@ Text.
 
 * one
 * two
+
+colour::
+term:: one
+
+other:: two
