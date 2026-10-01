@@ -126,9 +126,7 @@ func (s *scanner) attached(closer []byte) []Node {
 		switch {
 		case sh.kind == shapeContinuation:
 			children = append(children, s.node(gap, closer))
-			if carried := s.carried(closer); carried != nil {
-				children = append(children, carried)
-			}
+			children = append(children, s.carried(closer)...)
 		case sh.kind == shapeMarker && !s.open(sh.marker):
 			children = append(children, s.list(base{gap: gap}, sh, closer))
 		case bracketed(sh.kind) && s.endsTerm():
@@ -218,20 +216,31 @@ func (s *scanner) nests() bool {
 	return (sh.kind == shapeMarker && !s.open(sh.marker)) || sh.kind == shapeIndented
 }
 
-// carried is the block a continuation line attaches to the item. A continuation
-// with nothing left to carry gives the blank lines back, so they end up in the
-// gap of the next item or the tail of the enclosing block rather than in no
-// node at all.
-func (s *scanner) carried(closer []byte) Node {
-	m := s.mark()
-	gap := s.gap()
-	if s.done() || s.closes(closer) || s.sibling() {
-		s.rewind(m)
-		return nil
-	}
+// carried reads the blocks a continuation line attaches to the item. That is
+// the block under it. Where attribute entries come first, it is those entries
+// and the block under them, because Asciidoctor applies an entry and attaches
+// the next block instead.
+//
+// A continuation with nothing left to carry gives the blank lines back, so they
+// end up in the gap of the next item or the tail of the enclosing block rather
+// than in no node at all.
+func (s *scanner) carried(closer []byte) []Node {
 	s.carrying = true
 	defer func() { s.carrying = false }()
-	return s.node(gap, closer)
+	var nodes []Node
+	for {
+		m := s.mark()
+		gap := s.gap()
+		if s.done() || s.closes(closer) || s.sibling() {
+			s.rewind(m)
+			return nodes
+		}
+		node := s.node(gap, closer)
+		nodes = append(nodes, node)
+		if _, ok := node.(*Attribute); !ok {
+			return nodes
+		}
+	}
 }
 
 func (s *scanner) marker() (shape, bool) {

@@ -458,6 +458,27 @@ List "*"
   ListItem "* b\n"`,
 		},
 		{
+			name: "past an attribute entry it carries the block below",
+			src:  "a::\n+\n:x: y\nmore\nb::: c\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    Continuation gap! "+\n"
+    Attribute ":x: y\n"
+    Paragraph! "more\nb::: c\n"`,
+		},
+		{
+			name: "even across a blank line",
+			src:  "* a\n+\n:x: y\n\nmore\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Attribute ":x: y\n"
+    Paragraph "more\n"
+  ListItem "* b\n"`,
+		},
+		{
 			name: "a continuation at the end carries nothing and keeps the blank lines",
 			src:  "* a\n+\n\n",
 			want: `
