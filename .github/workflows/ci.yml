@@ -42,6 +42,20 @@ jobs:
       - name: Lint the workflows
         run: go tool -modfile=tools/actionlint/go.mod actionlint
 
+  adocfmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # The major tag rather than a commit: it is this repository's own action,
+      # so the check follows every release without an update to merge. The
+      # paths leave out testdata, whose cases are meant to be unformatted.
+      - name: Check the formatting of the documentation
+        uses: ypfaff/adocfmt@v0
+        with:
+          args: --check README.adoc CONTRIBUTING.adoc docs
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
