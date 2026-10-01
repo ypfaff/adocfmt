@@ -237,7 +237,14 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 func (s *scanner) node(gap Gap, closer []byte) Node {
 	b := base{gap: gap}
 	for s.metaLine(&b, closer) {
+		m := s.mark()
 		b.gap = s.gap()
+		if !b.gap.Span.Empty() && s.sibling() {
+			// No block follows, and the blank lines belong to the next item.
+			s.rewind(m)
+			b.gap = Gap{Span: Span{s.pos(), s.pos()}}
+			return s.orphan(b)
+		}
 	}
 	return s.block(b, closer)
 }
