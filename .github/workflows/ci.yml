@@ -54,7 +54,7 @@ jobs:
       - name: Check the formatting of the documentation
         uses: ypfaff/adocfmt@v0
         with:
-          args: --check README.adoc CONTRIBUTING.adoc docs
+          args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
 
   test:
     runs-on: ubuntu-latest
