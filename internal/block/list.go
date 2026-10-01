@@ -71,7 +71,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 		s.fold(item, start, closer)
 	}
 
-	item.Children = s.attached(closer, isTermMarker(sh.marker))
+	item.Children = s.attached(closer)
 	item.lines = Span{start, s.pos()}
 	return item
 }
@@ -112,7 +112,7 @@ func foldsOntoTerm(kind shapeKind) bool {
 // carries, a nested list, an indented literal block, or whatever follows the
 // item's content with no blank line between, which Asciidoctor keeps in the
 // item.
-func (s *scanner) attached(closer []byte, term bool) []Node {
+func (s *scanner) attached(closer []byte) []Node {
 	var children []Node
 	for {
 		m := s.mark()
@@ -131,7 +131,7 @@ func (s *scanner) attached(closer []byte, term bool) []Node {
 			}
 		case sh.kind == shapeMarker && !s.open(sh.marker):
 			children = append(children, s.list(base{gap: gap}, sh, closer))
-		case term && bracketed(sh.kind) && s.endsTerm():
+		case bracketed(sh.kind) && s.endsTerm():
 			s.rewind(m)
 			return children
 		case sh.kind == shapeIndented && !gap.Span.Empty():
@@ -146,21 +146,36 @@ func (s *scanner) attached(closer []byte, term bool) []Node {
 }
 
 // endsTerm reports whether the block attribute line the scanner stands on ends
-// the description list instead of binding to a block inside the item.
-// Asciidoctor keeps the line in the item only where a nested list follows it,
-// and ends the list on anything else, an item of an open list included, taking
-// the line to the block below.
+// a description list. It does, unless the next item belongs to a list nested
+// in the description list.
+//
+// This holds even when the line stands in a list nested in the description
+// list, because Asciidoctor collects all lines of a term's item, nested lists
+// included, before it reads them.
 func (s *scanner) endsTerm() bool {
+	ending, ok := s.markersEndingTerm()
+	if !ok {
+		return false
+	}
 	m := s.mark()
 	defer s.rewind(m)
 	for !s.done() && (bracketed(s.shape().kind) || s.shape().kind == shapeBlank) {
 		s.at++
 	}
-	if s.done() {
-		return true
+	next, ok := s.marker()
+	return !ok || slices.Contains(ending, next.marker)
+}
+
+// markersEndingTerm returns the markers whose items end the innermost open
+// description list: its own and those of the lists around it. It reports false
+// when no description list is open.
+func (s *scanner) markersEndingTerm() ([]string, bool) {
+	for i, marker := range slices.Backward(s.markers) {
+		if isTermMarker(marker) {
+			return s.markers[:i+1], true
+		}
 	}
-	sh := s.shape()
-	return sh.kind != shapeMarker || s.open(sh.marker)
+	return nil, false
 }
 
 // bracketed reports whether the line is one Asciidoctor reads as a block

@@ -990,6 +990,27 @@ List "::"
 Literal! meta("[source]\n") "b:: y\nc:: z\n"`,
 		},
 		{
+			name: "it ends the description list from inside a list nested in it",
+			src:  "a:: x\n* y\n[.r]\nmore\n",
+			want: `
+List "::"
+  ListItem "a:: x\n"
+    List "*"
+      ListItem "* y\n"
+Paragraph meta("[.r]\n") "more\n"`,
+		},
+		{
+			name: "it stays where an item of the nested list follows it",
+			src:  "a:: x\n* y\n[.r]\n* z\n",
+			want: `
+List "::"
+  ListItem "a:: x\n"
+    List "*"
+      ListItem "* y\n"
+        Opaque meta("[.r]\n") ""
+      ListItem "* z\n"`,
+		},
+		{
 			name: "a directive among the lines it takes freezes the gap after them",
 			src:  "term1::\ninclude::part.adoc[]\n\ntext\n\nterm2:: d\n",
 			want: `
