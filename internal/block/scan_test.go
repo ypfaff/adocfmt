@@ -982,6 +982,14 @@ List "::"
       ListItem "1. one\n"`,
 		},
 		{
+			name: "it ends the list above the next term too",
+			src:  "a:: x\n[source]\nb:: y\nc:: z\n",
+			want: `
+List "::"
+  ListItem "a:: x\n"
+Literal! meta("[source]\n") "b:: y\nc:: z\n"`,
+		},
+		{
 			name: "a directive among the lines it takes freezes the gap after them",
 			src:  "term1::\ninclude::part.adoc[]\n\ntext\n\nterm2:: d\n",
 			want: `

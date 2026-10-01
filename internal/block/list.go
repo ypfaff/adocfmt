@@ -147,15 +147,20 @@ func (s *scanner) attached(closer []byte, term bool) []Node {
 
 // endsTerm reports whether the block attribute line the scanner stands on ends
 // the description list instead of binding to a block inside the item.
-// Asciidoctor keeps the line in the item only where a list follows it, and ends
-// the list on anything else, taking the line to the block below.
+// Asciidoctor keeps the line in the item only where a nested list follows it,
+// and ends the list on anything else, an item of an open list included, taking
+// the line to the block below.
 func (s *scanner) endsTerm() bool {
 	m := s.mark()
 	defer s.rewind(m)
 	for !s.done() && (bracketed(s.shape().kind) || s.shape().kind == shapeBlank) {
 		s.at++
 	}
-	return s.done() || s.shape().kind != shapeMarker
+	if s.done() {
+		return true
+	}
+	sh := s.shape()
+	return sh.kind != shapeMarker || s.open(sh.marker)
 }
 
 // bracketed reports whether the line is one Asciidoctor reads as a block
