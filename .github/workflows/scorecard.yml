@@ -20,7 +20,6 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-      security-events: write
       # Signs the results, which scorecard.dev requires before it publishes
       # them.
       id-token: write
@@ -29,10 +28,9 @@ jobs:
 
       - uses: ossf/scorecard-action@2d1146689b8cda280b9bc96326124645441f03bc # v2.4.4
         with:
-          results_file: results.sarif
-          results_format: sarif
+          # The action requires a results file. Nothing reads it: the badge
+          # needs only the published results, and Scorecard's findings stay out
+          # of code scanning.
+          results_file: results.json
+          results_format: json
           publish_results: true
-
-      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
-        with:
-          sarif_file: results.sarif
