@@ -1,5 +1,7 @@
 = image:docs/images/adocfmt-icon.svg[adocfmt icon,40] adocfmt
 
+image:https://api.scorecard.dev/projects/github.com/ypfaff/adocfmt/badge[OpenSSF Scorecard,link=https://scorecard.dev/viewer/?uri=github.com/ypfaff/adocfmt]
+
 An opinionated AsciiDoc® formatter.
 
 CAUTION: adocfmt is early work in progress.
