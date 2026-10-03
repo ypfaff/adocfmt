@@ -18,6 +18,10 @@ The documentation is published at https://ypfaff.github.io/adocfmt/.
 
 xref:CONTRIBUTING.adoc[Contributing] explains how to work on adocfmt.
 
+== Security
+
+link:SECURITY.md[Security policy] explains how to report a vulnerability.
+
 == License
 
 Apache License 2.0; see link:LICENSE[`LICENSE`] and link:NOTICE[`NOTICE`].
