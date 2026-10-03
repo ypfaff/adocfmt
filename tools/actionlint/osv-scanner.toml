@@ -1,0 +1,8 @@
+# For Scorecard's Vulnerabilities check: osv-scanner reads this only beside the
+# go.mod it scans.
+
+[[IgnoredVulns]]
+id = "GO-2026-5024"
+# Revisit once an actionlint release requires golang.org/x/sys 0.44.0 or later.
+ignoreUntil = 2027-04-01
+reason = "Affects only NewNTUnicodeString on Windows, which neither actionlint nor its dependencies call; CI runs actionlint on Linux."
