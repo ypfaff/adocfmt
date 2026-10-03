@@ -48,11 +48,11 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The major tag rather than a commit: it is this repository's own action,
-      # so the check follows every release without an update to merge. The
-      # paths leave out testdata, whose cases are meant to be unformatted.
+      # Pinned, so that a release that formats differently arrives in its own
+      # Dependabot PR. The paths leave out testdata, whose cases are meant to be
+      # unformatted.
       - name: Check the formatting of the documentation
-        uses: ypfaff/adocfmt@v0
+        uses: ypfaff/adocfmt@f7a93b68b658308ba807506aa76c02e6afd3f8a7 # v0.2.0
         with:
           args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
 
