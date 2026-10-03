@@ -5,7 +5,7 @@ name: Release vulnerabilities
 # release's source with the release's Go version, not on main with today's.
 on:
   schedule:
-    - cron: '0 6 * * 1'
+    - cron: '8 16 * * 1'
   workflow_dispatch:
 
 permissions:
