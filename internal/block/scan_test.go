@@ -292,6 +292,14 @@ Paragraph! gap! "+\nText.\n"
 Verbatim meta("[source]\n") "----\n* a\n----\n"`,
 		},
 		{
+			name: "but a lone plus on its first line is code, and a delimiter under it too",
+			src:  "[source]\n+\n////\nc\n////\n\n[literal]\n+\n+\nText.\n",
+			want: `
+Literal meta("[source]\n") "+\n////\nc\n////\n"
+Literal meta("[literal]\n") "+\n"
+Paragraph! gap! "+\nText.\n"`,
+		},
+		{
 			name: "a pass style still lets the line decide",
 			src:  "[pass]\n* a\n* b\n",
 			want: `
