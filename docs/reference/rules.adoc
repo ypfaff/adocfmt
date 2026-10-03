@@ -97,6 +97,10 @@ A closing marker counts only when it matches the opening marker.
 So `## Title ==` has the title `Title ==`, but `== Title ==` would have the title `Title`.
 * A document header that an include or a conditional reaches, including its title.
 Which lines are the author and revision lines is known only after Asciidoctor resolves the directive.
+* A title right below an include, a conditional or front matter, with no blank line between.
+Asciidoctor may read it as part of a paragraph above it.
+That paragraph can come from the lines that the directive brings in.
+Without the https://docs.asciidoctor.org/asciidoc/latest/attributes/document-attributes-ref/#compliance-attributes[`skip-front-matter`] attribute, Asciidoctor reads front matter and the lines below it, down to the first blank line, as one paragraph.
 
 [#setext-headings]
 == Setext headings
@@ -127,6 +131,7 @@ A one-line title cannot keep the indentation, because Asciidoctor skips the whit
 * A two-line title at the very top of a document.
 That title is the document title, not a section title.
 It stays on two lines; see <<heading-markers>>.
+* A title right below an include, a conditional or front matter, with no blank line between; see <<heading-markers>>.
 
 [#blank-lines]
 == Blank lines
@@ -679,6 +684,9 @@ are blue.
 Asciidoctor then drops every line that refers to a missing attribute, so the line breaks decide which sentences the page shows.
 * A paragraph that holds a comment line.
 Joining its lines would pull the comment into the text, where it shows.
+* A paragraph right below an include, a conditional or front matter, with no blank line between.
+Asciidoctor may read it as part of a paragraph above it; see <<heading-markers>>.
+When the directive brings in a literal paragraph, the line breaks show.
 * A block that an extension may read in its own way.
 That is a block with a style Asciidoctor does not know, such as `[mermaid]`, and a paragraph that starts with a block macro it does not know, such as `plantuml::diagram.puml[]`.
 Which extensions are loaded depends on the build, which adocfmt cannot see.

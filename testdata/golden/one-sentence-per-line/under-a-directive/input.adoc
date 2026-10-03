@@ -1,0 +1,4 @@
+include::part.adoc[]
+One. Two.
+
+Three. Four.
