@@ -50,3 +50,11 @@ archives:
 # fixed path.
 checksum:
   name_template: checksums.txt
+
+# An immutable release takes no new assets once published, so the release
+# workflow publishes the draft after it attaches the build provenance.
+release:
+  draft: true
+  # A retry of the same version deletes the draft a failed run left behind,
+  # rather than adding a second one.
+  replace_existing_draft: true
