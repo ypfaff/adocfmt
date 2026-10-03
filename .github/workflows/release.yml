@@ -34,6 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment: release
+    permissions:
+      contents: read
+      # Signs the build provenance and stores it with the repository.
+      id-token: write
+      attestations: write
     steps:
       # The rulesets on main and the version tags can list this app as a bypass
       # actor, but not GITHUB_TOKEN.
@@ -102,12 +107,36 @@ jobs:
           git push origin "v${VERSION}"
           echo "sha=$(git rev-parse HEAD)" >>"${GITHUB_OUTPUT}"
 
+      # Creates the release as a draft; .goreleaser.yml says why.
       - uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GORELEASER_CURRENT_TAG: v${{ steps.version.outputs.version }}
+
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        id: provenance
+        with:
+          subject-checksums: dist/checksums.txt
+
+      # Scorecard's Signed-Releases check looks for the .intoto.jsonl name.
+      # Publishing comes before the formula and the major tag, which both send
+      # users to the release's downloads.
+      - name: Attach the provenance and publish the release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
+        run: |
+          provenance="dist/adocfmt_${VERSION}.intoto.jsonl"
+          cp "${BUNDLE}" "${provenance}"
+          gh attestation verify "dist/adocfmt_${VERSION}_linux_amd64.tar.gz" \
+            --bundle "${provenance}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
+          gh release upload "v${VERSION}" "${provenance}"
+          gh release edit "v${VERSION}" --draft=false --latest
 
       # After the release, because the checksums it writes into the formula exist
       # only once the archives are built.
