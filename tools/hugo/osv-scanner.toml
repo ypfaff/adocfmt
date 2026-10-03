@@ -1,0 +1,7 @@
+# For Scorecard's Vulnerabilities check: osv-scanner reads this only beside the
+# go.mod it scans.
+
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+# No end date: the package is deprecated and will get no fix.
+reason = "Hugo imports other packages of golang.org/x/crypto, never openpgp."
