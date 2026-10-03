@@ -404,9 +404,10 @@ func (s *scanner) body(b base, closer []byte) Node {
 		return s.directive(b, sh)
 	case shapeContinuation:
 		// A + carries the block under it only inside a list, and only where no
-		// other + carries it already. Everywhere else it is text again.
+		// other + carries it already. Everywhere else it is a line like any
+		// other, which contentBlock reads: text, or code under a verbatim style.
 		if !s.inList() {
-			return s.plusText(b, closer, endsText)
+			return s.contentBlock(b, sh, closer)
 		}
 		if s.carrying && b.gap.Span.Empty() {
 			return s.plusText(b, closer, endsCarriedPlus)
@@ -424,10 +425,12 @@ func (s *scanner) body(b base, closer []byte) Node {
 // the next blank line whatever the lines look like.
 func (s *scanner) contentBlock(b base, sh shape, closer []byte) Node {
 	if strictVerbatimStyles[styleOf(s.src, b.meta)] {
-		s.textRun(&b, closer, endsVerbatim)
+		s.textRun(&b, closer, s.endsVerbatimAfter(s.at))
 		return &Literal{base: b}
 	}
 	switch sh.kind {
+	case shapeContinuation:
+		return s.plusText(b, closer, endsText)
 	case shapeMarker:
 		return s.list(b, sh, closer)
 	case shapeIndented:
@@ -684,6 +687,13 @@ func endsCarriedPlus(sh shape) bool {
 // blank line or a lone +, whatever the lines in between look like.
 func endsVerbatim(sh shape) bool {
 	return sh.kind == shapeBlank || sh.kind == shapeContinuation
+}
+
+// endsVerbatimAfter is endsVerbatim for a paragraph whose first line is first.
+// Asciidoctor ends it at a lone + only once it has read a line, so a + on the
+// first line is code.
+func (s *scanner) endsVerbatimAfter(first int) func(shape) bool {
+	return func(sh shape) bool { return s.at > first && endsVerbatim(sh) }
 }
 
 // endsProse is where a paragraph ends at the current position. Inside an item
