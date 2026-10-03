@@ -92,6 +92,12 @@ shasum --algorithm 256 --check --ignore-missing checksums.txt
 ----
 +
 Both print the archive name followed by `OK`.
+. Optional: Verify the archive's build provenance with the https://cli.github.com/[GitHub CLI]:
++
+[source,shell]
+----
+gh attestation verify "adocfmt_${VERSION}_${PLATFORM}.tar.gz" --repo ypfaff/adocfmt
+----
 . Extract the binary:
 +
 [source,shell]
