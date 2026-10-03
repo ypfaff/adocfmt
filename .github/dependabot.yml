@@ -77,3 +77,15 @@ updates:
     commit-message:
       prefix: ci
       include: scope
+
+  - package-ecosystem: gomod
+    directory: /tools/govulncheck
+    schedule:
+      interval: weekly
+    # As for actionlint: naming govulncheck keeps the tool itself watched.
+    allow:
+      - dependency-name: golang.org/x/vuln
+        dependency-type: all
+    commit-message:
+      prefix: ci
+      include: scope
