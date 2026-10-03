@@ -1,0 +1,10 @@
+include::part.adoc[]
+Section
+~~~~~~~
+
+ifdef::draft[Draft.]
+Other
+~~~~~
+
+Last
+----

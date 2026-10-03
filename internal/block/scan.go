@@ -116,6 +116,9 @@ type scanner struct {
 	// freeze carries the reach of a directive or the front matter fence to the
 	// gaps that follow it, see gap.
 	freeze bool
+	// directiveEnd is where the last directive line the scanner read ends, see
+	// directiveSince.
+	directiveEnd int
 	// markers are the list markers of the open lists, innermost last.
 	markers []string
 	// carrying is true while the scanner reads the block a continuation
@@ -179,8 +182,9 @@ func (s *scanner) gap() Gap {
 	gap := Gap{Span: Span{start, s.pos()}, Frozen: s.freeze}
 	// A freeze reaches to the next blank line of the source rather than to the
 	// next node: what a directive brings in, and what the front matter fence
-	// opens, Asciidoctor reads on as one block until a blank line ends it, so
-	// every gap it crosses on the way would split it.
+	// opens, may run on into the lines below it. Which of them ends it depends
+	// on what it is, but a blank line ends a paragraph whatever it holds, so
+	// the freeze follows it that far and every gap it crosses could split it.
 	s.freeze = s.freeze && gap.Span.Empty()
 	return gap
 }
@@ -192,6 +196,7 @@ func (s *scanner) report(at int, message string) {
 // track follows the directive on the current line into or out of a
 // conditional region.
 func (s *scanner) track(sh shape) {
+	s.directiveEnd = s.lines[s.at].full.End
 	if sh.bad {
 		s.report(s.at, "malformed preprocessor directive")
 	}
@@ -211,6 +216,18 @@ func (s *scanner) track(sh shape) {
 func (s *scanner) reach(b *base, sh shape) {
 	s.track(sh)
 	b.frozen, b.gap.Frozen, s.freeze = true, true, true
+}
+
+// directiveSince reports whether the scanner has read a directive line at
+// offset or later. A block asks it with its own start to learn whether a
+// directive stands in its lines, which makes its end uncertain.
+func (s *scanner) directiveSince(offset int) bool { return s.directiveEnd > offset }
+
+// newBase starts the node below gap. A frozen gap with no blank line in it
+// means the reach of a directive or the front matter goes on into this node,
+// see gap. What that brings in may continue the node, so it starts frozen.
+func newBase(gap Gap) base {
+	return base{gap: gap, frozen: gap.Frozen && gap.Span.Empty()}
 }
 
 // region identifies the innermost open conditional region, or -1 outside any.
@@ -235,7 +252,7 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 // node reads the metadata lines at the current position and the block they
 // bind to.
 func (s *scanner) node(gap Gap, closer []byte) Node {
-	b := base{gap: gap}
+	b := newBase(gap)
 	for s.metaLine(&b, closer) {
 		m := s.mark()
 		b.gap = s.gap()
@@ -306,24 +323,25 @@ func (s *scanner) block(b base, closer []byte) Node {
 	if s.done() || s.closes(closer) || (len(b.meta) > 0 && s.sibling()) {
 		return s.orphan(b)
 	}
+	reaches := s.directiveInMeta(b)
 	node := s.body(b, closer)
-	s.freezeAfter(b)
+	s.freeze = s.freeze || reaches
 	return node
 }
 
 // orphan holds metadata lines that found no block.
 func (s *scanner) orphan(b base) Node {
 	b.lines = Span{s.pos(), s.pos()}
-	s.freezeAfter(b)
+	s.freeze = s.freeze || s.directiveInMeta(b)
 	return &Opaque{base: b}
 }
 
-// freezeAfter carries a directive among the metadata lines to the gap after the
-// block, past whatever the block itself read.
-func (s *scanner) freezeAfter(b base) {
-	if b.frozen {
-		s.freeze = true
-	}
+// directiveInMeta reports whether a directive stands among the metadata lines.
+// What it brings in may reach past the block, so the gap after the block
+// freezes too. Ask it before the block is read, or the block's own directives
+// count as well.
+func (s *scanner) directiveInMeta(b base) bool {
+	return s.directiveSince(b.Extent().Start)
 }
 
 func metaKind(sh shape) (MetaKind, bool) {
@@ -491,7 +509,7 @@ func (s *scanner) headerBody(b *base) {
 			s.at++
 		case sh.kind == shapeComment:
 			s.at++
-		case taken < headerLines || b.frozen:
+		case taken < headerLines || s.directiveSince(b.Extent().Start):
 			taken++
 			s.at++
 		default:

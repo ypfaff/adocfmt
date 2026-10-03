@@ -48,8 +48,7 @@ func (s *scanner) directiveBelow() bool {
 
 func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 	start := s.pos()
-	b := base{gap: gap}
-	item := &ListItem{base: b, Marker: sh.span}
+	item := &ListItem{base: newBase(gap), Marker: sh.span}
 	marker := s.at
 	bare := sh.span.End == s.lines[marker].text.End
 
@@ -67,7 +66,7 @@ func (s *scanner) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 		s.at++
 	}
 	item.Principal = Span{start, s.pos()}
-	if bare && (s.at == marker+1 || item.frozen) {
+	if bare && (s.at == marker+1 || s.directiveSince(start)) {
 		s.fold(item, start, closer)
 	}
 
@@ -128,12 +127,12 @@ func (s *scanner) attached(closer []byte) []Node {
 			children = append(children, s.node(gap, closer))
 			children = append(children, s.carried(closer)...)
 		case sh.kind == shapeMarker && !s.open(sh.marker):
-			children = append(children, s.list(base{gap: gap}, sh, closer))
+			children = append(children, s.list(newBase(gap), sh, closer))
 		case bracketed(sh.kind) && s.endsTerm():
 			s.rewind(m)
 			return children
 		case sh.kind == shapeIndented && !gap.Span.Empty():
-			children = append(children, s.literal(base{gap: gap}, closer))
+			children = append(children, s.literal(newBase(gap), closer))
 		case gap.Span.Empty() && sh.kind != shapeMarker && sh.kind != shapeDelimiter:
 			children = append(children, s.adjacent(gap, closer))
 		default:
@@ -189,7 +188,7 @@ func bracketed(kind shapeKind) bool {
 // behind a continuation. A blank line ends it too, unless a nested list or a
 // literal block follows.
 func (s *scanner) adjacent(gap Gap, closer []byte) Node {
-	b := base{gap: gap}
+	b := newBase(gap)
 	for s.metaLine(&b, closer) {
 		m := s.mark()
 		b.gap = s.gap()

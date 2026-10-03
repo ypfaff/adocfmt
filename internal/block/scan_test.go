@@ -56,9 +56,9 @@ Paragraph gap! "Text.\n"`,
 			want: `
 Attribute ":a: b\n"
 Directive! gap! "ifdef::x[]\n"
-Attribute gap! ":c: d\n"
+Attribute! gap! ":c: d\n"
 Directive! gap! "endif::[]\n"
-Header gap! "= Title\nAuthor Name\n" title "Title"
+Header! gap! "= Title\nAuthor Name\n" title "Title"
 Paragraph gap! "Text.\n"`,
 		},
 		{
@@ -225,11 +225,11 @@ Verbatim meta("[comment]\n") "--\ninclude::part.adoc[]\n--\n"`,
 Verbatim delim! meta("[comment]\n") "----\ninclude::part.adoc[]\n----\n"`,
 		},
 		{
-			name: "a directive above a block freezes the gap below it, not the block",
+			name: "a directive above a block freezes the block rather than marking its fence",
 			src:  "include::part.adoc[]\n----\ncode\n----\n",
 			want: `
 Directive! gap! "include::part.adoc[]\n"
-Verbatim gap! "----\ncode\n----\n"`,
+Verbatim! gap! "----\ncode\n----\n"`,
 		},
 		{
 			name: "below section level a heading line is prose",
@@ -531,6 +531,79 @@ Directive! gap! "include::part.adoc[]\n"
 Paragraph gap! "More.\n"`,
 		},
 		{
+			name: "and every block down to the next blank line, since what it brings in may continue them",
+			src:  "include::part.adoc[]\nTitle\n~~~~~\nText. More.\n\nLast.\n",
+			want: `
+Directive! gap! "include::part.adoc[]\n"
+Setext! gap! "Title\n~~~~~\n" title "Title"
+Paragraph! gap! "Text. More.\n"
+Paragraph gap! "Last.\n"`,
+		},
+		{
+			name: "an endif reaches the block under it the same way",
+			src:  "ifdef::x[]\n:a: b\nendif::[]\n## Sec ##\n",
+			want: `
+Directive! gap! "ifdef::x[]\n"
+Attribute! gap! ":a: b\n"
+Directive! gap! "endif::[]\n"
+Heading! gap! "## Sec ##\n" title "Sec"`,
+		},
+		{
+			name: "and so does a conditional that brings in a line of its own",
+			src:  "ifdef::x[Text.]\nOne. Two.\n",
+			want: `
+Directive! gap! "ifdef::x[Text.]\n"
+Paragraph! gap! "One. Two.\n"`,
+		},
+		{
+			name: "a list it reaches freezes whole",
+			src:  "include::part.adoc[]\n* a\n\n* b\n",
+			want: `
+Directive! gap! "include::part.adoc[]\n"
+List! gap! "*"
+  ListItem "* a\n"
+  ListItem gap! "* b\n"`,
+		},
+		{
+			name: "inside a container it freezes only the blocks it reaches",
+			src:  "====\ninclude::part.adoc[]\nText.\n\nMore.\n====\n",
+			want: `
+Container delim! "====\n"
+  Directive! gap! "include::part.adoc[]\n"
+  Paragraph! gap! "Text.\n"
+  Paragraph gap! "More.\n"`,
+		},
+		{
+			name: "and inside an item too",
+			src:  "* c\n+\ninclude::part.adoc[]\n** d\n",
+			want: `
+List extensible! "*"
+  ListItem "* c\n"
+    Continuation gap! "+\n"
+    Directive! gap! "include::part.adoc[]\n"
+    List! gap! "**"
+      ListItem "** d\n"`,
+		},
+		{
+			name: "a header it reaches freezes, but still ends under the revision line",
+			src:  "ifdef::x[]\n:a: b\nendif::[]\n= Title\nJane Doe\nv1.0\n----\ncode\n\nmore\n----\n",
+			want: `
+Directive! gap! "ifdef::x[]\n"
+Attribute! gap! ":a: b\n"
+Directive! gap! "endif::[]\n"
+Header! gap! "= Title\nJane Doe\nv1.0\n" title "Title"
+Verbatim! gap! "----\ncode\n\nmore\n----\n"`,
+		},
+		{
+			name: "a term it reaches freezes, but takes no lines across a blank line",
+			src:  "a:: x\nifdef::q[]\nendif::[]\nb::\ntext\n\nPara. Two.\n",
+			want: `
+List extensible! "::"
+  ListItem! "a:: x\nifdef::q[]\nendif::[]\n"
+  ListItem! gap! "b::\ntext\n"
+Paragraph gap! "Para. Two.\n"`,
+		},
+		{
 			name: "a directive inside a paragraph freezes the paragraph",
 			src:  "First line.\ninclude::part.adoc[]\nThird line.\n",
 			want: `
@@ -582,7 +655,7 @@ List extensible! "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
     Paragraph! gap! meta(".Title\n") meta("include::part.adoc[]\n") "Text.\n"
-  ListItem gap! "* b\n"`,
+  ListItem! gap! "* b\n"`,
 		},
 		{
 			name: "an anchor line and a lone + end a paragraph",
@@ -1090,12 +1163,12 @@ FrontMatter "---\ntitle: x\n---\n"
 Header gap! "= Title\n" title "Title"`,
 		},
 		{
-			name: "front matter freezes the gaps down to the next blank line",
+			name: "front matter freezes the blocks and gaps down to the next blank line",
 			src:  "---\ntitle: x\n---\n:a: 1\n== Sec\n\nText.\n",
 			want: `
 FrontMatter "---\ntitle: x\n---\n"
-Attribute gap! ":a: 1\n"
-Heading gap! "== Sec\n" title "Sec"
+Attribute! gap! ":a: 1\n"
+Heading! gap! "== Sec\n" title "Sec"
 Paragraph gap! "Text.\n"`,
 		},
 		{

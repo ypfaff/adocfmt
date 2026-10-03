@@ -52,7 +52,7 @@ Gap::
 The blank lines in front of a node.
 
 Frozen::
-A node or gap whose meaning depends on an include or a conditional, which the scanner does not resolve.
+A node or gap the printer leaves as it stands: its meaning depends on something the scanner does not resolve, such as an include, a conditional or the front matter, or one of its lines means something else once it moves, such as a comment line joined into a paragraph.
 No rule may add, remove, join or split lines in a frozen node, or change the blank lines of a frozen gap between two nodes.
 
 Finding::
