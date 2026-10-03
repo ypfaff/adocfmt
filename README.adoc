@@ -1,11 +1,13 @@
-= image:docs/images/adocfmt-icon.svg[adocfmt icon,40] adocfmt
+image::docs/images/adocfmt-logo-light.svg#gh-light-mode-only[adocfmt,240]
+
+image::docs/images/adocfmt-logo-dark.svg#gh-dark-mode-only[adocfmt,240]
 
 image:https://api.scorecard.dev/projects/github.com/ypfaff/adocfmt/badge[OpenSSF Scorecard,link=https://scorecard.dev/viewer/?uri=github.com/ypfaff/adocfmt]
 
 An opinionated AsciiDoc® formatter.
 
-CAUTION: adocfmt is early work in progress.
-Its rules and their output can still change between releases.
+adocfmt is at version 0.x: its formatting may still change between releases, though no major changes are currently planned.
+From version 1.0 on, the output stays stable within a major version.
 
 == Documentation
 
