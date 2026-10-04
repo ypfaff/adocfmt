@@ -5,6 +5,10 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
+      # Its own releases need no waiting period.
+      exclude: ["ypfaff/adocfmt"]
     commit-message:
       prefix: ci
       include: scope
@@ -22,6 +26,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
@@ -34,6 +40,8 @@ updates:
     directory: /tools/actionlint
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     # Go marks a tool as indirect, and the default covers direct dependencies
     # only, which would leave actionlint itself unwatched. Naming it keeps its
     # own dependencies at the versions its release was tested with.
@@ -48,6 +56,8 @@ updates:
     directory: /tools/hugo
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     # As for actionlint: naming Hugo keeps the tool itself watched.
     allow:
       - dependency-name: github.com/gohugoio/hugo
@@ -61,6 +71,8 @@ updates:
     directory: /website
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: chore
       include: scope
@@ -69,6 +81,8 @@ updates:
     directory: /tools/htmltest
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     # Unlike for actionlint, every dependency stays current, not only the tool:
     # htmltest's last release, from 2022, pins a golang.org/x/net with known
     # vulnerabilities.
@@ -82,6 +96,8 @@ updates:
     directory: /tools/govulncheck
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     # As for actionlint: naming govulncheck keeps the tool itself watched.
     allow:
       - dependency-name: golang.org/x/vuln
