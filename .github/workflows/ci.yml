@@ -52,7 +52,7 @@ jobs:
       # Dependabot PR. The paths leave out testdata, whose cases are meant to be
       # unformatted.
       - name: Check the formatting of the documentation
-        uses: ypfaff/adocfmt@f7a93b68b658308ba807506aa76c02e6afd3f8a7 # v0.2.0
+        uses: ypfaff/adocfmt@bed9e3caf659963385287458f0e15edc30f7d0c3 # v0.2.1
         with:
           args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
 
