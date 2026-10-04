@@ -8,7 +8,7 @@ require (
 	github.com/badoux/checkmail v1.2.4 // indirect
 	github.com/docopt/docopt-go v0.0.0-20180111231733-ee0de3bc6815 // indirect
 	github.com/fatih/color v1.19.0 // indirect
-	github.com/imdario/mergo v0.3.11 // indirect
+	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/wjdp/htmltest v0.17.0 // indirect
