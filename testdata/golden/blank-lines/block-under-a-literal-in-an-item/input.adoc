@@ -1,0 +1,27 @@
+* a
+
+  lit
+----
+code
+----
+
+* b
+
+  lit
+----
+code
+
+  more
+----
+
+//
+
+c:: d
++
+  lit
+====
+text
+[.r]
+para
+====
+e:: f

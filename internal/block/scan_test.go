@@ -501,7 +501,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Literal "  code\n"
-  ListItem "* b\n"`,
+  ListItem gap! "* b\n"`,
 		},
 		{
 			name: "an indented callout is a literal block, not an item",
@@ -518,9 +518,161 @@ List "<>"
 List "*"
   ListItem "* a\n"
     Literal! "  code\n* b\n"
-  ListItem "* c\n"
+  ListItem gap! "* c\n"
 Paragraph "Text.\n"
 Literal "  more\n* d\n"`,
+		},
+		{
+			name: "a literal paragraph in an item ends at a delimiter, and the block there belongs to the item",
+			src:  "* a\n\n  code\n----\nx\n----\n\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal "  code\n"
+    Verbatim "----\nx\n----\n"
+  ListItem gap! "* b\n"`,
+		},
+		{
+			name: "that block may close below a blank line, as the item reads on past one",
+			src:  "* a\n\n  code\n----\nx\n\n  more\n----\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal "  code\n"
+    Verbatim "----\nx\n\n  more\n----\n"`,
+		},
+		{
+			name: "so does one under a continuation, and the next term ends it",
+			src:  "a:: b\n+\n  code\n[source]\n----\nx\n----\nc:: d\n",
+			want: `
+List "::"
+  ListItem "a:: b\n"
+    Continuation gap! "+\n"
+    Literal "  code\n"
+    Verbatim meta("[source]\n") "----\nx\n----\n"
+  ListItem "c:: d\n"`,
+		},
+		{
+			name: "an item line under that block opens a list nested in the item, even one with the item's own marker",
+			src:  "* a\n\n  lit\n----\nx\n----\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal "  lit\n"
+    Verbatim "----\nx\n----\n"
+    List "*"
+      ListItem gap! "* b\n"`,
+		},
+		{
+			name: "a term of a nested list ends the literal paragraph, while the item around the list takes the block",
+			src:  "* a\nc:: d\n\n  code\ne:: f\n----\nx\n----\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "::"
+      ListItem "c:: d\n"
+        Literal "  code\n"
+      ListItem gap! "e:: f\n"
+    Verbatim "----\nx\n----\n"`,
+		},
+		{
+			name: "no blank line may come between the blocks inside a delimited block there either",
+			src:  "* a\n\n  lit\n====\ntext\n----\nx\n----\n====\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal "  lit\n"
+    Container "====\n"
+      Paragraph gap! "text\n"
+      Verbatim gap! "----\nx\n----\n"`,
+		},
+		{
+			name: "a comment under the continuation ends it, so the block stays out",
+			src:  "* a\n+\n// c\n  code\n----\nx\n----\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Literal meta("// c\n") "  code\n"
+Verbatim "----\nx\n----\n"`,
+		},
+		{
+			name: "the blank line between metadata and a literal paragraph in an item stays, the item takes the paragraph whole",
+			src:  "* a\n[x]\n\n  code\n* b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal! gap! meta("[x]\n") "  code\n* b\n"`,
+		},
+		{
+			name: "the blank line between metadata and an indented line in a delimited block in an item may go",
+			src:  "* a\n+\n--\n[x]\n\n  code\n--\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Container "--\n"
+      Literal meta("[x]\n") "  code\n"`,
+		},
+		{
+			name: "a + under a blank line reads as a blank line in a nested item, so the block it carries belongs to the item around the list",
+			src:  "* d\n** x\n\n+\n[source]\nc\n** u\n",
+			want: `
+List "*"
+  ListItem "* d\n"
+    List "**"
+      ListItem "** x\n"
+    Continuation gap! "+\n"
+    Literal! meta("[source]\n") "c\n** u\n"`,
+		},
+		{
+			name: "where that + stands between two items of the nested list, the item above takes it, so the next one follows",
+			src:  "* a\n1. one\n\n+\n1. two\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "1."
+      ListItem "1. one\n"
+        Continuation gap! "+\n"
+      ListItem "1. two\n"`,
+		},
+		{
+			name: "the blank line under the lines of a literal paragraph stays before the next item, also where they read as a list",
+			src:  "- d\n+\n  t:: u\nb::\n\n- d\n",
+			want: `
+List "-"
+  ListItem "- d\n"
+    Continuation gap! "+\n"
+    List "::"
+      ListItem "  t:: u\n"
+      ListItem gap! "b::\n"
+  ListItem gap! "- d\n"`,
+		},
+		{
+			name: "a line with the separator of a description list is its next term, whatever else it reads as",
+			src:  "t:: u\n[source]\n* a:: b\n----\nx\n",
+			want: `
+List "::"
+  ListItem "t:: u\n"
+Literal meta("[source]\n") "* a:: b\n----\nx\n"`,
+		},
+		{
+			name: "the blank line between metadata and an indented item of a nested list may go",
+			src:  "* a\n[horizontal]\n\n  b:: c\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List meta("[horizontal]\n") "::"
+      ListItem "  b:: c\n"`,
+		},
+		{
+			name: "under a term without text, the indented line is the text and the block stays out",
+			src:  "t::\n\n  code\n----\n----\n",
+			want: `
+List "::"
+  ListItem "t::\n"
+    Literal "  code\n"
+Verbatim "----\n----\n"`,
 		},
 		{
 			name: "a space in a conditional target or at the edge of an include target makes no directive",
@@ -842,6 +994,15 @@ List "*"
       ListItem "** b\n"
         Continuation gap! "+\n"
   ListItem "* c\n"`,
+		},
+		{
+			name: "two blank lines under a continuation end the item, and stay, as one would carry the block below",
+			src:  "* a\n+\n\n\nText.\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+Paragraph gap! "Text.\n"`,
 		},
 		{
 			name: "metadata after the continuation binds to no block then either",
@@ -1232,6 +1393,29 @@ func TestScanReports(t *testing.T) {
 			name: "a comment block in the header that never closes",
 			src:  "= Title\n:a: b\n////\nc\n\n* d\n",
 			want: []Finding{{Line: 3, Message: "block has no closing delimiter"}},
+		},
+		{
+			name: "a block under a literal paragraph in an item that does not close before the item ends",
+			src:  "* a\n\n  code\n----\nx\n\ny\n----\n",
+			want: []Finding{
+				{Line: 4, Message: "block has no closing delimiter"},
+				{Line: 8, Message: "block has no closing delimiter"},
+			},
+		},
+		{
+			name: "a fence under a line of text there opens a block rather than underlining the text",
+			src:  "* a\n\n  code\n....\ny\n....\ntext\n----\n",
+			want: []Finding{{Line: 8, Message: "block has no closing delimiter"}},
+		},
+		{
+			name: "a fence inside a verbatim paragraph under such a literal paragraph opens no block",
+			src:  "* a\n\n  code\n[source]\nx\n----\n\nText.\n",
+			want: nil,
+		},
+		{
+			name: "a block under an item a directive reaches is read as if the directive brought in nothing",
+			src:  "include::part.adoc[]\n* b\n[source]\nc\n----\nx\n",
+			want: []Finding{{Line: 5, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a delimiter that closes outside the region it opened in",
