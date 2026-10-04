@@ -40,7 +40,7 @@ func (p *printer) gap(g block.Gap, prev block.Node, w where) {
 		p.collapse(g)
 	case betweenItems:
 		if endsInLiteral(prev) {
-			p.blank()
+			p.collapse(g)
 		}
 	case betweenTerms:
 		if !bareTerm(p.src, prev) {
@@ -105,7 +105,9 @@ func isContinuation(prev block.Node) bool {
 
 // endsInLiteral reports whether the last block of an item is a literal, looked
 // up through the lists nested in it. A literal runs to the next blank line, so
-// without one it would swallow the marker of the item below.
+// without one it would swallow the marker of the item below. Without a blank
+// line in the source, something else ended the literal, and adding one could
+// end an item around the list instead.
 func endsInLiteral(prev block.Node) bool {
 	item, ok := prev.(*block.ListItem)
 	if !ok || len(item.Children) == 0 {

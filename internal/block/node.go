@@ -25,8 +25,11 @@ func (s Span) Empty() bool { return s.Start == s.End }
 // Gap is the blank lines in front of a node.
 //
 // Frozen marks the ones that carry meaning: before a list continuation they
-// select the level the following block attaches to, and under front matter or a
-// directive they decide whether two blocks merge when rendered.
+// select the level the following block attaches to, under front matter or a
+// directive they decide whether two blocks merge when rendered, and in and
+// under a list item they decide which lines the item takes, see
+// freezeItemGaps. A frozen gap with no blank line in it is one where none may
+// be added.
 type Gap struct {
 	Span   Span
 	Frozen bool
@@ -115,6 +118,9 @@ type Node interface {
 	Lines() Span
 	Frozen() bool
 	node()
+	gaps() []*Gap
+	gapAbove() *Gap
+	blockGap() *Gap
 }
 
 // base is what every node has.
@@ -144,6 +150,55 @@ func (b *base) Gap() Gap     { return b.gap }
 func (b *base) Meta() []Meta { return b.meta }
 func (b *base) Lines() Span  { return b.lines }
 func (b *base) Frozen() bool { return b.frozen }
+
+// gaps returns the gaps a node holds, top down: one in front of each
+// metadata line, then the one between the metadata and the block.
+func (b *base) gaps() []*Gap {
+	gaps := make([]*Gap, 0, len(b.meta)+1)
+	for i := range b.meta {
+		gaps = append(gaps, &b.meta[i].Gap)
+	}
+	return append(gaps, &b.gap)
+}
+
+// gapAbove is the gap in front of the whole node: in front of its first
+// metadata line, or in front of the block if it has none.
+func (b *base) gapAbove() *Gap {
+	if len(b.meta) > 0 {
+		return &b.meta[0].Gap
+	}
+	return &b.gap
+}
+
+// blockGap is the gap right in front of the block, below its metadata.
+func (b *base) blockGap() *Gap { return &b.gap }
+
+// eachNode calls visit for every node in nodes and in the nodes they hold, top
+// down.
+func eachNode(nodes []Node, visit func(Node)) {
+	for _, node := range nodes {
+		visit(node)
+		eachNode(below(node), visit)
+	}
+}
+
+// below returns the nodes the node holds: the blocks of a delimited block or a
+// list item, the items of a list.
+func below(node Node) []Node {
+	switch node := node.(type) {
+	case *Container:
+		return node.Children
+	case *ListItem:
+		return node.Children
+	case *List:
+		items := make([]Node, len(node.Items))
+		for i, item := range node.Items {
+			items[i] = item
+		}
+		return items
+	}
+	return nil
+}
 
 // Header is the document header: the level 0 title, in one-line or two-line
 // form, with the author, revision and attribute lines that follow it without a

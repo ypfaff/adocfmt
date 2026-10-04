@@ -41,6 +41,7 @@ func Scan(src []byte) (*Document, error) {
 	nodes, tail := s.nodes(nil)
 	doc.Nodes = append(doc.Nodes, nodes...)
 	doc.Tail = tail
+	s.freezeItemGaps(doc.Nodes)
 	for _, at := range s.regions {
 		s.report(at, "conditional region has no endif")
 	}
@@ -132,14 +133,41 @@ type scanner struct {
 	// a paragraph significant. An entry counts from where it stands, inside a
 	// conditional too, because the scanner resolves none.
 	lineBound map[string]bool
+	// items are the lines collected for the list items being read, innermost
+	// last, see itemEnd.
+	items []itemLines
+	// notes collects, for the printer, the blank-line runs and literal
+	// paragraphs the items found, see freezeItemGaps.
+	notes printerNotes
 
 	findings []Finding
 }
 
-func (s *scanner) done() bool { return s.at >= len(s.lines) }
+func (s *scanner) done() bool { return s.at >= s.limit() }
+
+// limit is the line the scanner stops at: the end of the innermost list item
+// it reads, which ends inside the items around it, or the end of the source.
+func (s *scanner) limit() int {
+	if len(s.items) == 0 {
+		return len(s.lines)
+	}
+	return s.items[len(s.items)-1].end
+}
+
+// skipped and blanked report whether the buffer of an item being read leaves
+// the line out, or holds the + on it as a blank line. Every one of them counts:
+// Asciidoctor reads a nested item from the buffer of its parent, which it read
+// from the grandparent's.
+func (s *scanner) skipped(at int) bool {
+	return slices.ContainsFunc(s.items, func(l itemLines) bool { return l.skipped[at] })
+}
+
+func (s *scanner) blanked(at int) bool {
+	return slices.ContainsFunc(s.items, func(l itemLines) bool { return l.blanked == at })
+}
 
 func (s *scanner) pos() int {
-	if s.done() {
+	if s.at >= len(s.lines) {
 		return len(s.src)
 	}
 	return s.lines[s.at].full.Start
@@ -254,14 +282,7 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 func (s *scanner) node(gap Gap, closer []byte) Node {
 	b := newBase(gap)
 	for s.metaLine(&b, closer) {
-		m := s.mark()
 		b.gap = s.gap()
-		if !b.gap.Span.Empty() && s.sibling() {
-			// No block follows, and the blank lines belong to the next item.
-			s.rewind(m)
-			b.gap = Gap{Span: Span{s.pos(), s.pos()}}
-			return s.orphan(b)
-		}
 	}
 	return s.block(b, closer)
 }
@@ -317,10 +338,9 @@ func (s *scanner) commentBlock() {
 }
 
 // block is the node the metadata lines in b bind to. None follows at the end
-// of the source or the enclosing block, or at an item of an open list, which
-// ends the item being read whatever came before it.
+// of the source, the enclosing block or the list item.
 func (s *scanner) block(b base, closer []byte) Node {
-	if s.done() || s.closes(closer) || (len(b.meta) > 0 && s.sibling()) {
+	if s.done() || s.closes(closer) {
 		return s.orphan(b)
 	}
 	reaches := s.directiveInMeta(b)
@@ -577,7 +597,7 @@ func (s *scanner) bind(e attrEntry) {
 // setextLevel reports whether the current line and the next form a two-line
 // title, and its level.
 func (s *scanner) setextLevel() (int, bool) {
-	if s.at+1 >= len(s.lines) {
+	if s.at+1 >= s.limit() {
 		return 0, false
 	}
 	return setextLevel(s.src, s.lines[s.at], s.lines[s.at+1])
@@ -699,22 +719,14 @@ func (s *scanner) endsVerbatimAfter(first int) func(shape) bool {
 // endsProse is where a paragraph ends at the current position. Inside an item
 // Asciidoctor breaks a paragraph at an item line only when no blank line came
 // before it, and a continuation counts as one: a paragraph right after the
-// item's text ends at any item line, a carried one at an item of an open list.
+// item's text ends at any item line, a carried one does not.
 // A literal paragraph does not use it: Asciidoctor reads that up to a blank
 // line, an item line included.
 func (s *scanner) endsProse() func(shape) bool {
-	switch {
-	case !s.inList():
-		return endsText
-	case s.carrying:
-		return s.endsCarriedText
-	default:
+	if s.inList() && !s.carrying {
 		return endsItemText
 	}
-}
-
-func (s *scanner) endsCarriedText(sh shape) bool {
-	return endsText(sh) || s.sibling()
+	return endsText
 }
 
 // plusText reads a + that carries nothing, with the lines under it that

@@ -735,6 +735,34 @@ func isLower(c byte) bool { return c >= 'a' && c <= 'z' }
 
 func isTermMarker(marker string) bool { return marker[0] == ':' || marker[0] == ';' }
 
+// termShape reads the line as a description list term, whatever else it reads
+// as. Asciidoctor tests a line that way for the next term of a description
+// list and for a description list nested in an item, so * a:: b is a term
+// there. A comment line is none.
+func termShape(src []byte, l line) (shape, bool) {
+	s := src[l.text.Start:l.text.End]
+	if len(s) > 2 && s[0] == '/' && s[1] == '/' && s[2] != '/' {
+		return shape{}, false
+	}
+	body := bytes.TrimLeft(s, " \t")
+	if len(body) == 0 {
+		return shape{}, false
+	}
+	width, key, ok := descriptionMarker(body)
+	if !ok {
+		return shape{}, false
+	}
+	start := l.text.Start + len(s) - len(body)
+	return shape{kind: shapeMarker, span: Span{start, start + width}, marker: key}, true
+}
+
+// opensAnyList reports whether the line opens an item of any list, which is
+// what Asciidoctor's AnyListRx matches.
+func opensAnyList(src []byte, l line) bool {
+	_, isTerm := termShape(src, l)
+	return isTerm || classify(src, l).kind == shapeMarker
+}
+
 // descriptionMarker finds the term separator of a description list. The term
 // itself is free text, so the separator is what identifies the list.
 func descriptionMarker(s []byte) (int, string, bool) {

@@ -259,8 +259,10 @@ code <1>
 |===
 ====
 * The blank line after an item that ends in indented text.
-Indented text in an item is a literal paragraph, which runs on to the next blank line.
-Without that blank line, the next item becomes part of the literal paragraph.
+Indented text in an item is a literal paragraph.
+The item takes every line from there down to the next blank line, even a block right under the paragraph.
+Without that blank line, the next item becomes part of the item above.
+For the same reason, adocfmt adds no blank line among those lines.
 +
 .Example
 [%collapsible]
@@ -321,6 +323,9 @@ More text.
 ....
 |===
 ====
+* A run of two or more blank lines in a description list where one blank line reads differently.
+Under a term with no text on its line, Asciidoctor takes the line after such a run as the term's text, even a delimiter or a block attribute line.
+A block attribute line above a nested list keeps that list in the description after one blank line, and ends the description list after two.
 * The blank line under a comment.
 Asciidoctor drops comments before it renders, so nothing ties a comment to the block beneath it.
 Removing that blank line would make a comment that stands on its own read as a comment about the block below it.
