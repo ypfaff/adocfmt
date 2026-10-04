@@ -1,12 +1,15 @@
 = Contributing
 
 This page lists the conventions that every contribution follows.
-Everyone who takes part in the project follows the xref:CODE_OF_CONDUCT.adoc[Code of Conduct].
-Report a vulnerability privately, not in an issue; the link:SECURITY.md[security policy] explains how.
-xref:docs/contributing/development-setup.adoc[Development setup] lists the tools and commands you need.
-xref:docs/contributing/architecture.adoc[Architecture] explains how the code is built.
-xref:docs/contributing/testing-strategy.adoc[Testing strategy] explains how every rule is checked.
-The link:docs/decision-records[decision records] explain why it is built this way.
+Everyone who takes part follows the xref:CODE_OF_CONDUCT.adoc[Code of Conduct].
+Report vulnerabilities privately, as the link:SECURITY.md[security policy] explains.
+
+Further pages for contributors:
+
+* xref:docs/contributing/development-setup.adoc[Development setup]: the tools and commands you need.
+* xref:docs/contributing/architecture.adoc[Architecture]: how the code is built.
+* xref:docs/contributing/testing-strategy.adoc[Testing strategy]: how every rule is checked.
+* link:docs/decision-records[Decision records]: why it is built this way.
 
 == Conventions
 
