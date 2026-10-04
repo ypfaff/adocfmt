@@ -100,6 +100,10 @@ updates:
     # vulnerabilities.
     allow:
       - dependency-type: all
+    ignore:
+      # v1 moved to dario.cat/mergo, but htmltest imports the old path.
+      - dependency-name: github.com/imdario/mergo
+        update-types: ["version-update:semver-major"]
     commit-message:
       prefix: ci
       include: scope
