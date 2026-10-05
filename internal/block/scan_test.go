@@ -775,6 +775,15 @@ List "<>"
   ListItem "<2> c\n"`,
 		},
 		{
+			name: "a two-line title whose title line reads as a list item freezes",
+			src:  "a:: b\n\n[[id]]\n\n<1> c\n-----\n",
+			want: `
+List "::"
+  ListItem "a:: b\n"
+    Opaque meta("[[id]]\n") ""
+Setext! "<1> c\n-----\n" title "<1> c"`,
+		},
+		{
 			name: "a space in a conditional target or at the edge of an include target makes no directive",
 			src:  "ifdef::a b[]\n\ninclude:: part.adoc[]\n",
 			want: `
