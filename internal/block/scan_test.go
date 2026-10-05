@@ -703,6 +703,78 @@ List "::"
 Verbatim "----\n"`,
 		},
 		{
+			name: "a callout list after metadata and a blank line ends the list, the item keeps the metadata",
+			src:  "* a\n[[id]]\n\n<1> b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque meta("[[id]]\n") ""
+List "<>"
+  ListItem "<1> b\n"`,
+		},
+		{
+			name: "a nested callout list ends at a blank line with the item it stands in",
+			src:  "* a\n<1> b\n\n<2> c\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "<>"
+      ListItem "<1> b\n"
+List "<>"
+  ListItem "<2> c\n"`,
+		},
+		{
+			name: "a nested callout list goes on after a blank line under a term without text",
+			src:  "* a\n<1> b\nt::\n\n<2> c\n\n<3> d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "<>"
+      ListItem "<1> b\n"
+        List "::"
+          ListItem "t::\n"
+      ListItem "<2> c\n"
+List "<>"
+  ListItem "<3> d\n"`,
+		},
+		{
+			name: "under a term without text, a callout list after a blank line is the term's text",
+			src:  "t::\n\n<1> b\n\n<2> c\n",
+			want: `
+List "::"
+  ListItem "t::\n"
+    List "<>"
+      ListItem "<1> b\n"
+List "<>"
+  ListItem "<2> c\n"`,
+		},
+		{
+			name: "block attribute lines one blank line under a description stay in it when a callout list follows",
+			src:  "a:: b\n\n[x]\n\n<1> c\n\nText.\n\nd:: e\n\n[x]\n<1> f\n",
+			want: `
+List "::"
+  ListItem "a:: b\n"
+    Opaque meta("[x]\n") ""
+List "<>"
+  ListItem "<1> c\n"
+Paragraph "Text.\n"
+List "::"
+  ListItem "d:: e\n"
+    List meta("[x]\n") "<>"
+      ListItem "<1> f\n"`,
+		},
+		{
+			name: "under a term without text, block attribute lines stay in the item together with the callout list below them",
+			src:  "t::\n\n[.r]\n\n<1> b\n\n<2> c\n",
+			want: `
+List "::"
+  ListItem "t::\n"
+    List meta("[.r]\n") "<>"
+      ListItem "<1> b\n"
+List "<>"
+  ListItem "<2> c\n"`,
+		},
+		{
 			name: "a space in a conditional target or at the edge of an include target makes no directive",
 			src:  "ifdef::a b[]\n\ninclude:: part.adoc[]\n",
 			want: `
