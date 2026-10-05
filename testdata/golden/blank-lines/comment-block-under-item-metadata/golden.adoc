@@ -1,0 +1,19 @@
+* An item
+[.role]
+
+////
+A comment block ends the item.
+////
+
+Text below the list.
+
+* An item
++
+.A title
+////
+A comment block that the continuation carries.
+////
+
+----
+A listing below the list.
+----

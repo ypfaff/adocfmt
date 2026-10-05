@@ -1124,6 +1124,66 @@ List "*"
   ListItem "* b\n"`,
 		},
 		{
+			name: "a comment block under item metadata ends the item, as any delimiter does",
+			src:  "* a\n[x]\n////\nc\n////\ntext\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque meta("[x]\n") ""
+Verbatim "////\nc\n////\n"
+Paragraph "text\n"`,
+		},
+		{
+			name: "a continuation ends with the comment block it carries, so a delimiter under it ends the item",
+			src:  "* a\n+\n[x]\n////\nc\n////\n----\nx\n----\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Opaque meta("[x]\n") meta("////\nc\n////\n") ""
+Verbatim "----\nx\n----\n"`,
+		},
+		{
+			name: "text under a comment block a + carries stays in the item, with the metadata bound to it",
+			src:  "* a\n+\n[.r]\n////\nc\n////\ntext\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph meta("[.r]\n") meta("////\nc\n////\n") "text\n"`,
+		},
+		{
+			name: "a comment line ends a +, so a blank line under it ends the item",
+			src:  "* a\n+\n// c\n\ntext\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Opaque meta("// c\n") ""
+Paragraph "text\n"`,
+		},
+		{
+			name: "a block attribute line under a comment line under a + ends a description list",
+			src:  "t:: d\n+\n// c\n[.r]\ntext\n",
+			want: `
+List "::"
+  ListItem "t:: d\n"
+    Continuation gap! "+\n"
+    Opaque meta("// c\n") ""
+Paragraph meta("[.r]\n") "text\n"`,
+		},
+		{
+			name: "a block attribute line under a block title after a delimited block a + carries ends a description list",
+			src:  "t:: d\n+\n----\nx\n----\n.T\n[x]\ntext\n",
+			want: `
+List "::"
+  ListItem "t:: d\n"
+    Continuation gap! "+\n"
+    Verbatim "----\nx\n----\n"
+    Opaque meta(".T\n") ""
+Opaque meta("[x]\n") "text\n"`,
+		},
+		{
 			name: "a delimited block in an item confines the list, so an item line inside it is prose",
 			src:  "* a\n+\n====\ntext\n* b\n====\n",
 			want: `
