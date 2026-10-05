@@ -323,9 +323,40 @@ More text.
 ....
 |===
 ====
-* A run of two or more blank lines in a description list where one blank line reads differently.
-Under a term with no text on its line, Asciidoctor takes the line after such a run as the term's text, even a delimiter or a block attribute line.
-A block attribute line above a nested list keeps that list in the description after one blank line, and ends the description list after two.
+* Two or more blank lines in a row under a term with nothing after its `::`.
+Asciidoctor reads the line after them as the start of the term's description, even a delimiter or a block attribute line.
+After one blank line, such a line ends the description list instead.
+* Two or more blank lines in a row between a term's description and a list with a block attribute line above it.
+After one blank line, the list belongs to the description.
+After two, it is a list of its own below the description list.
++
+.Example
+[%collapsible]
+====
+With one blank line, the list belongs to the description of `term`.
+With two, it is a list of its own below the description list.
+
+[cols="1,1"]
+|===
+| Part of the description | A list of its own
+
+a|
+....
+term:: text
+
+[.role]
+* item
+....
+a|
+....
+term:: text
+
+
+[.role]
+* item
+....
+|===
+====
 * The blank line under a comment.
 Asciidoctor drops comments before it renders, so nothing ties a comment to the block beneath it.
 Removing that blank line would make a comment that stands on its own read as a comment about the block below it.
