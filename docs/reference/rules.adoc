@@ -132,6 +132,9 @@ A one-line title cannot keep the indentation, because Asciidoctor skips the whit
 That title is the document title, not a section title.
 It stays on two lines; see <<heading-markers>>.
 * A title right below an include, a conditional or front matter, with no blank line between; see <<heading-markers>>.
+* A two-line title whose first line reads as a list item, such as `<1> Title`.
+Block attribute lines between a description list and such a line stay in the list, because Asciidoctor keeps them only above a list item.
+On one line, the title would take them over.
 
 [#blank-lines]
 == Blank lines

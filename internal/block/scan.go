@@ -603,8 +603,12 @@ func (s *scanner) setextLevel() (int, bool) {
 	return setextLevel(s.src, s.lines[s.at], s.lines[s.at+1])
 }
 
+// setext reads a two-line title. One whose title line reads as a list item
+// stays as it stands: a description list above keeps the block attribute
+// lines over such a line, so the one-line form would hand them to the title.
 func (s *scanner) setext(b base, level int) Node {
 	title := s.lines[s.at].text
+	b.frozen = b.frozen || s.shape().kind == shapeMarker
 	start := s.pos()
 	s.at += 2
 	b.lines = Span{start, s.pos()}
