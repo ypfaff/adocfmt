@@ -675,6 +675,34 @@ List "::"
 Verbatim "----\n----\n"`,
 		},
 		{
+			name: "under a term without text, a block attribute line after one blank line ends the list",
+			src:  "t::\n\n[.r]\ntext\n\nu:: v\n",
+			want: `
+List "::"
+  ListItem "t::\n"
+Paragraph meta("[.r]\n") "text\n"
+List "::"
+  ListItem "u:: v\n"`,
+		},
+		{
+			name: "under a term without text, a block attribute line after two blank lines is the term's text",
+			src:  "t::\n\n\n[.r]\ntext\n\nu:: v\n",
+			want: `
+List "::"
+  ListItem "t::\n"
+    Paragraph meta("[.r]\n") "text\n"
+  ListItem "u:: v\n"`,
+		},
+		{
+			name: "under a term without text, a fence after two blank lines opens a block in the item",
+			src:  "t::\n\n\n----\nx\n----\n",
+			want: `
+List "::"
+  ListItem "t::\n"
+    Verbatim gap! "----\nx\n"
+Verbatim "----\n"`,
+		},
+		{
 			name: "a space in a conditional target or at the edge of an include target makes no directive",
 			src:  "ifdef::a b[]\n\ninclude:: part.adoc[]\n",
 			want: `
@@ -1416,6 +1444,22 @@ func TestScanReports(t *testing.T) {
 			name: "a block under an item a directive reaches is read as if the directive brought in nothing",
 			src:  "include::part.adoc[]\n* b\n[source]\nc\n----\nx\n",
 			want: []Finding{{Line: 5, Message: "block has no closing delimiter"}},
+		},
+		{
+			name: "a fence two blank lines under a term without text, which opens a block in the item",
+			src:  "t::\n\n\n----\nx\n----\n",
+			want: []Finding{
+				{Line: 4, Message: "block has no closing delimiter"},
+				{Line: 6, Message: "block has no closing delimiter"},
+			},
+		},
+		{
+			name: "a fence two blank lines under a term a directive reaches is refused, since the directive reads as bringing in nothing",
+			src:  "t::\ninclude::part.adoc[]\n\n\n----\nx\n----\n",
+			want: []Finding{
+				{Line: 5, Message: "block has no closing delimiter"},
+				{Line: 7, Message: "block has no closing delimiter"},
+			},
 		},
 		{
 			name: "a delimiter that closes outside the region it opened in",
