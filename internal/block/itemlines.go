@@ -9,9 +9,17 @@ type itemLines struct {
 	end int
 	// skipped are the blank lines the buffer leaves out, see scanner.skipped.
 	skipped map[int]bool
-	// blanked is the + the buffer holds as a blank line, or -1, see
-	// scanner.blanked.
+	// blanked is the + under a blank line, or -1. A nested item reads it as
+	// a blank line too, see scanner.blanked.
 	blanked int
+	// placeholders are the + lines the item's own blocks read as blank lines:
+	// blanked, and each + under a line that carries the line below it. A
+	// nested item never reads one of the latter as a blank line: it stands
+	// above the nested list, or a callout list reads it as a + still.
+	placeholders map[int]bool
+	// textOnly is the line of the block Asciidoctor reads as text only, or -1,
+	// see scanner.readsTextOnly.
+	textOnly int
 }
 
 // itemEnd finds where the item on the current line ends. Asciidoctor collects
@@ -27,7 +35,8 @@ func (s *scanner) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []Span
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
 		s: s, closer: closer, marker: sh.marker, dlist: dlist,
-		hasText: !dlist || !bare, at: s.at + 1, detached: -1, skipped: map[int]bool{},
+		hasText: !dlist || !bare, at: s.at + 1, detached: -1, first: -1,
+		skipped: map[int]bool{}, placeholders: map[int]bool{},
 	}
 	r.end = r.at
 	for r.hasMoreLines() {
@@ -36,7 +45,23 @@ func (s *scanner) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []Span
 		}
 	}
 	// Ruby: buffer[detached_continuation] = ListContinuationPlaceholder
-	return itemLines{end: r.end, skipped: r.skipped, blanked: r.detached}, r.literals
+	if r.detached >= 0 {
+		r.placeholders[r.detached] = true
+	}
+	lines := itemLines{
+		end: r.end, skipped: r.skipped, blanked: r.detached,
+		placeholders: r.placeholders, textOnly: -1,
+	}
+	// Ruby, in parse_list_item: has_text = nil unless dlist
+	// That holds where the first line under any comment lines is not empty; a
+	// term without text has none either. The first block is then read with
+	// text_only: has_text ? nil : true.
+	if r.first >= 0 && (!dlist || bare) {
+		if kind := r.shape(r.first).kind; kind != shapeBlank && kind != shapeContinuation {
+			lines.textOnly = r.first
+		}
+	}
+	return lines, r.literals
 }
 
 // itemReader holds the state of read_lines_for_list_item.
@@ -51,14 +76,19 @@ type itemReader struct {
 	continuation continuation
 	withinNested bool
 	prev         prevLine
+	// plus is the line of the last + added to the buffer, and first the first
+	// line that is no comment line, or -1.
+	plus  int
+	first int
 	// detached is the line of the last + under a blank line, or -1.
 	detached int
 
 	at  int
 	end int
-	// skipped are the blank lines left out of the buffer, see itemLines.
-	skipped  map[int]bool
-	literals []Span
+	// skipped and placeholders are what itemLines says they are.
+	skipped      map[int]bool
+	placeholders map[int]bool
+	literals     []Span
 }
 
 // continuation is the state of the + lines, with Asciidoctor's names.
@@ -85,11 +115,15 @@ const (
 // from the buffer. A + at the end stays in the span although Asciidoctor pops
 // it, since the item consumes it.
 func (r *itemReader) take() {
-	switch r.shape(r.at).kind {
+	kind := r.shape(r.at).kind
+	if r.first < 0 && kind != shapeComment {
+		r.first = r.at
+	}
+	switch kind {
 	case shapeBlank:
 		r.prev = prevEmpty
 	case shapeContinuation:
-		r.prev, r.end = prevPlus, r.at+1
+		r.prev, r.end, r.plus = prevPlus, r.at+1, r.at
 	default:
 		r.prev, r.end = prevText, r.at+1
 	}
@@ -129,8 +163,9 @@ func (r *itemReader) step() bool {
 		if r.continuation == continuationInactive {
 			r.continuation, r.hasText = continuationActive, true
 			// Ruby: buffer[-1] = ListContinuationPlaceholder unless within_nested_list
-			// Not ported: only a nested item would read that +, and none
-			// started above it.
+			if !r.withinNested {
+				r.placeholders[r.plus] = true
+			}
 		}
 		// Ruby: if ListContinuationMarker === this_line
 		if sh.kind == shapeContinuation {

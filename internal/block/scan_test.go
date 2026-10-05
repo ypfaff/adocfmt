@@ -1397,6 +1397,162 @@ List "*"
     Paragraph "text\n"`,
 		},
 		{
+			name: "metadata above a + binds to the block below it, which a verbatim style makes code",
+			src:  "* a\n[literal]\n+\nOne. Two.\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal gap! meta("[literal]\n") "One. Two.\n"`,
+		},
+		{
+			name: "it reads past blank lines above the + too",
+			src:  "* a\n[literal]\n\n+\nOne. Two.\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal gap! meta("[literal]\n") "One. Two.\n"`,
+		},
+		{
+			name: "a + right under the one it reads past is a line of the block, which stays as it stands",
+			src:  "* a\n[literal]\n+\n+\nOne. Two.\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Paragraph! gap! meta("[literal]\n") "+\nOne. Two.\n"`,
+		},
+		{
+			name: "past a nested list the item holds the + as it stands, so it is text under the metadata",
+			src:  "* a\nb::\n[literal]\n+\nOne. Two.\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "::"
+      ListItem "b::\n"
+    Paragraph! gap! meta("[literal]\n") "+\nOne. Two.\n"`,
+		},
+		{
+			name: "it binds the same way in a nested item and under a +",
+			src:  "* a\n** b\n[literal]\n+\nOne. Two.\n\ntext\n\nt:: d\n+\n[verse]\n+\nOne. Two.\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "**"
+      ListItem "** b\n"
+        Literal gap! meta("[literal]\n") "One. Two.\n"
+Paragraph "text\n"
+List "::"
+  ListItem "t:: d\n"
+    Continuation gap! "+\n"
+    Literal gap! meta("[verse]\n") "One. Two.\n"`,
+		},
+		{
+			name: "right under the item's line a block title is text, which a verbatim style makes code",
+			src:  "* b\n[source]\n+\n.T\n\ntext\n",
+			want: `
+List "*"
+  ListItem "* b\n"
+    Literal gap! meta("[source]\n") ".T\n"
+    Paragraph "text\n"`,
+		},
+		{
+			name: "comment lines between the item's line and the metadata change nothing",
+			src:  "* b\n// c\n[source]\n+\n.T\n\ntext\n",
+			want: `
+List "*"
+  ListItem "* b\n// c\n"
+    Literal gap! meta("[source]\n") ".T\n"
+    Paragraph "text\n"`,
+		},
+		{
+			name: "a directive there counts as metadata, so the block title under it is text",
+			src:  "* a\n[.r]\nifdef::x[]\n.T\nendif::[]\n",
+			want: `
+List extensible! "*"
+  ListItem "* a\n"
+    Paragraph! gap! meta("[.r]\n") meta("ifdef::x[]\n") ".T\nendif::[]\n"`,
+		},
+		{
+			name: "so is an attribute entry",
+			src:  ". o\n[literal]\n:a: b\ntext\n",
+			want: `
+List "."
+  ListItem ". o\n"
+    Literal meta("[literal]\n") ":a: b\ntext\n"`,
+		},
+		{
+			name: "and so is a break, which a comment style reads on past an item line",
+			src:  "* a\n[comment]\n---\nc:: d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Literal! meta("[comment]\n") "---\nc:: d\n"`,
+		},
+		{
+			name: "and so is a block macro, so a + under the paragraph carries the block below",
+			src:  "* b\n[%hardbreaks]\nimage::a.png[]\n.T\n+\ntext\nc:: d\n",
+			want: `
+List "*"
+  ListItem "* b\n"
+    Opaque meta("[%hardbreaks]\n") "image::a.png[]\n.T\n"
+    Continuation gap! "+\n"
+    Paragraph! "text\nc:: d\n"`,
+		},
+		{
+			name: "under more text of the item a block title is metadata again",
+			src:  "* b\nmore\n[source]\n+\n.T\n\ntext\n",
+			want: `
+List "*"
+  ListItem "* b\nmore\n"
+    Literal meta("[source]\n") meta(".T\n") "text\n"`,
+		},
+		{
+			name: "under a + a block title is metadata again",
+			src:  "* b\n+\n[source]\n+\n.T\n\ntext\n",
+			want: `
+List "*"
+  ListItem "* b\n"
+    Continuation gap! "+\n"
+    Literal meta("[source]\n") meta(".T\n") "text\n"`,
+		},
+		{
+			name: "the paragraph below the + still ends at an item line",
+			src:  "* a\n[.r]\n+\ntext\n** n\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Paragraph gap! meta("[.r]\n") "text\n"
+    List "**"
+      ListItem "** n\n"`,
+		},
+		{
+			name: "unless a paragraph style hands it to block parsing",
+			src:  "* a\n[quote]\n+\ntext\nc:: d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Paragraph! gap! meta("[quote]\n") "text\nc:: d\n"`,
+		},
+		{
+			name: "which also reads a quote-shaped paragraph past an item line",
+			src:  "* a\n[sidebar]\n> x\nc:: d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Opaque! meta("[sidebar]\n") "> x\nc:: d\n"`,
+		},
+		{
+			name: "where no block follows the +, the metadata binds to nothing",
+			src:  "* a\nb:: c\n+\n.T\n\n\n+\n\nc:: d\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    List "::"
+      ListItem "b:: c\n"
+        Continuation gap! "+\n"
+        Opaque gap! meta(".T\n") ""
+      ListItem "c:: d\n"`,
+		},
+		{
 			name: "a block attribute line under a term ends the description list",
 			src:  "term::\n[verse]\ndetached\n",
 			want: `

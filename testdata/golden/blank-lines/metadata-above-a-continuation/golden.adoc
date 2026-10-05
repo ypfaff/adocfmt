@@ -1,0 +1,20 @@
+* An item
+[source]
++
+.not a title, but the code
+
+The paragraph below the code.
+* An item
++
+[source]
++
+.A title
+puts "the code"
+
+* An item
+** A nested item
+[listing]
++
+.not a title either
+
+The paragraph below it.

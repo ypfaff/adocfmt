@@ -1,0 +1,19 @@
+* An item
+[literal]
++
+One sentence. Two sentences.
+
+A paragraph between the lists.
+
+. An item
+[verse]
++
+One line. Two lines.
+
+A paragraph between the lists.
+
+Term:: A description
++
+[%hardbreaks]
++
+One line. Two lines.
