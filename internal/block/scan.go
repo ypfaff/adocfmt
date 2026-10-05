@@ -166,6 +166,20 @@ func (s *scanner) blanked(at int) bool {
 	return slices.ContainsFunc(s.items, func(l itemLines) bool { return l.blanked == at })
 }
 
+// placeholder reports whether the buffer of an item being read holds the + on
+// the line as a blank line for the blocks read from it. A nested item reads
+// one that stands under a line as a + still, so blanked leaves it out.
+func (s *scanner) placeholder(at int) bool {
+	return slices.ContainsFunc(s.items, func(l itemLines) bool { return l.placeholders[at] })
+}
+
+// readsTextOnly reports whether Asciidoctor reads the block starting on the
+// line as text only: fewer lines are metadata there, see textOnlyMeta, and
+// fewer are blocks, see body.
+func (s *scanner) readsTextOnly(at int) bool {
+	return len(s.items) > 0 && s.items[len(s.items)-1].textOnly == at
+}
+
 func (s *scanner) pos() int {
 	if s.at >= len(s.lines) {
 		return len(s.src)
@@ -281,21 +295,42 @@ func (s *scanner) nodes(closer []byte) ([]Node, Gap) {
 // bind to.
 func (s *scanner) node(gap Gap, closer []byte) Node {
 	b := newBase(gap)
-	for s.metaLine(&b, closer) {
-		b.gap = s.gap()
+	textOnly := s.readsTextOnly(s.at)
+	for s.metaLine(&b, closer, textOnly) {
+		b.gap = s.metaGap()
 	}
-	return s.block(b, closer)
+	return s.block(b, closer, textOnly)
+}
+
+// metaGap is the gap under a metadata line. In a list item it takes a + the
+// item's buffer holds as a blank line, which Asciidoctor reads past to the
+// block under it, as it does a blank line. The gap freezes, since its lines
+// are not all blank. Where no block follows, the blank lines under the + go
+// back, as they do under a continuation, see carried; block then finds a
+// blank line and binds the metadata to nothing.
+func (s *scanner) metaGap() Gap {
+	gap := s.gap()
+	for !s.done() && s.placeholder(s.at) {
+		s.at++
+		m := s.mark()
+		s.gap()
+		if s.done() {
+			s.rewind(m)
+		}
+		gap = Gap{Span: Span{gap.Span.Start, s.pos()}, Frozen: true}
+	}
+	return gap
 }
 
 // metaLine reads the metadata line at the current position into b and reports
 // whether there was one.
-func (s *scanner) metaLine(b *base, closer []byte) bool {
+func (s *scanner) metaLine(b *base, closer []byte, textOnly bool) bool {
 	if s.done() || s.closes(closer) {
 		return false
 	}
 	sh := s.shape()
 	kind, ok := metaKind(sh)
-	if !ok || (len(b.meta) == 0 && !opensMeta(kind)) {
+	if !ok || (len(b.meta) == 0 && !opensMeta(kind)) || (textOnly && !textOnlyMeta(kind)) {
 		return false
 	}
 	start := s.pos()
@@ -326,6 +361,18 @@ func opensMeta(kind MetaKind) bool {
 	}
 }
 
+// textOnlyMeta reports whether a line of this kind is metadata where
+// Asciidoctor reads a block as text only. A directive counts: Asciidoctor
+// resolves it before it reads the line.
+func textOnlyMeta(kind MetaKind) bool {
+	switch kind {
+	case MetaAttributes, MetaAnchor, MetaComment, MetaDirective:
+		return true
+	default:
+		return false
+	}
+}
+
 // commentBlock skips the comment block opening on the current line.
 func (s *scanner) commentBlock() {
 	openAt := s.at
@@ -338,13 +385,14 @@ func (s *scanner) commentBlock() {
 }
 
 // block is the node the metadata lines in b bind to. None follows at the end
-// of the source, the enclosing block or the list item.
-func (s *scanner) block(b base, closer []byte) Node {
-	if s.done() || s.closes(closer) {
+// of the source, the enclosing block or the list item, nor where a blank line
+// follows: only metaGap leaves one, where the item ends below it.
+func (s *scanner) block(b base, closer []byte, textOnly bool) Node {
+	if s.done() || s.closes(closer) || s.shape().kind == shapeBlank {
 		return s.orphan(b)
 	}
 	reaches := s.directiveInMeta(b)
-	node := s.body(b, closer)
+	node := s.body(b, closer, textOnly)
 	s.freeze = s.freeze || reaches
 	return node
 }
@@ -392,8 +440,17 @@ func metaKind(sh shape) (MetaKind, bool) {
 //
 // A level 0 title in either form is the document header while nothing but the
 // blocks precedesTitle names came before it.
-func (s *scanner) body(b base, closer []byte) Node {
+//
+// In a block read as text only, see readsTextOnly, Asciidoctor looks for no
+// break, no block macro and no attribute entry: such a line is text. Nor does
+// it look for a Markdown quote, a quoted paragraph, an admonition label or a
+// literal paragraph, which the scanner still reads as Opaque, Admonition or
+// Literal; that only costs formatting.
+func (s *scanner) body(b base, closer []byte, textOnly bool) Node {
 	sh := s.shape()
+	if textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
+		sh.kind = shapeText
+	}
 	atStart := s.atStart
 	s.atStart = atStart && precedesTitle(sh)
 
@@ -424,12 +481,15 @@ func (s *scanner) body(b base, closer []byte) Node {
 		return s.directive(b, sh)
 	case shapeContinuation:
 		// A + carries the block under it only inside a list, and only where no
-		// other + carries it already. Everywhere else it is a line like any
-		// other, which contentBlock reads: text, or code under a verbatim style.
+		// other + carries it already. Under metadata, one that carries is part
+		// of the gap, see metaGap; one that reaches here is a line of the block,
+		// which is read as it stands, frozen. Outside a list it is a line like
+		// any other, which contentBlock reads: text, or code under a verbatim
+		// style.
 		if !s.inList() {
 			return s.contentBlock(b, sh, closer)
 		}
-		if s.carrying && b.gap.Span.Empty() {
+		if (s.carrying && b.gap.Span.Empty()) || len(b.meta) > 0 {
 			return s.plusText(b, closer, endsCarriedPlus)
 		}
 		b.gap.Frozen = true
@@ -459,7 +519,7 @@ func (s *scanner) contentBlock(b base, sh shape, closer []byte) Node {
 		b.lines = s.take()
 		return &Opaque{base: b}
 	case shapeQuote:
-		s.textRun(&b, closer, s.endsProse())
+		s.textRun(&b, closer, s.endsProse(b))
 		return &Opaque{base: b}
 	default:
 		return s.paragraph(b, closer)
@@ -624,7 +684,7 @@ func (s *scanner) setext(b base, level int) Node {
 // isCustomBlockMacro. A label opening its first line makes it an Admonition.
 func (s *scanner) paragraph(b base, closer []byte) Node {
 	first := s.at
-	s.textRun(&b, closer, s.endsProse())
+	s.textRun(&b, closer, s.endsProse(b))
 	style := styleOf(s.src, b.meta)
 	switch {
 	case !paragraphStyles[style] && quotedParagraph(s.src, s.lines[first:s.at]),
@@ -720,14 +780,16 @@ func (s *scanner) endsVerbatimAfter(first int) func(shape) bool {
 	return func(sh shape) bool { return s.at > first && endsVerbatim(sh) }
 }
 
-// endsProse is where a paragraph ends at the current position. Inside an item
-// Asciidoctor breaks a paragraph at an item line only when no blank line came
-// before it, and a continuation counts as one: a paragraph right after the
-// item's text ends at any item line, a carried one does not.
+// endsProse is where a paragraph with the metadata in b ends at the current
+// position. Inside an item Asciidoctor breaks a paragraph at an item line only
+// when no blank line came before it, and a continuation counts as one: a
+// paragraph right after the item's text ends at any item line, a carried one
+// does not. Nor does one with a paragraph style, which Asciidoctor reads as
+// the block that style names.
 // A literal paragraph does not use it: Asciidoctor reads that up to a blank
 // line, an item line included.
-func (s *scanner) endsProse() func(shape) bool {
-	if s.inList() && !s.carrying {
+func (s *scanner) endsProse(b base) func(shape) bool {
+	if s.inList() && !s.carrying && !paragraphStyles[styleOf(s.src, b.meta)] {
 		return endsItemText
 	}
 	return endsText
