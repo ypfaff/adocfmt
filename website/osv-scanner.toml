@@ -1,0 +1,8 @@
+# For Scorecard's Vulnerabilities check: osv-scanner reads this only beside the
+# package-lock.json it scans.
+
+[[IgnoredVulns]]
+id = "GHSA-238p-pmpm-9mq7"
+# Delete with the first Mermaid release that bundles KaTeX 0.18.2 or later.
+ignoreUntil = 2027-01-06
+reason = "KaTeX comes bundled in mermaid.min.js, but exploiting it needs prototype pollution and attacker-written math; the static site renders only its own diagrams."
