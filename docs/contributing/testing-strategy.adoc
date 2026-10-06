@@ -9,7 +9,7 @@ Besides the unit tests of each package, four checks each guard one property of t
 
 <<identity,Identity>>:: With every rule off, the tree gives the source back byte for byte.
 
-<<classification,Classification>>:: The scanner reads the first line of a block the way Asciidoctor does.
+<<classification,Classification>>:: The parser reads the first line of a block the way Asciidoctor does.
 
 <<render-equivalence,Render equivalence>>:: No rule changes what the rendered document shows.
 
@@ -33,7 +33,7 @@ Raw mode walks the tree the same way as formatting mode, but prints every node a
 `Format` never offers raw mode, because turning the rules off is a test tool, not a mode of the formatter.
 
 link:../../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every Asciidoctor case and every golden case back and compares bytes.
-link:../../internal/block/partition_test.go[`TestScanPartitions`] checks that the nodes cover the source without gaps or overlaps, so a failure names the node that lost or repeated bytes.
+link:../../internal/block/partition_test.go[`TestParsePartitions`] checks that the nodes cover the source without gaps or overlaps, so a failure names the node that lost or repeated bytes.
 link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`] searches for source that the Asciidoctor cases do not cover.
 Its seeds are fixed inputs that run as ordinary cases with every `go test`.
 The search mutates the seeds and runs on demand:
@@ -48,13 +48,13 @@ An input that the search finds breaking the test is saved under `testdata/fuzz` 
 [#classification]
 == Classification
 
-The scanner decides what each block is, such as a heading, a list or a code block, and every rule builds on that decision.
-Asciidoctor decides what kind of block starts from the first line of the block, and so does the scanner.
+The parser decides what each block is, such as a heading, a list or a code block, and every rule builds on that decision.
+Asciidoctor decides what kind of block starts from the first line of the block, and so does the parser.
 link:../../internal/block/classify_oracle_test.go[`TestClassifyAgreesWithAsciidoctor`] compares that decision line by line.
 
 The test collects every distinct line of the Asciidoctor cases.
 It also edits each line in a few ways that can move it from one kind to another, such as a leading `//` or a tab instead of a space.
-The scanner reads each line as the first line of a block.
+adocfmt's parser reads each line as the first line of a block.
 So does link:../../internal/block/testdata/line_kinds.rb[`line_kinds.rb`], which asks Asciidoctor's own parser what block the line starts.
 The test fails on every line where the two disagree, and on any Asciidoctor release other than the pinned one.
 
@@ -64,7 +64,7 @@ What depends on more than one line is out of the test's reach, such as where a l
 A wrong decision there does harm only where a rule rewrites the misread block, and there the <<render-equivalence,render equivalence>> checks fail.
 A misread block that no rule rewrites cannot change the rendered document.
 
-TIP: When you fix a misread block, add a case to link:../../internal/block/scan_test.go[`scan_test.go`] that pins the tree the scanner now produces.
+TIP: When you fix a misread block, add a case to link:../../internal/block/parse_test.go[`parse_test.go`] that pins the tree the parser now produces.
 
 [#render-equivalence]
 == Render equivalence
@@ -87,7 +87,7 @@ So this check cannot see a rule that changes trailing whitespace there.
 Comments::
 The comment lines of both sources, in order, because Asciidoctor drops them before they reach the HTML.
 The check reads raw lines, not the block tree.
-So a comment that the scanner took for prose still counts.
+So a comment that the parser took for prose still counts.
 
 link:../../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] feeds each check a document broken in the way the check is meant to catch, to prove that the check can fail at all.
 
@@ -104,7 +104,7 @@ After you change it, regenerate the cases:
 go run ./tools/fetch-asciidoctor-cases
 ----
 
-The scanner mirrors some of Asciidoctor's patterns and constants, and its comments name each one, such as `BlockTitleRx` or `PARAGRAPH_STYLES`.
+The parser mirrors some of Asciidoctor's patterns and constants, and its comments name each one, such as `BlockTitleRx` or `PARAGRAPH_STYLES`.
 Compare them between the two releases in `lib/asciidoctor/rx.rb` and `lib/asciidoctor.rb`, because the <<classification,classification check>> sees only the lines that the cases hold.
 
 link:../../internal/renderequivalence/cases_test.go[`TestAsciidoctorCases`] formats every case and compares the result with the original.

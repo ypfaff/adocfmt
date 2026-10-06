@@ -5,7 +5,7 @@
 // makes a formatter with no rule enabled the identity function, and it holds
 // without asking Asciidoctor anything.
 //
-// The scanner never resolves an include or a conditional, and never guesses.
+// The parser never resolves an include or a conditional, and never guesses.
 // Content it cannot know it freezes; structure it cannot trust it reports.
 package block
 
@@ -41,7 +41,7 @@ type Gap struct {
 //
 // A block closes only on a line equal to the one that opened it, which is what
 // makes Width part of its identity. Extensible marks a body an include or a
-// conditional may extend, whose lines the scanner therefore does not see in
+// conditional may extend, whose lines the parser therefore does not see in
 // full.
 type Delimiter struct {
 	Char       byte
@@ -86,11 +86,11 @@ const (
 
 	// MetaCommentBlock and MetaAttrEntry are blocks of their own until metadata
 	// lines stand above them. Asciidoctor reads them as metadata there and keeps
-	// the lines above bound to the block that follows, so the scanner does too.
+	// the lines above bound to the block that follows, so the parser does too.
 	MetaCommentBlock // //// to ////
 	MetaAttrEntry    // :name: value, with the lines that continue it
 
-	// MetaDirective also freezes the block, whose real content the scanner
+	// MetaDirective also freezes the block, whose real content the parser
 	// cannot know once Asciidoctor has resolved the directive.
 	MetaDirective
 )
@@ -108,7 +108,7 @@ type Meta struct {
 	Open  bool
 }
 
-// Node is one piece of the document. The scanner produces the types below and
+// Node is one piece of the document. The parser produces the types below and
 // no others.
 type Node interface {
 	// Extent reports every byte the node owns, its gap and metadata included.
@@ -125,7 +125,7 @@ type Node interface {
 
 // base is what every node has.
 //
-// Frozen marks a node whose lines have to stay as they are: the scanner could
+// Frozen marks a node whose lines have to stay as they are: the parser could
 // not determine their structure, or one of them changes meaning when moved. No
 // rule may add, remove, join or split lines there; line-local rewrites such as
 // trailing whitespace removal stay safe.
@@ -224,7 +224,7 @@ type Heading struct {
 }
 
 // Setext is a two-line section title. Asciidoctor reads the pair before it
-// reads the underline as a delimiter, and so does the scanner.
+// reads the underline as a delimiter, and so does the parser.
 type Setext struct {
 	base
 	Level int
@@ -307,7 +307,7 @@ type Continuation struct{ base }
 type Attribute struct{ base }
 
 // Directive is an include, ifdef, ifndef, ifeval or endif line. What it brings
-// in decides the structure around it, so the scanner freezes rather than
+// in decides the structure around it, so the parser freezes rather than
 // resolves.
 type Directive struct{ base }
 
@@ -315,7 +315,7 @@ type Directive struct{ base }
 // not AsciiDoc and passes through untouched.
 type FrontMatter struct{ base }
 
-// Opaque is a block the scanner delimits but does not model: a block macro, a
+// Opaque is a block the parser delimits but does not model: a block macro, a
 // thematic or page break, a Markdown quote, a quoted paragraph with its
 // attribution line, a paragraph an extension may read, or metadata that never
 // found its block. It is neither prose nor verbatim content, so no rule
@@ -324,7 +324,7 @@ type FrontMatter struct{ base }
 // A construct leaves this type when a rule needs it told apart from the rest.
 type Opaque struct{ base }
 
-// Finding is what the scanner could not decide, and where.
+// Finding is what the parser could not decide, and where.
 type Finding struct {
 	Line    int
 	Message string
@@ -343,7 +343,7 @@ const (
 	CRLF LineEnding = "\r\n"
 )
 
-// Document is a scanned source file. The scanner refuses a source that mixes
+// Document is a parsed source file. The parser refuses a source that mixes
 // the two line endings, so LineEnding holds for the whole of it.
 type Document struct {
 	Src        []byte

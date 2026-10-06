@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-// TestFormatRefuses pins that a document the scanner could not read safely
+// TestFormatRefuses pins that a document the parser could not read safely
 // comes back as an error naming every finding, and never as output.
 func TestFormatRefuses(t *testing.T) {
 	t.Parallel()
@@ -42,7 +42,7 @@ func TestFormatRefusalCarriesFindings(t *testing.T) {
 	}
 }
 
-// TestFormatRejects pins that source the scanner must not repair silently is
+// TestFormatRejects pins that source the parser must not repair silently is
 // refused with a reason, and that it is no Refusal: it names no line, so the
 // command has nothing to place it on.
 func TestFormatRejects(t *testing.T) {

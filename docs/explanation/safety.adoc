@@ -16,18 +16,18 @@ It renders a document: it converts the AsciiDoc source into the HTML page that y
 So formatting is correct when the page that Asciidoctor renders shows the same before and after.
 
 adocfmt does not use Asciidoctor to read your document.
-It has its own scanner, which decides what each block is, such as a section title, a list or a code block.
+It has its own parser, which decides what each block is, such as a section title, a list or a code block.
 The rules format each block according to that decision.
 A line that no rule rewrites keeps its content and loses only its trailing whitespace, which Asciidoctor ignores anyway.
-So a block that the scanner misreads cannot change the page unless a rule rewrites it.
+So a block that the parser misreads cannot change the page unless a rule rewrites it.
 
 Where a rule does rewrite a block, the tests hold it to Asciidoctor.
 They format the test inputs of the Asciidoctor test suite and adocfmt's own test cases, render each one before and after with Asciidoctor, and compare the results.
 A rule that changes the rendered page, the content of a code or literal block, or a comment fails the tests.
-The tests also xref:../contributing/testing-strategy.adoc#classification[compare how the scanner reads each line] with how Asciidoctor reads it, so a misread line shows up before any rule rewrites its block.
+The tests also xref:../contributing/testing-strategy.adoc#classification[compare how the parser reads each line] with how Asciidoctor reads it, so a misread line shows up before any rule rewrites its block.
 The xref:../contributing/testing-strategy.adoc[testing strategy] describes these checks and what they cannot see.
 
-xref:../decision-records/0005-own-scanner-not-asciidoctor.adoc[Decision record 0005] explains why adocfmt reads your document with its own scanner.
+xref:../decision-records/0005-own-scanner-not-asciidoctor.adoc[Decision record 0005] explains why adocfmt reads your document with its own parser.
 
 == Why includes and conditionals are left alone
 
@@ -75,11 +75,11 @@ The xref:../reference/rules.adoc[formatting rules] that treat such lines differe
 [#refusal]
 == Why a document with findings is refused whole
 
-When the scanner meets structure it cannot read reliably, such as a block with no closing delimiter, it reports a finding.
+When the parser meets structure it cannot read reliably, such as a block with no closing delimiter, it reports a finding.
 adocfmt then refuses the whole document: it leaves the file as it is and exits with an error.
 For what each finding means and how to fix it, see xref:../reference/cli.adoc#refusal[Refusal findings].
 
-Formatting only the parts the scanner could read would hide the problem.
+Formatting only the parts the parser could read would hide the problem.
 A refusal fails the run, where a warning would be easy to miss in a commit hook or a CI run.
 xref:../decision-records/0003-refuse-what-the-scanner-cannot-read.adoc[Decision record 0003] gives the full reasoning.
 

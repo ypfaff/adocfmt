@@ -33,7 +33,7 @@ func TestTrimTrailing(t *testing.T) {
 	}
 }
 
-// TestLines pins that a line is handed out the way the scanner reads it, since
+// TestLines pins that a line is handed out the way the parser reads it, since
 // a delimiter followed by trailing whitespace still closes its block.
 func TestLines(t *testing.T) {
 	tests := []struct {

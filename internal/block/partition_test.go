@@ -10,10 +10,10 @@ import (
 // corpusDir is relative to this package.
 const corpusDir = "../../" + corpus.Dir
 
-// TestScanPartitions guards what the package documentation promises: the tree
+// TestParsePartitions guards what the package documentation promises: the tree
 // partitions its source. A byte no span owns disappears when printed, a byte two
 // spans own is printed twice, and neither shows in a rendering comparison.
-func TestScanPartitions(t *testing.T) {
+func TestParsePartitions(t *testing.T) {
 	files, err := corpus.Files(corpusDir)
 	if err != nil {
 		t.Fatal(err)
@@ -26,7 +26,7 @@ func TestScanPartitions(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			doc, err := Scan(src)
+			doc, err := Parse(src)
 			if err != nil {
 				t.Fatal(err)
 			}

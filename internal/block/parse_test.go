@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestScan(t *testing.T) {
+func TestParse(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -1686,7 +1686,7 @@ Heading "= Title\n" title "Title"`,
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			doc, err := Scan([]byte(test.src))
+			doc, err := Parse([]byte(test.src))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1698,7 +1698,7 @@ Heading "= Title\n" title "Title"`,
 	}
 }
 
-func TestScanReports(t *testing.T) {
+func TestParseReports(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -1811,7 +1811,7 @@ func TestScanReports(t *testing.T) {
 			},
 		},
 		{
-			name: "a directive is not a finding, the scanner freezes around it instead",
+			name: "a directive is not a finding, the parser freezes around it instead",
 			src:  "include::part.adoc[]\n\nifdef::extra[]\nText.\nendif::[]\n",
 			want: nil,
 		},
@@ -1846,7 +1846,7 @@ func TestScanReports(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			doc, err := Scan([]byte(test.src))
+			doc, err := Parse([]byte(test.src))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1857,8 +1857,8 @@ func TestScanReports(t *testing.T) {
 	}
 }
 
-// TestScanRejects covers what the scanner must not repair silently.
-func TestScanRejects(t *testing.T) {
+// TestParseRejects covers what the parser must not repair silently.
+func TestParseRejects(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -1872,15 +1872,15 @@ func TestScanRejects(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			if _, err := Scan([]byte(test.src)); err == nil {
+			if _, err := Parse([]byte(test.src)); err == nil {
 				t.Error("got no error, want one")
 			}
 		})
 	}
 }
 
-// TestScanLineEnding covers the answer a rule writing a line of its own reads.
-func TestScanLineEnding(t *testing.T) {
+// TestParseLineEnding covers the answer a rule writing a line of its own reads.
+func TestParseLineEnding(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
@@ -1895,7 +1895,7 @@ func TestScanLineEnding(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			doc, err := Scan([]byte(test.src))
+			doc, err := Parse([]byte(test.src))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -60,7 +60,7 @@ func terminator(src []byte, full Span) int {
 // textEnd. The terminators stay as they are, so a CRLF source keeps its CRLF and
 // a last line without one gains none.
 //
-// It lives beside the scanner because both ask the same question: the scanner
+// It lives beside the parser because both ask the same question: the parser
 // cuts a line's content here before it classifies the line, and where a line's
 // content ends is one fact with one place.
 func TrimTrailing(src []byte) []byte {
@@ -74,7 +74,7 @@ func TrimTrailing(src []byte) []byte {
 
 // Lines returns the content of each line in src, its terminator and its
 // trailing whitespace already off. A rule asking what a line holds has to ask
-// it the way the scanner does, because that is what decides whether the line
+// it the way the parser does, because that is what decides whether the line
 // closes a block.
 func Lines(src []byte) [][]byte {
 	split := splitLines(src, 0)
@@ -86,7 +86,7 @@ func Lines(src []byte) [][]byte {
 }
 
 // HeadingTitle reports the title a one-line section title carries, read the way
-// the scanner reads it, and whether the line is one at all.
+// the parser reads it, and whether the line is one at all.
 func HeadingTitle(line []byte) ([]byte, bool) {
 	sh, ok := headingShape(line, 0)
 	if !ok {
@@ -96,7 +96,7 @@ func HeadingTitle(line []byte) ([]byte, bool) {
 }
 
 // ListMarker returns the marker a line opens a list item with, read the way the
-// scanner reads it, and whether it opens one at all. The marker is the key the
+// parser reads it, and whether it opens one at all. The marker is the key the
 // items of a list are compared on rather than the text they carry, see
 // List.Marker.
 func ListMarker(line []byte) (string, bool) {
@@ -125,7 +125,7 @@ func LineBelow(src []byte, at int) []byte {
 }
 
 // UnderlinesTitle reports whether the two lines form a two-line section title,
-// read the way the scanner reads the pair. The underline has to match the title
+// read the way the parser reads the pair. The underline has to match the title
 // within one character, so a rule that shortens a line asks first: a line it
 // makes shorter can reach that length and become a section title.
 func UnderlinesTitle(title, underline []byte) bool {
@@ -141,7 +141,7 @@ func Terminator(src []byte) []byte {
 
 type shapeKind int
 
-// The line shapes the scanner tells apart. This is the one place that answers
+// The line shapes classify tells apart. This is the one place that answers
 // what a line is; everything downstream reads the answer instead of matching
 // again.
 const (
@@ -468,7 +468,7 @@ func isSpaceByte(c byte) bool { return c == ' ' || c == '\t' }
 // nor ends with one. ifdef and ifndef with text in the brackets apply to that
 // text alone and open no region; ifeval carries its expression there and always
 // opens one. What Asciidoctor rejects as malformed is still a directive line,
-// marked bad so the scanner reports it.
+// marked bad so the parser reports it.
 func directiveShape(s []byte) (shape, bool) {
 	name, rest, ok := bytes.Cut(s, []byte("::"))
 	if !ok || len(rest) == 0 || rest[len(rest)-1] != ']' {

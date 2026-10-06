@@ -30,7 +30,7 @@ func TestPrintIsIdentity(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			doc, err := block.Scan(src)
+			doc, err := block.Parse(src)
 			if err != nil {
 				t.Fatal(err)
 			}

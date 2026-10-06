@@ -90,7 +90,7 @@ func fail(stderr io.Writer, message string, args ...any) int {
 }
 
 // report writes path:line: message, the form an editor and an errorformat read.
-// A source the scanner rejects outright carries no line, so it gets the name
+// A source the parser rejects outright carries no line, so it gets the name
 // alone.
 func report(stderr io.Writer, name string, err error) {
 	var refusal *format.Refusal

@@ -9,7 +9,7 @@ import (
 
 // reflowed returns the lines of a paragraph or an admonition the way the
 // sentence rule writes them: one sentence per line, or as they stand where the
-// scanner would read that as something else.
+// parser would read that as something else.
 func reflowed(src []byte, node block.Node, eol string) []byte {
 	lines := src[node.Lines().Start:node.Lines().End]
 	if node.Frozen() {

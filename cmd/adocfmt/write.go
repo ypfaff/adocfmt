@@ -11,7 +11,7 @@ import (
 	"github.com/ypfaff/adocfmt/internal/format"
 )
 
-// writeAll leaves a document the scanner refuses as it is, and still writes the
+// writeAll leaves a document the parser refuses as it is, and still writes the
 // surrounding files.
 func writeAll(paths []string, stderr io.Writer) int {
 	return eachFile(paths, stderr, func(src []byte, path string) int {

@@ -8,7 +8,7 @@ import (
 )
 
 // FuzzPrintIsIdentity searches for source the tree does not partition. The
-// seeds are the line shapes the scanner tells apart, in the arrangements that
+// seeds are the line shapes classify tells apart, in the arrangements that
 // make it backtrack: a list continuation with nothing to carry lost its blank
 // lines this way.
 //
@@ -58,7 +58,7 @@ func FuzzPrintIsIdentity(f *testing.F) {
 	}
 
 	f.Fuzz(func(t *testing.T, src []byte) {
-		doc, err := block.Scan(src)
+		doc, err := block.Parse(src)
 		if err != nil {
 			return
 		}
