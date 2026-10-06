@@ -32,11 +32,11 @@ func (n *printerNotes) addLiterals(item *ListItem, literals []Span) {
 // takes. It runs once the tree stands, because such a gap may stand below the
 // item that found it: in front of the next item, or of the block under the
 // list.
-func (s *scanner) freezeItemGaps(nodes []Node) {
-	s.notes.freezeRuns(nodes)
-	s.notes.freezeUnderLiterals(nodes)
-	s.notes.freezeInsideLiterals()
-	s.freezeAboveIndented(nodes, false)
+func (p *parser) freezeItemGaps(nodes []Node) {
+	p.notes.freezeRuns(nodes)
+	p.notes.freezeUnderLiterals(nodes)
+	p.notes.freezeInsideLiterals()
+	p.freezeAboveIndented(nodes, false)
 }
 
 // freezeRuns freezes the runs of blank lines that one blank line would not
@@ -93,12 +93,12 @@ func (n *printerNotes) freezeInsideLiterals() {
 // indented line in a list item, unless the line opens an item of a nested
 // list. Below them, the item takes the lines down to the next blank line
 // whole, see takeLiteral; without them, one by one.
-func (s *scanner) freezeAboveIndented(nodes []Node, inItem bool) {
+func (p *parser) freezeAboveIndented(nodes []Node, inItem bool) {
 	for _, node := range nodes {
 		blockGap, lines := node.blockGap(), node.Lines()
 		if inItem && len(node.Meta()) > 0 && !blockGap.Span.Empty() && !lines.Empty() {
-			first := s.lineAt(lines.Start)
-			indented := isIndented(s.text(first)) && !opensAnyList(s.src, first)
+			first := p.lineAt(lines.Start)
+			indented := isIndented(p.text(first)) && !opensAnyList(p.src, first)
 			blockGap.Frozen = blockGap.Frozen || indented
 		}
 		belowInItem := inItem
@@ -109,15 +109,15 @@ func (s *scanner) freezeAboveIndented(nodes []Node, inItem bool) {
 			// The block confines the reader, see delimited.
 			belowInItem = false
 		}
-		s.freezeAboveIndented(below(node), belowInItem)
+		p.freezeAboveIndented(below(node), belowInItem)
 	}
 }
 
 // lineAt returns the line that starts at offset. A node's lines start where a
 // line does, so the search always finds one.
-func (s *scanner) lineAt(offset int) line {
-	at, _ := slices.BinarySearchFunc(s.lines, offset, func(l line, target int) int {
+func (p *parser) lineAt(offset int) line {
+	at, _ := slices.BinarySearchFunc(p.lines, offset, func(l line, target int) int {
 		return cmp.Compare(l.full.Start, target)
 	})
-	return s.lines[at]
+	return p.lines[at]
 }

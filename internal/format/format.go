@@ -8,10 +8,10 @@ import (
 	"github.com/ypfaff/adocfmt/internal/printer"
 )
 
-// Finding is one thing the scanner could not decide, and the line it stands on.
+// Finding is one thing the parser could not decide, and the line it stands on.
 type Finding = block.Finding
 
-// Refusal is what Format returns for a document the scanner reported findings
+// Refusal is what Format returns for a document the parser reported findings
 // on, in line order.
 //
 // The findings stay apart rather than joined into one message, so a caller can
@@ -21,7 +21,7 @@ type Refusal struct{ Findings []Finding }
 // Error joins the findings, one per line.
 //
 // Refusal is exported, so one can reach here empty or nil. Neither is a
-// document the scanner turned down, and saying so beats an empty message or a
+// document the parser turned down, and saying so beats an empty message or a
 // panic.
 func (r *Refusal) Error() string {
 	if r == nil || len(r.Findings) == 0 {
@@ -36,11 +36,11 @@ func (r *Refusal) Error() string {
 
 // Format returns the formatted form of src.
 //
-// A document the scanner reported findings on is refused with all of them,
+// A document the parser reported findings on is refused with all of them,
 // because formatting the part it did understand would report success on a
 // document it barely touched.
 func Format(src []byte) ([]byte, error) {
-	doc, err := block.Scan(src)
+	doc, err := block.Parse(src)
 	if err != nil {
 		return nil, err
 	}

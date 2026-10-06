@@ -22,7 +22,7 @@ var notRenderable = map[string]string{
 // refused names the cases Format turns down, and why. Asciidoctor's suite
 // keeps documents it warns about, and the formatter refuses what Asciidoctor
 // warns about rather than formatting the part it understood. A case that
-// formats after all fails the test, so the list tracks the scanner.
+// formats after all fails the test, so the list tracks the parser.
 var refused = byCase(map[string][]string{
 	"a block never closes": {
 		"attributes/0028-should-warn-if-unterminated-block-comment-is-detected-in-doc",

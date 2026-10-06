@@ -47,7 +47,7 @@ func TestClassifyAgreesWithAsciidoctor(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	type pair struct{ asciidoctor, scanner string }
+	type pair struct{ asciidoctor, classify string }
 	disagree := map[pair][]string{}
 	for i, l := range lines {
 		src := []byte(l)
@@ -63,12 +63,12 @@ func TestClassifyAgreesWithAsciidoctor(t *testing.T) {
 	}
 	pairs := slices.Collect(maps.Keys(disagree))
 	slices.SortFunc(pairs, func(a, b pair) int {
-		return cmp.Or(len(disagree[b])-len(disagree[a]), strings.Compare(a.asciidoctor+a.scanner, b.asciidoctor+b.scanner))
+		return cmp.Or(len(disagree[b])-len(disagree[a]), strings.Compare(a.asciidoctor+a.classify, b.asciidoctor+b.classify))
 	})
 	for _, p := range pairs {
 		examples := disagree[p][:min(5, len(disagree[p]))]
 		t.Errorf("%d lines Asciidoctor reads as %s and classify as %s, such as:\n%s",
-			len(disagree[p]), p.asciidoctor, p.scanner, quoteLines(examples))
+			len(disagree[p]), p.asciidoctor, p.classify, quoteLines(examples))
 	}
 	t.Logf("%d lines read", len(lines))
 }

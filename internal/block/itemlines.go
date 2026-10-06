@@ -7,10 +7,10 @@ import "bytes"
 type itemLines struct {
 	// end is the line the item's span ends before.
 	end int
-	// skipped are the blank lines the buffer leaves out, see scanner.skipped.
+	// skipped are the blank lines the buffer leaves out, see parser.skipped.
 	skipped map[int]bool
 	// blanked is the + under a blank line, or -1. A nested item reads it as
-	// a blank line too, see scanner.blanked.
+	// a blank line too, see parser.blanked.
 	blanked int
 	// placeholders are the + lines the item's own blocks read as blank lines:
 	// blanked, and each + under a line that carries the line below it. A
@@ -18,7 +18,7 @@ type itemLines struct {
 	// above the nested list, or a callout list reads it as a + still.
 	placeholders map[int]bool
 	// textOnly is the line of the block Asciidoctor reads as text only, or -1,
-	// see scanner.readsTextOnly.
+	// see parser.readsTextOnly.
 	textOnly int
 }
 
@@ -31,11 +31,11 @@ type itemLines struct {
 // It ports read_lines_for_list_item from Asciidoctor's parser.rb. A comment
 // starting with "Ruby:" quotes the code a part stands for, "Not in parser.rb:"
 // marks what the port adds, and "Not ported:" what it leaves out and why.
-func (s *scanner) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []Span) {
+func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []Span) {
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
-		s: s, closer: closer, marker: sh.marker, dlist: dlist,
-		hasText: !dlist || !bare, at: s.at + 1, detached: -1, first: -1,
+		p: p, closer: closer, marker: sh.marker, dlist: dlist,
+		hasText: !dlist || !bare, at: p.at + 1, detached: -1, first: -1,
 		skipped: map[int]bool{}, placeholders: map[int]bool{},
 	}
 	r.end = r.at
@@ -66,7 +66,7 @@ func (s *scanner) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []Span
 
 // itemReader holds the state of read_lines_for_list_item.
 type itemReader struct {
-	s      *scanner
+	p      *parser
 	closer []byte
 	// marker is sibling_trait.
 	marker string
@@ -143,7 +143,7 @@ func (r *itemReader) drop() {
 func (r *itemReader) step() bool {
 	// Not in parser.rb: a line an enclosing item skipped is not in the buffer
 	// this one reads from.
-	if r.s.skipped(r.at) {
+	if r.p.skipped(r.at) {
 		r.at++
 		return true
 	}
@@ -250,7 +250,7 @@ func (r *itemReader) takeAttributes() bool {
 		// Ruby: if is_delimited_block? next_line then interrupt
 		// Ruby: elsif AnyListRx.match? next_line && !is_sibling_list_item? then keep
 		keep := r.shape(next).kind != shapeDelimiter &&
-			opensAnyList(r.s.src, r.s.lines[next]) && !r.siblingItem(next)
+			opensAnyList(r.p.src, r.p.lines[next]) && !r.siblingItem(next)
 		if !keep {
 			return false
 		}
@@ -290,7 +290,7 @@ func (r *itemReader) afterBlank(sh shape) bool {
 		// Ruby: reader.skip_blank_lines
 		blankedPlus := false
 		for r.hasMoreLines() && r.shape(r.at).kind == shapeBlank {
-			blankedPlus = blankedPlus || r.s.blanked(r.at)
+			blankedPlus = blankedPlus || r.p.blanked(r.at)
 			r.skipped[r.at] = true
 			r.at++
 		}
@@ -352,7 +352,7 @@ func (r *itemReader) noteRun(sh shape) {
 	delimiter := sh.kind == shapeDelimiter && !r.hasText
 	attributes := r.dlist && bracketed(sh.kind)
 	if r.continuation == continuationActive || delimiter || attributes {
-		r.s.notes.runs = append(r.s.notes.runs, r.s.lines[r.at].full.Start)
+		r.p.notes.runs = append(r.p.notes.runs, r.p.lines[r.at].full.Start)
 	}
 }
 
@@ -373,7 +373,7 @@ func (r *itemReader) takeLiteral() {
 		r.take()
 	}
 	// Not in parser.rb: noted for the printer.
-	r.literals = append(r.literals, Span{r.s.lines[from].full.Start, r.s.lines[r.at-1].full.End})
+	r.literals = append(r.literals, Span{r.p.lines[from].full.Start, r.p.lines[r.at-1].full.End})
 }
 
 // nestable is which nested lists Asciidoctor looks for.
@@ -405,14 +405,14 @@ func (r *itemReader) noteNestedList(kinds nestable) bool {
 		r.withinNested = true
 		return true
 	}
-	term, ok := termShape(r.s.src, r.s.lines[r.at])
+	term, ok := termShape(r.p.src, r.p.lines[r.at])
 	if !ok {
 		return false
 	}
 	// Ruby: within_nested_list = true
 	r.withinNested = true
 	// Ruby: has_text = false if nested_list_type == :dlist && $3.nil_or_empty?
-	if term.span.End == r.s.lines[r.at].text.End {
+	if term.span.End == r.p.lines[r.at].text.End {
 		r.hasText = false
 	}
 	return true
@@ -420,7 +420,7 @@ func (r *itemReader) noteNestedList(kinds nestable) bool {
 
 // siblingItem is is_sibling_list_item?, see siblingAt.
 func (r *itemReader) siblingItem(at int) bool {
-	_, ok := r.s.siblingAt(at, r.marker)
+	_, ok := r.p.siblingAt(at, r.marker)
 	return ok
 }
 
@@ -430,19 +430,19 @@ func (r *itemReader) hasMoreLines() bool { return r.within(r.at) }
 // within reports whether the item may still take the line at: the buffer ends
 // at the enclosing block's closing line as it does at the limit.
 func (r *itemReader) within(at int) bool {
-	return at < r.s.limit() && (r.closer == nil || !bytes.Equal(r.text(at), r.closer))
+	return at < r.p.limit() && (r.closer == nil || !bytes.Equal(r.text(at), r.closer))
 }
 
 // shape reads the line the way the buffer holds it: a + an enclosing item
 // blanked out is a blank line there.
 func (r *itemReader) shape(at int) shape {
-	if r.s.blanked(at) {
+	if r.p.blanked(at) {
 		return shape{kind: shapeBlank}
 	}
-	return classify(r.s.src, r.s.lines[at])
+	return classify(r.p.src, r.p.lines[at])
 }
 
-func (r *itemReader) text(at int) []byte { return r.s.text(r.s.lines[at]) }
+func (r *itemReader) text(at int) []byte { return r.p.text(r.p.lines[at]) }
 
 // isIndented is LiteralParagraphRx: a line starting with a space or a tab.
 // Unlike shapeIndented, it includes an indented list item.

@@ -8,6 +8,8 @@ linkTitle: 0003 Refuse unreadable input
 *Status:* accepted +
 *Date:* 2026-09-21
 
+NOTE: The code now calls the scanner of this record the parser, as xref:0002-block-tree-and-canonical-printer.adoc[decision record 0002] notes.
+
 == Context
 
 The scanner from xref:0002-block-tree-and-canonical-printer.adoc[decision record 0002] meets structure it cannot trust: a block that never closes, a conditional region that never closes or that closes nothing, a delimiter that opens inside a conditional and closes outside it, a malformed directive.

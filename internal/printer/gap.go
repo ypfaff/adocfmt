@@ -97,7 +97,7 @@ func (p *printer) blank() { p.out.WriteString(p.eol) }
 // isContinuation reports whether a lone + stands above the gap. In a list the
 // size of that run is the decision itself: at most one blank line attaches the
 // block below to the item, two or more end the list. Outside a list the + is
-// prose, and the scanner freezes what follows it instead.
+// prose, and the parser freezes what follows it instead.
 func isContinuation(prev block.Node) bool {
 	_, ok := prev.(*block.Continuation)
 	return ok

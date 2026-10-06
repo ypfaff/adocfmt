@@ -8,6 +8,9 @@ linkTitle: 0002 Block tree and printer
 *Status:* accepted +
 *Date:* 2026-09-21
 
+NOTE: Since 2026-10-06, the code calls the scanner of this record the parser, because it builds a tree.
+Its scope stays the one decided here: it reads only as much structure as the rules need.
+
 == Context
 
 Formatting AsciiDoc means first deciding what each line of a document is: a heading, a list item, verbatim content no rule may touch.

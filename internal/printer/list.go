@@ -96,7 +96,7 @@ func written(src []byte, item *block.ListItem, picked string) string {
 // reached reports whether an include or a conditional reaches the list, which
 // leaves every line of it as it stands, the space behind a marker included:
 // what those lines mean is known only once Asciidoctor has resolved the
-// directive. The scanner reports the directives it read within the list as
+// directive. The parser reports the directives it read within the list as
 // List.Extensible, and a directive beside the list freezes the gap between
 // them.
 func (k *picker) reached(list *block.List, next block.Node) bool {
@@ -119,7 +119,7 @@ func (k *picker) rewritable(list *block.List, marker string) bool {
 }
 
 // holds reports whether a line inside the list would be an item of it once the
-// list carried the marker. A line the scanner read as prose counts too:
+// list carried the marker. A line the parser read as prose counts too:
 // Asciidoctor ends a paragraph on an item of a list open around it, so the
 // rewrite would turn that line into one.
 func (k *picker) holds(list *block.List, marker string) bool {
