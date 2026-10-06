@@ -2,6 +2,7 @@
 
 This page lists the conventions that every contribution follows.
 Everyone who takes part follows the xref:CODE_OF_CONDUCT.adoc[Code of Conduct].
+Report bugs and suggest changes in https://github.com/ypfaff/adocfmt/issues[GitHub issues]; for a formatting bug, include the input, the expected output, and `adocfmt --version`.
 Report vulnerabilities privately, as the link:SECURITY.md[security policy] explains.
 
 Further pages for contributors:
