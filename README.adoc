@@ -2,7 +2,7 @@ image::docs/images/adocfmt-logo-light.svg#gh-light-mode-only[adocfmt,240]
 
 image::docs/images/adocfmt-logo-dark.svg#gh-dark-mode-only[adocfmt,240]
 
-image:https://api.scorecard.dev/projects/github.com/ypfaff/adocfmt/badge[OpenSSF Scorecard,link=https://scorecard.dev/viewer/?uri=github.com/ypfaff/adocfmt]
+image:https://img.shields.io/ossf-scorecard/github.com/ypfaff/adocfmt?label=openssf%20scorecard&style=for-the-badge[OpenSSF Scorecard,link=https://scorecard.dev/viewer/?uri=github.com/ypfaff/adocfmt] image:https://img.shields.io/cii/level/15262?label=openssf%20best%20practices&style=for-the-badge[OpenSSF Best Practices,link=https://www.bestpractices.dev/projects/15262]
 
 An opinionated AsciiDoc® formatter.
 
