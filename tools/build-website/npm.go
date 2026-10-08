@@ -13,7 +13,7 @@ import (
 )
 
 // lockfile is website/package-lock.json. The build takes its tools from the
-// packages it pins, so Dependabot updates them and GitHub reports their
+// packages it pins, so Renovate updates them and GitHub reports their
 // advisories, but nobody needs npm to build the website.
 const lockfile = "website/package-lock.json"
 

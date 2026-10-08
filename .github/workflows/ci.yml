@@ -49,7 +49,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       # Pinned, so that a release that formats differently arrives in its own
-      # Dependabot PR. The paths leave out testdata, whose cases are meant to be
+      # Renovate PR. The paths leave out testdata, whose cases are meant to be
       # unformatted.
       - name: Check the formatting of the documentation
         uses: ypfaff/adocfmt@d97e6c7945053ce3b1748e73784bac5c9c78eb66 # v0.3.0
