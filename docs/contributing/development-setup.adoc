@@ -11,6 +11,7 @@ This page lists the tools you need to work on adocfmt and the commands that buil
 
 Go::
 Version 1.27 or later, as link:../../go.mod[`go.mod`] states.
+The `toolchain` line there names the release CI builds with, and an older Go downloads that release on first use.
 
 Asciidoctor::
 The release that the tests run with.
