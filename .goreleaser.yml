@@ -71,7 +71,7 @@ changelog:
   filters:
     exclude:
       - "^(build|chore|style|test)(\\([^)]*\\))?:"
-      - "^ci(\\((deps|dependabot|website)\\))?:"
+      - "^ci(\\((deps|renovate|website)\\))?:"
   # A commit lands in the first group that matches, so a security fix or a
   # breaking change is listed there rather than under its type.
   groups:

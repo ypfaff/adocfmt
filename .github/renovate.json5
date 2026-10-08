@@ -1,0 +1,108 @@
+// Renovate proposes every update as a pull request; none merges by itself.
+// No presets: this file is everything Renovate does here.
+{
+  $schema: 'https://docs.renovatebot.com/renovate-schema.json',
+  extends: [],
+
+  timezone: 'Europe/Berlin',
+  // All of Monday, because the hosted app runs only every few hours.
+  schedule: ['* * * * 1'],
+  // A compromised release is usually pulled within days, so wait a week before
+  // proposing one. Security fixes skip the wait.
+  minimumReleaseAge: '7 days',
+  // Lists the updates still waiting, the open ones and the dependencies found.
+  dependencyDashboard: true,
+
+  semanticCommits: 'enabled',
+  semanticCommitType: 'chore',
+  semanticCommitScope: 'deps',
+
+  // The status checks require an up-to-date branch, so a pull request left
+  // behind by a merge is rebased and ready to merge again.
+  rebaseWhen: 'behind-base-branch',
+  postUpdateOptions: ['gomodTidy'],
+
+  customManagers: [
+    {
+      // The Asciidoctor that testdata/asciidoctor-cases comes from and CI installs.
+      customType: 'regex',
+      managerFilePatterns: ['/^internal/corpus/corpus\\.go$/'],
+      matchStrings: ['const Version = "(?<currentValue>[^"]+)"'],
+      depNameTemplate: 'asciidoctor',
+      datasourceTemplate: 'rubygems',
+    },
+    {
+      // The checkout in the workflow examples, which names a major version only.
+      customType: 'regex',
+      managerFilePatterns: ['/^docs/.+\\.adoc$/'],
+      matchStrings: ['uses: actions/checkout@(?<currentValue>v\\d+)\\n'],
+      depNameTemplate: 'actions/checkout',
+      datasourceTemplate: 'github-tags',
+      versioningTemplate: 'docker',
+    },
+  ],
+
+  packageRules: [
+    {
+      matchManagers: ['github-actions'],
+      semanticCommitType: 'ci',
+    },
+    {
+      matchFileNames: [
+        'tools/actionlint/go.mod',
+        'tools/govulncheck/go.mod',
+        'tools/htmltest/go.mod',
+      ],
+      semanticCommitType: 'ci',
+    },
+    {
+      // One pull request for the minor and patch updates of the actions.
+      // Majors stay out: they tend to change an action's inputs. So do updates
+      // that only move a digest, because they mean a tag was moved upstream.
+      matchManagers: ['github-actions'],
+      matchDepTypes: ['action'],
+      matchUpdateTypes: ['minor', 'patch'],
+      // adocfmt stays out while at 0.x, where a minor can break like a major:
+      // its own pull request takes the reformatted docs.
+      matchPackageNames: ['!ypfaff/adocfmt'],
+      groupName: 'actions',
+    },
+    {
+      // Its own releases need neither the week nor the Monday. The minutes
+      // cover the release run, which pushes the tag before the binaries.
+      matchPackageNames: ['ypfaff/adocfmt'],
+      schedule: ['at any time'],
+      minimumReleaseAge: '10 minutes',
+    },
+    {
+      // A Go patch release mostly fixes the standard library, which ships in
+      // the binary, so it needs neither the week nor the Monday. A new minor
+      // waits, so the tools have time to support it.
+      matchDepTypes: ['toolchain'],
+      matchUpdateTypes: ['patch'],
+      schedule: ['at any time'],
+      minimumReleaseAge: null,
+    },
+    {
+      // htmltest's last release, from 2022, pins a golang.org/x/net with known
+      // vulnerabilities, so every dependency stays current, not only the tool.
+      matchFileNames: ['tools/htmltest/go.mod'],
+      matchDepTypes: ['indirect'],
+      enabled: true,
+    },
+    {
+      // A major of a Go module has a new import path, which htmltest's code
+      // does not import: mergo v1 moved to dario.cat/mergo, yaml.v2 became
+      // yaml.v3.
+      matchFileNames: ['tools/htmltest/go.mod'],
+      matchUpdateTypes: ['major'],
+      enabled: false,
+    },
+    {
+      matchPackageNames: ['asciidoctor'],
+      prBodyNotes: [
+        'Follow docs/contributing/testing-strategy.adoc for a new Asciidoctor release.',
+      ],
+    },
+  ],
+}
