@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-colorable v0.1.15 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/wjdp/htmltest v0.17.0 // indirect
-	golang.org/x/net v0.59.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	gopkg.in/seborama/govcr.v2 v2.4.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
