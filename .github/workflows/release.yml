@@ -175,3 +175,37 @@ jobs:
             sleep 10
           done
           git push --force origin "refs/tags/${major}"
+
+      # Moves the pin in the documentation check to this release, but only when
+      # the release finds the docs formatted. If it does not, the pin stays, and
+      # Renovate opens a PR where the docs get reformatted.
+      - name: Pin the release in the documentation check
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          SHA: ${{ steps.tag.outputs.sha }}
+        run: |
+          go run ./tools/set-action-pin \
+            --sha "${SHA}" \
+            --version "${VERSION}" \
+            --file .github/actions/check-docs/action.yml
+
+      - name: Check the documentation with the release
+        id: check-docs
+        continue-on-error: true
+        uses: ./.github/actions/check-docs
+
+      - name: Push the pin
+        if: steps.check-docs.outcome == 'success'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git add .github/actions/check-docs/action.yml
+          # A retry of the same version finds the pin already committed.
+          git diff --cached --quiet ||
+            git commit --message "ci(deps): update ypfaff/adocfmt action to v${VERSION}"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
+
+      - name: Leave the pin to Renovate
+        if: steps.check-docs.outcome == 'failure'
+        run: echo "::warning::The documentation check with the release failed; Renovate proposes the pin in a PR"

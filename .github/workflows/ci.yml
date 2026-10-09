@@ -48,13 +48,8 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Pinned, so that a release that formats differently arrives in its own
-      # Renovate PR. The paths leave out testdata, whose cases are meant to be
-      # unformatted.
       - name: Check the formatting of the documentation
-        uses: ypfaff/adocfmt@1b2b178b656e6ef4fc05ec4f9f565fef3fa232c4 # v0.3.1
-        with:
-          args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
+        uses: ./.github/actions/check-docs
 
   test:
     runs-on: ubuntu-latest
