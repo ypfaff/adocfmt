@@ -56,6 +56,14 @@ func TestCollectWalksADirectory(t *testing.T) {
 	collectsTheWholeTree(t, tree(t))
 }
 
+// TestCollectWalksTheWorkingDirectory pins the walk of ".", the action's
+// default, which has to keep the leading dot of .hidden.
+func TestCollectWalksTheWorkingDirectory(t *testing.T) {
+	t.Chdir(tree(t))
+
+	collectsTheWholeTree(t, ".")
+}
+
 // collectsTheWholeTree fails unless collect walks root into the four AsciiDoc
 // files tree built, each under root's own name.
 func collectsTheWholeTree(t *testing.T, root string) {
