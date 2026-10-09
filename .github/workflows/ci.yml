@@ -52,7 +52,7 @@ jobs:
       # Renovate PR. The paths leave out testdata, whose cases are meant to be
       # unformatted.
       - name: Check the formatting of the documentation
-        uses: ypfaff/adocfmt@d97e6c7945053ce3b1748e73784bac5c9c78eb66 # v0.3.0
+        uses: ypfaff/adocfmt@1b2b178b656e6ef4fc05ec4f9f565fef3fa232c4 # v0.3.1
         with:
           args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
 
