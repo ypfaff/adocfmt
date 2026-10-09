@@ -41,30 +41,23 @@ func collect(paths []string, stderr io.Writer) ([]string, int) {
 }
 
 // walk lists the AsciiDoc files below dir, in path order and under dir's own
-// name. A link inside the tree is passed over, which is what filepath.WalkDir
-// does anyway: a link is no regular file, so the walk reaches neither the
-// directory behind it nor the file.
+// name. A link inside the tree is passed over, which is what fs.WalkDir does
+// anyway: a link is no regular file, so the walk reaches neither the directory
+// behind it nor the file.
 func walk(dir string, stderr io.Writer) ([]string, int) {
-	// WalkDir Lstats its root, so a linked directory has to be read through
-	// what it resolves to.
-	root, err := filepath.EvalSymlinks(dir)
-	if err != nil {
-		return nil, fail(stderr, "%s: %v", dir, err)
-	}
-
 	var files []string
 	code := exitOK
-	// The callback answers every error itself and returns fs.SkipDir alone,
-	// which the walk does not hand back.
-	_ = filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
+	// The callback returns no error but fs.SkipDir, and WalkDir does not pass
+	// that one on, so its result is always nil.
+	_ = fs.WalkDir(os.DirFS(dir), ".", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
-			// The error names the resolved path; dir is the one its reader
-			// typed. What lies behind it is unreachable, the rest is not.
+			// A directory that cannot be read costs only its own files, so
+			// report it and walk on.
 			code = max(code, fail(stderr, "%s: %v", dir, err))
 			return fs.SkipDir
 		}
 		if entry.Type().IsRegular() && hasExtension(path) {
-			files = append(files, filepath.Join(dir, strings.TrimPrefix(path, root)))
+			files = append(files, filepath.Join(dir, filepath.FromSlash(path)))
 		}
 		return nil
 	})
