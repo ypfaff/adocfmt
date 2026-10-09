@@ -68,11 +68,12 @@
       groupName: 'actions',
     },
     {
-      // Its own releases need neither the week nor the Monday. The minutes
-      // cover the release run, which pushes the tag before the binaries.
+      // Its own releases need neither the week nor the Monday. The release run
+      // moves the pin itself when the docs pass, so Renovate waits it out and
+      // only proposes the releases that reformat the docs.
       matchPackageNames: ['ypfaff/adocfmt'],
       schedule: ['at any time'],
-      minimumReleaseAge: '10 minutes',
+      minimumReleaseAge: '30 minutes',
     },
     {
       // A Go patch release mostly fixes the standard library, which ships in

@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-action.json
+name: Check the documentation
+description: Check the formatting of the documentation with the pinned adocfmt release.
+
+runs:
+  using: composite
+  steps:
+    # Pinned, so that a release that formats differently arrives in its own
+    # Renovate PR, which takes the reformatted docs. A release that accepts the
+    # docs as they are moves the pin itself; see tools/set-action-pin. The pin
+    # lives here rather than in ci.yml, because pushing a change to a workflow
+    # would need the release app to hold the workflows permission.
+    #
+    # The paths leave out testdata, whose cases are meant to be unformatted.
+    - uses: ypfaff/adocfmt@1b2b178b656e6ef4fc05ec4f9f565fef3fa232c4 # v0.3.1
+      with:
+        args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
