@@ -35,6 +35,8 @@ See <<versioning>> for the default.
 | `--check .`
 | The arguments passed to adocfmt.
 The action splits them at whitespace and does not honor quotes, so an argument cannot contain a space.
+It does not expand glob patterns such as `docs/*.adoc` either.
+To check every file under a directory, pass the directory.
 
 | `install-only`
 | `false`
