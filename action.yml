@@ -46,6 +46,9 @@ runs:
       env:
         ARGS: ${{ inputs.args }}
       run: |
+        # ARGS is left unquoted to split it at whitespace, and noglob keeps
+        # bash from expanding a pattern in it as well.
+        set -o noglob
         set +o errexit
         adocfmt ${ARGS}
         code=$?
