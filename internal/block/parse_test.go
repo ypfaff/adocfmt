@@ -1730,6 +1730,8 @@ Heading "= Title\n" title "Title"`,
 			if err != nil {
 				t.Fatal(err)
 			}
+			// The dump leaves out gaps and closing delimiters, so only this
+			// sees a byte lost or doubled there.
 			checkPartition(t, doc)
 			if got, want := dump(doc), strings.TrimPrefix(test.want, "\n")+"\n"; got != want {
 				t.Errorf("tree differs\ngot:\n%swant:\n%s", got, want)
