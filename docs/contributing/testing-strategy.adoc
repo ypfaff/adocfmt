@@ -154,15 +154,20 @@ A case that tests CRLF line endings therefore needs a line in link:../../.gitatt
 == Fuzzing
 
 The checks above run over fixed cases.
-Two fuzz targets search for source that the cases do not cover.
+Three fuzz targets search for source that the cases do not cover.
 
 link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`]::
-The <<identity,identity>> check.
+With every rule off, the <<identity,tree gives the source back>> byte for byte.
 Its seeds are a few line shapes written into the test, plus every document that `TestPrintIsIdentity` reads.
 
 link:../../internal/format/fuzz_test.go[`FuzzFormatIsIdempotent`]::
 Formatting a formatted document changes nothing, and adocfmt never refuses its own output.
 Its seeds are every Asciidoctor case and every golden input.
+
+link:../../internal/renderequivalence/fuzz_test.go[`FuzzFormatIsRenderEquivalent`]::
+Formatting does not change what the <<render-equivalence,rendered document>> shows.
+Its seeds are the same as those of `FuzzFormatIsIdempotent`.
+Like the other render checks, it needs Asciidoctor and is skipped with `-short`.
 
 The seeds run as ordinary cases with every `go test`.
 The search mutates them and runs on demand, one target at a time:
@@ -171,6 +176,7 @@ The search mutates them and runs on demand, one target at a time:
 ----
 go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 go test -fuzz=FuzzFormatIsIdempotent ./internal/format
+go test -fuzz=FuzzFormatIsRenderEquivalent ./internal/renderequivalence
 ----
 
 The search stops at the first input that breaks the test and saves it under `testdata/fuzz`.
