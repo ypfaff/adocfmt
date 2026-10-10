@@ -96,6 +96,10 @@ func TestReflow(t *testing.T) {
 		{"cross reference", "See <<id,Text. More>> now.", "See <<id,Text. More>> now."},
 		{"anchor", "Here [[id,Text. More]] now.", "Here [[id,Text. More]] now."},
 		{"index term", "Here ((Term. More)) now.", "Here ((Term. More)) now."},
+		{"counter", "See {counter:one. Two} now.", "See {counter:one. Two} now."},
+		{"line end in a counter", "See {counter2:a\nb} now.", "See {counter2:a\nb} now."},
+		{"brace right after a counter colon", "See {counter:}\n} now.", "See {counter:}\n} now."},
+		{"line end in other braces", "See {a\nb} now. Next.", "See {a b} now.\nNext."},
 		{"escaped backtick", "A \\` bb. Cc.", "A \\` bb.\nCc."},
 		{"unclosed backtick", "A ` bb. Cc.", "A ` bb.\nCc."},
 		{"unclosed bracket", "See x[aa. Bb", "See x[aa.\nBb"},
@@ -103,6 +107,7 @@ func TestReflow(t *testing.T) {
 		{"empty", "", ""},
 		{"lone mark", ".", "."},
 		{"ending in an opener", "One. (", "One. ("},
+		{"ending in a counter", "One. {counter:", "One. {counter:"},
 	}
 
 	for _, test := range tests {
