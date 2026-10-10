@@ -10,6 +10,9 @@ func TestNormalizeHTML(t *testing.T) {
 	if got, want := normalizeHTML("<p>a\n  b</p>\n"), "<p>a b</p>"; got != want {
 		t.Errorf("got %q, want %q", got, want)
 	}
+	if got, want := normalizeHTML("<p>a\n<br></p>"), "<p>a<br></p>"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
 	if normalizeHTML("<p>a</p>") == normalizeHTML("<p>b</p>") {
 		t.Error("collapsing whitespace hid a difference in the text")
 	}

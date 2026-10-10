@@ -21,15 +21,17 @@ var (
 	preBlock = regexp.MustCompile(`(?s)<pre[^>]*>(.*?)</pre>`)
 )
 
-// normalizeHTML collapses every run of whitespace to a single space.
+// normalizeHTML collapses every run of whitespace to a single space, and drops
+// the one in front of a line break.
 //
 // Where a paragraph wraps is invisible in the rendered page, because HTML shows
-// any run of whitespace as one space. Comparing the renderings byte for byte
-// would therefore report line breaks no reader can see. The whitespace that
-// does reach the reader sits in verbatim blocks, which verbatimBlocks compares
-// exactly.
+// any run of whitespace as one space, and none at the end of a line. Comparing
+// the renderings byte for byte would therefore report line breaks no reader can
+// see. The whitespace that does reach the reader sits in verbatim blocks, which
+// verbatimBlocks compares exactly.
 func normalizeHTML(rendered string) string {
-	return strings.TrimSpace(whitespaceRun.ReplaceAllString(rendered, " "))
+	collapsed := whitespaceRun.ReplaceAllString(rendered, " ")
+	return strings.TrimSpace(strings.ReplaceAll(collapsed, " <br>", "<br>"))
 }
 
 // verbatimBlocks returns the content of every code and literal block, in
