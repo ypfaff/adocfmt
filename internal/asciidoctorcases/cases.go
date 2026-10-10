@@ -15,6 +15,12 @@ const Dir = "testdata/asciidoctor-cases"
 
 // Version is the Asciidoctor release the cases come from. It pins them so
 // regenerating them is reproducible, and tracks the release the checks run with.
+//
+// After changing it, regenerate the cases with go run ./tools/fetch-asciidoctor-cases.
+// The parser also mirrors some of Asciidoctor's patterns and constants, and its
+// comments name each one, such as BlockTitleRx. Compare them in
+// lib/asciidoctor/rx.rb and lib/asciidoctor.rb, because the classification
+// check sees only the lines the cases hold.
 const Version = "2.0.26"
 
 // Files returns every case below root, in path order. The README the generator

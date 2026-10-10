@@ -23,9 +23,8 @@ It reports what it found and writes nothing.
 * Formatting a formatted document changes nothing.
 * No rule changes what the rendered document shows.
 The rendering that counts is Asciidoctor's, the reference implementation of AsciiDoc.
-xref:../contributing/testing-strategy.adoc[The testing strategy] describes how every rule is checked against Asciidoctor.
 
-xref:../explanation/safety.adoc[How adocfmt keeps your document safe] gives the reasons.
+xref:../explanation/safety.adoc[How adocfmt keeps your document safe] gives the reasons, and the xref:../contributing/testing-strategy.adoc#guarantees[testing strategy] shows how the tests check them.
 
 [#trailing-whitespace]
 == Trailing whitespace
