@@ -558,18 +558,13 @@ func precedesTitle(sh shape) bool {
 	}
 }
 
-// headerLines is what the document title takes under it: the author line and
-// the revision line. Asciidoctor counts the two rather than reading what they
-// say, so whatever stands there belongs to the header.
-const headerLines = 2
-
 // header is the document header, which stays compact: it runs to the first
-// blank line and takes headerLines under the title, with the attribute
-// entries, comment lines and comment blocks among them, which Asciidoctor
-// reads without counting. It resolves a directive before it counts, so which
-// lines are the author and the revision is unknown then: the header freezes
-// and runs to the blank line. twoLine says the title is written as a title and
-// an underline.
+// blank line and takes the author and the revision line under the title, with
+// the attribute entries, comment lines and comment blocks among them, which
+// Asciidoctor reads without counting. It resolves a directive before it counts,
+// so which lines are the author and the revision is unknown then: the header
+// freezes and runs to the blank line. twoLine says the title is written as a
+// title and an underline.
 func (p *parser) header(b base, title Span, twoLine bool) Node {
 	start := p.pos()
 	p.at++
@@ -596,13 +591,40 @@ func (p *parser) headerBody(b *base) {
 			p.at++
 		case sh.kind == shapeComment:
 			p.at++
-		case taken < headerLines || p.directiveSince(b.Extent().Start):
+		case isAuthorOrRevision(taken, p.text(p.lines[p.at])) || p.directiveSince(b.Extent().Start):
 			taken++
 			p.at++
 		default:
 			return
 		}
 	}
+}
+
+// isAuthorOrRevision reports whether a line under the title is the author or
+// the revision line, where taken counts the lines already read as one of them.
+// Asciidoctor takes the author line whatever it says, but the revision line
+// only when it matches RevisionInfoLineRx.
+func isAuthorOrRevision(taken int, text []byte) bool {
+	switch taken {
+	case 0:
+		return true
+	case 1:
+		return isRevisionLine(text)
+	default:
+		return false
+	}
+}
+
+// isRevisionLine mirrors Asciidoctor's RevisionInfoLineRx, which fails only
+// where the line and the text after each of its commas all start with a colon,
+// as :x and :x,:y do.
+func isRevisionLine(text []byte) bool {
+	for field := range bytes.SplitSeq(text, []byte(",")) {
+		if !bytes.HasPrefix(field, []byte(":")) {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *parser) attribute(b base) Node {

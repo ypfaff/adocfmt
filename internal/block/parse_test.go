@@ -29,6 +29,19 @@ List "-"
   ListItem "- two\n"`,
 		},
 		{
+			name: "a line starting with a colon is no revision, so the header ends at the author line",
+			src:  "= Title\nAuthor Name\n:x\nText.\n",
+			want: `
+Header "= Title\nAuthor Name\n" title "Title"
+Paragraph ":x\nText.\n"`,
+		},
+		{
+			name: "a field after a comma that starts otherwise makes it a revision",
+			src:  "= Title\nAuthor Name\n:x, 2020\n",
+			want: `
+Header "= Title\nAuthor Name\n:x, 2020\n" title "Title"`,
+		},
+		{
 			name: "a comment line under the title is read without being counted",
 			src:  "= Title\nAuthor Name\n// note\nv1, 2020\n- one\n",
 			want: `
