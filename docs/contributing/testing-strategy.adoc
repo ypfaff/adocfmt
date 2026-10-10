@@ -5,178 +5,94 @@ linkTitle: Testing strategy
 ---
 = Testing strategy
 
-Besides the unit tests of each package, four checks each guard one property of the formatter.
+Each package has its own unit tests.
+On top of them, three kinds of tests check the formatter as a whole:
 
-<<identity,Identity>>:: With every rule off, the tree gives the source back byte for byte.
+* <<golden-cases,Golden cases>> say what a rule should do.
+* <<guarantees,Guarantees>> say what adocfmt promises for any document.
+* <<classification,The classification check>> compares how the parser reads a line with how Asciidoctor reads it.
 
-<<classification,Classification>>:: The parser reads the first line of a block the way Asciidoctor does.
+[#inputs]
+== Test inputs
 
-<<render-equivalence,Render equivalence>>:: No rule changes what the rendered document shows.
+Asciidoctor cases::
+The test inputs of the Asciidoctor test suite, one file each under link:../../testdata/asciidoctor-cases[`testdata/asciidoctor-cases`].
+They give breadth, but hold little prose, and the lines inside an `ifdef` that is not set never reach the rendering.
 
-<<golden-files,Golden files>>:: A rule does what its cases say.
+Golden cases::
+Documents written for a rule, under link:../../testdata/golden[`testdata/golden`].
+They cover what the Asciidoctor cases miss, and a new or changed rule comes with them.
 
-The checks run over two sets of cases.
-Golden cases are written for a rule, and a new or changed rule comes with them.
-The Asciidoctor cases are the test inputs of the Asciidoctor test suite, stored under link:../../testdata/asciidoctor-cases[`testdata/asciidoctor-cases`].
-Identity and render equivalence run over both sets, which makes it more likely that a rule's mistake is caught even where no case was written for it.
+Fuzzing::
+Go's fuzzer mutates both sets in search of input that breaks a guarantee.
+The seeds run with every `go test`, the search only on demand.
+An input it finds is pinned as a golden case or as a case in link:../../internal/block/parse_test.go[`parse_test.go`].
 
-To run the tests, follow xref:development-setup.adoc#test[the development setup].
+[#golden-cases]
+== Golden cases
+
+A golden case is a directory with an `input.adoc` and a `golden.adoc`.
+link:../../internal/format/golden_test.go[`TestGoldenCases`] formats the input and expects the golden file byte for byte.
+The cases run with every rule on, so keep each input to what the rule under test has to do.
+
+`go run ./tools/update-golden` writes the golden files from the formatter's output.
+Read its diff before you commit it, because an unreviewed update turns a bug into the expectation.
+Asciidoctor strips trailing whitespace before it renders, so the <<render-equivalence,render check>> cannot see what a rule does to it.
+For such a rule, write `golden.adoc` by hand.
+
+[#guarantees]
+== Guarantees
+
+Three of the xref:../reference/rules.adoc#guarantees[guarantees] need no expected output, so they can be checked on any document.
+Each is checked by one test over every Asciidoctor case and every golden input.
+Its fuzz target starts from the same documents.
+
+[cols="1,1,1"]
+|===
+| | Test | Fuzz target
+
+| <<identity,Identity>>
+| link:../../internal/printer/printer_test.go[`TestPrintIsIdentity`]
+| link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`]
+
+| <<idempotence,Idempotence>>
+| link:../../internal/format/idempotence_test.go[`TestFormatIsIdempotent`]
+| link:../../internal/format/fuzz_test.go[`FuzzFormatIsIdempotent`]
+
+| <<render-equivalence,Render equivalence>>
+| link:../../internal/renderequivalence/cases_test.go[`TestFormatIsRenderEquivalent`]
+| link:../../internal/renderequivalence/fuzz_test.go[`FuzzFormatIsRenderEquivalent`]
+|===
 
 [#identity]
-== Identity
+=== Identity
 
-Printing the block tree with every rule off reproduces the source byte for byte.
-Render equivalence cannot replace this check, because a lost blank line renders the same.
+With every rule off, printing the parsed tree must give the source back byte for byte, so the parser loses nothing.
+The render check cannot show this: a lost blank line renders the same.
 
-The printer has a raw mode for this check.
-Raw mode walks the tree the same way as formatting mode, but prints every node as it stands.
-`Format` never offers raw mode, because turning the rules off is a test tool, not a mode of the formatter.
+[#idempotence]
+=== Idempotence
 
-link:../../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every Asciidoctor case and every golden case back and compares bytes.
-link:../../internal/block/partition_test.go[`TestParsePartitions`] checks that the nodes cover the source without gaps or overlaps, so a failure names the node that lost or repeated bytes.
-<<fuzzing,Fuzzing>> searches for source that the cases do not cover.
+The test formats each document twice.
+The second run must neither change nor refuse the output of the first.
+
+[#render-equivalence]
+=== Render equivalence
+
+The check renders the document with Asciidoctor before and after formatting and compares three things:
+
+* The HTML, with every run of whitespace collapsed, because a browser shows it as one space anyway.
+* The content of every code and literal block, byte for byte, because whitespace carries meaning there.
+* The comment lines of the source, because Asciidoctor drops them before they reach the HTML.
 
 [#classification]
 == Classification
 
-The parser decides what each block is, such as a heading, a list or a code block, and every rule builds on that decision.
-Asciidoctor decides what kind of block starts from the first line of the block, and so does the parser.
-link:../../internal/block/classify_oracle_test.go[`TestClassifyAgreesWithAsciidoctor`] compares that decision line by line.
+Every rule builds on what the parser decides a block is, such as a heading, a list or a code block.
+The parser, like Asciidoctor, decides most of it from the first line of the block.
+link:../../internal/block/classify_oracle_test.go[`TestClassifyAgreesWithAsciidoctor`] takes every line of the Asciidoctor cases, plus variants such as a leading `//` or a tab instead of a space.
+It asks both parsers what block each line starts and fails where they disagree.
+What the lines around it add, such as an underline or a `[source]` style above, is left to the render check.
 
-The test collects every distinct line of the Asciidoctor cases.
-It also edits each line in a few ways that can move it from one kind to another, such as a leading `//` or a tab instead of a space.
-adocfmt's parser reads each line as the first line of a block.
-So does link:../../internal/block/testdata/line_kinds.rb[`line_kinds.rb`], which asks Asciidoctor's own parser what block the line starts.
-The test fails on every line where the two disagree, and on any Asciidoctor release other than the pinned one.
-
-So a misread line shows up before any rule rewrites its block, not only once a rule does and the rendering changes.
-
-What depends on more than one line is out of the test's reach, such as where a list ends or whether two lines form a title.
-A wrong decision there does harm only where a rule rewrites the misread block, and there the <<render-equivalence,render equivalence>> checks fail.
-A misread block that no rule rewrites cannot change the rendered document.
-
-TIP: When you fix a misread block, add a case to link:../../internal/block/parse_test.go[`parse_test.go`] that pins the tree the parser now produces.
-
-[#render-equivalence]
-== Render equivalence
-
-Formatting is correct when it does not change what the reader of the rendered document sees.
-The rendering that counts is Asciidoctor's, the reference implementation of AsciiDoc.
-The checks render both sides and compare three things.
-
-Rendering::
-Both HTML renderings, with every run of whitespace collapsed to a single space, and none in front of a line break.
-Where a paragraph wraps is invisible in the rendered page, because HTML shows any run of whitespace as one space, and none at the end of a line.
-
-Verbatim content::
-The content of every code and literal block, byte for byte.
-Whitespace carries meaning there.
-Because this check compares it, the rendering check can ignore whitespace everywhere else.
-Asciidoctor strips trailing whitespace from those lines before it renders.
-So this check cannot see a rule that changes trailing whitespace there.
-
-Comments::
-The comment lines of both sources, in order, because Asciidoctor drops them before they reach the HTML.
-The check reads raw lines, not the block tree.
-So a comment that the parser took for prose still counts.
-
-link:../../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption`] feeds each check a document broken in the way the check is meant to catch, to prove that the check can fail at all.
-
-=== Where the checks run
-
-The Asciidoctor cases are the main input, because breadth gives confidence.
-There is one file per test input of the Asciidoctor test suite.
-Those inputs sit inside Ruby test files, so link:../../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] extracts them.
-link:../../internal/asciidoctorcases/cases.go[`cases.go`] pins the Asciidoctor release that the tool extracts from, which is also the release that the checks run with.
-After you change it, regenerate the cases:
-
-[source,shell]
-----
-go run ./tools/fetch-asciidoctor-cases
-----
-
-The parser mirrors some of Asciidoctor's patterns and constants, and its comments name each one, such as `BlockTitleRx` or `PARAGRAPH_STYLES`.
-Compare them between the two releases in `lib/asciidoctor/rx.rb` and `lib/asciidoctor.rb`, because the <<classification,classification check>> sees only the lines that the cases hold.
-
-link:../../internal/renderequivalence/cases_test.go[`TestFormatIsRenderEquivalent`] formats every Asciidoctor case and both files of every <<golden-files,golden case>>, and compares the result with the original.
-
-Some Asciidoctor cases are documents that adocfmt refuses, as xref:../decision-records/0003-refuse-what-the-scanner-cannot-read.adoc[decision record 0003] describes.
-The `refused` list in link:../../internal/renderequivalence/cases_test.go[`cases_test.go`] pins which ones, grouped by cause.
-If a case on that list formats after all, `TestFormatIsRenderEquivalent` fails.
-
-The Asciidoctor cases have two blind spots: they hold little prose, and each conditional in them is rendered in one reading only.
-Golden cases cover both with expectations written for them.
-
-[#golden-files]
-== Golden files
-
-Render equivalence shows that a rule does no harm; a golden case shows that it does what it should.
-A case is a directory under link:../../testdata/golden[`testdata/golden`] that holds two files:
-
-....
-testdata/golden/
-  <case>/
-    input.adoc
-    golden.adoc
-  <group>/<case>/
-    input.adoc
-    golden.adoc
-....
-
-`input.adoc` goes through the formatter, and the result must equal `golden.adoc` byte for byte.
-Directories can nest, so cases can be grouped by rule.
-The path below `testdata/golden` is the test name.
-
-The cases run with every rule on, so cut the input until only the rule under test has anything to do.
-The exception is link:../../testdata/golden/website/home-example[`website/home-example`], the before and after example on the home page of the website, which shows several rules at once.
-
-To add a case, write `input.adoc`, then let the formatter write the expectation:
-
-[source,shell]
-----
-go run ./tools/update-golden
-----
-
-IMPORTANT: Read the diff before you commit it.
-The tool records whatever the formatter produces, so an unreviewed update turns a bug into the expectation.
-
-The render checks are blind to some changes, such as trailing whitespace inside verbatim blocks or comments.
-For those, write `golden.adoc` by hand.
-
-Every rule also needs a case whose input is already in the rule's target state, so `input.adoc` and `golden.adoc` are identical.
-That case catches a rule that keeps reformatting its own output.
-
-Git stores every file in the repository with LF line endings.
-A case that tests CRLF line endings therefore needs a line in link:../../.gitattributes[`.gitattributes`] that exempts its files, such as `testdata/golden/list-markers/crlf/* -text`.
-
-[#fuzzing]
-== Fuzzing
-
-The checks above run over fixed cases.
-Three fuzz targets search for source that the cases do not cover.
-
-link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`]::
-With every rule off, the <<identity,tree gives the source back>> byte for byte.
-Its seeds are a few line shapes written into the test, plus every document that `TestPrintIsIdentity` reads.
-
-link:../../internal/format/fuzz_test.go[`FuzzFormatIsIdempotent`]::
-Formatting a formatted document changes nothing, and adocfmt never refuses its own output.
-Its seeds are the documents that `TestFormatIsIdempotent` reads.
-
-link:../../internal/renderequivalence/fuzz_test.go[`FuzzFormatIsRenderEquivalent`]::
-Formatting does not change what the <<render-equivalence,rendered document>> shows.
-Its seeds are the documents that `TestFormatIsRenderEquivalent` reads.
-Like the other render checks, it needs Asciidoctor and is skipped with `-short`.
-
-The seeds run as ordinary cases with every `go test`.
-The search mutates them and runs on demand, one target at a time:
-
-[source,shell]
-----
-go test -fuzz=FuzzPrintIsIdentity ./internal/printer
-go test -fuzz=FuzzFormatIsIdempotent ./internal/format
-go test -fuzz=FuzzFormatIsRenderEquivalent ./internal/renderequivalence
-----
-
-The search stops at the first input that breaks the test and saves it under `testdata/fuzz`.
-Fix the cause and pin it with a golden case or a case in `parse_test.go`, rather than committing the saved file.
+So a misread line shows up before any rule rewrites its block.
+The render check would see it only once a rule does, and only in a document that holds that line.
