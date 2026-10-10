@@ -72,8 +72,8 @@ func TestAsciidoctorCases(t *testing.T) {
 	if testing.Short() {
 		t.Skip("renders every case with Asciidoctor")
 	}
-	if _, err := exec.LookPath("asciidoctor"); err != nil {
-		t.Fatal("asciidoctor is not on the PATH")
+	if _, err := exec.LookPath("ruby"); err != nil {
+		t.Fatal("ruby is not on the PATH")
 	}
 
 	files, err := corpus.Files(casesDir)

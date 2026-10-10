@@ -59,10 +59,10 @@ func TestGoldenCasesAreFormatted(t *testing.T) {
 // changes meaning would be recorded as the expectation.
 func TestGoldenCasesRenderEquivalent(t *testing.T) {
 	if testing.Short() {
-		t.Skip("rendering shells out to Asciidoctor")
+		t.Skip("renders every case with Asciidoctor")
 	}
-	if _, err := exec.LookPath("asciidoctor"); err != nil {
-		t.Fatal("asciidoctor is not on the PATH")
+	if _, err := exec.LookPath("ruby"); err != nil {
+		t.Fatal("ruby is not on the PATH")
 	}
 
 	for _, dir := range goldenCases(t) {
