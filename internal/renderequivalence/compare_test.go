@@ -35,10 +35,9 @@ func TestComments(t *testing.T) {
 
 // TestChecksCatchCorruption proves the checks can fail.
 //
-// Format returns its input unchanged for now, so every case compares a document
-// against itself and passes whether the checks work or not. This test
-// hands them output that differs in a known way instead, and asserts that the
-// check meant to catch that difference is the one that reports it.
+// The other tests only hand the checks correct output, so a check that never
+// reports anything would pass them too. This test breaks the output on purpose,
+// such as by dropping a comment, and asserts that the matching check reports it.
 func TestChecksCatchCorruption(t *testing.T) {
 	const src = "= Title\nAnna Muster\n\n// a comment\nSome prose.\n\n----\nkeep   these   spaces\n----\n"
 
