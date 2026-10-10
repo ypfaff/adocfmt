@@ -30,6 +30,7 @@ With no path adocfmt reads stdin and writes the result to stdout.
 Flags come before the paths.
 A flag after a path is an error.
 A flag works with one dash as well as with two, so `-check` is the same as `--check`.
+To name a file that begins with a dash, put `--` before the paths, as in `adocfmt --check -- -draft.adoc`.
 
 == Flags
 
