@@ -144,6 +144,24 @@ func TestRun(t *testing.T) {
 			stderr: "--write stands behind a path",
 		},
 		{
+			name:   "a path behind -- may begin with a dash",
+			args:   []string{"--check", "--", "-missing.adoc"},
+			code:   exitError,
+			stderr: "no such file or directory",
+		},
+		{
+			name:   "a -- behind a path is a flag behind a path",
+			args:   []string{unformatted, "--", missing},
+			code:   exitError,
+			stderr: "-- stands behind a path",
+		},
+		{
+			name:   "a lone dash is a path, not a flag",
+			args:   []string{"-"},
+			code:   exitError,
+			stderr: "no such file or directory",
+		},
+		{
 			name:   "an unknown flag is a complaint",
 			args:   []string{"--nope"},
 			code:   exitError,

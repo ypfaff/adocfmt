@@ -56,12 +56,8 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	}
 
 	paths := flags.Args()
-	// flag stops at the first argument that is no flag, so one written behind a
-	// path arrives here as a path rather than as an error.
-	for _, path := range paths {
-		if strings.HasPrefix(path, "-") {
-			return fail(stderr, "%s stands behind a path, and flags come first", path)
-		}
+	if misplaced, ok := flagBehindPath(args, paths); ok {
+		return fail(stderr, "%s stands behind a path, and flags come first", misplaced)
 	}
 
 	switch {
@@ -79,6 +75,23 @@ func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	default:
 		return emitOne(paths, stdin, stdout, stderr)
 	}
+}
+
+// flagBehindPath finds a flag written behind a path. flag stops at the first
+// argument that is no flag, so such a flag arrives among the paths rather than
+// as an error.
+func flagBehindPath(args, paths []string) (string, bool) {
+	// flag drops the -- that ends the flags, so it stands right before the paths.
+	if before := len(args) - len(paths) - 1; before >= 0 && args[before] == "--" {
+		return "", false
+	}
+	for _, path := range paths {
+		// A lone - is no flag.
+		if len(path) > 1 && strings.HasPrefix(path, "-") {
+			return path, true
+		}
+	}
+	return "", false
 }
 
 // fail puts the program name in front, because a reader of a CI log has to see
