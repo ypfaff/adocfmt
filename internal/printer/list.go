@@ -70,12 +70,15 @@ func (k *picker) list(list *block.List, next block.Node) {
 	if canon, ok := canonical(list.Marker); ok && k.rewritable(list, canon) {
 		picked = canon
 	}
-	// Only the first line of a list can become a section title, and only where
-	// the list stands at section level. Where writing it would make one, that
-	// item prints as it stands, and the rest of the list keeps the marker the
-	// item carries: a second marker there would nest the rest under it.
+	// Only the first line of a list is read on its own, since Asciidoctor tries
+	// the lines below it as items of the list first. Writing it can make it
+	// something else, such as the break * * * from - * *, or, where the list
+	// stands at section level, a section title. Then that item prints as it
+	// stands, and the rest of the list keeps the marker the item carries: a
+	// second marker there would nest the rest under it.
 	items := list.Items
-	if list.Section && k.underlines(list, items[0], picked) {
+	first := firstLine(k.src, items[0], written(k.src, items[0], picked))
+	if k.readsAsOther(list, first) {
 		picked, items = "", items[1:]
 	}
 	for _, item := range items {
@@ -160,23 +163,37 @@ func (k *picker) carries(span block.Span, marker string) bool {
 	return false
 }
 
-// underlines reports whether the item's first line, written with the marker,
-// would turn the line below it into the underline of a section title.
+// firstLine is the item's first line as the rule writes it with the marker.
+func firstLine(src []byte, item *block.ListItem, marker string) []byte {
+	head, at := itemHead(src, item, marker)
+	if lines := block.Lines(src[at:item.Principal.End]); len(lines) > 0 {
+		head = append(head, lines[0]...)
+	}
+	return head
+}
+
+// readsAsOther reports whether the list's first line, as written, would no
+// longer start the list.
+func (k *picker) readsAsOther(list *block.List, first []byte) bool {
+	if !block.ReadsAs(list, first) {
+		return true
+	}
+	return list.Section && k.underlines(list, list.Items[0], first)
+}
+
+// underlines reports whether the item's first line, as written, would turn the
+// line below it into the underline of a section title.
 //
 // The line below is read from the source rather than from the output, because
 // the two are the same line here: the only line another rule may drop between
 // two items is a blank one, and what follows it is a marker, which no underline
 // is. It has to stand in the list as well, since under the list the printer
 // writes a blank line, and nothing underlines a blank line.
-func (k *picker) underlines(list *block.List, item *block.ListItem, picked string) bool {
+func (k *picker) underlines(list *block.List, item *block.ListItem, line []byte) bool {
 	if len(block.Lines(k.src[list.Lines().Start:list.Lines().End])) < 2 {
 		return false
 	}
-	head, at := itemHead(k.src, item, written(k.src, item, picked))
-	if lines := block.Lines(k.src[at:item.Principal.End]); len(lines) > 0 {
-		head = append(head, lines[0]...)
-	}
-	return block.UnderlinesTitle(head, block.LineBelow(k.src, item.Principal.Start))
+	return block.UnderlinesTitle(line, block.LineBelow(k.src, item.Principal.Start))
 }
 
 // itemHead builds the head of an item's first line: the indentation the marker

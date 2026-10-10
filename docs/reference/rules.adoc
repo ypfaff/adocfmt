@@ -584,7 +584,7 @@ term:: text
 * A list that an include or a conditional reaches, next to the list or inside one of its items.
 Nothing marks the end of a list, so the items that a directive brings in may still belong to it.
 Their markers are known only after Asciidoctor resolves the directive.
-* The first line of a list, where a shorter line would read as a section title.
+* The first line of a list, where the rewritten line would read as a section title or as a https://docs.asciidoctor.org/asciidoc/latest/blocks/breaks/[thematic break].
 The rest of the list keeps that line's marker.
 +
 .Example
