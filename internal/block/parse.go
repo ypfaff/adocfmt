@@ -140,7 +140,7 @@ type parser struct {
 	// items are the lines collected for the list items being read, innermost
 	// last, see itemEnd.
 	items []itemLines
-	// notes collects, for the printer, the blank-line runs and literal
+	// notes collects, for the printer, the blank lines and literal
 	// paragraphs the items found, see freezeItemGaps.
 	notes printerNotes
 

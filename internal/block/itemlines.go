@@ -254,6 +254,7 @@ func (r *itemReader) takeAttributes() bool {
 		if !keep {
 			return false
 		}
+		r.noteBareTerm(next)
 	}
 	for r.at < next {
 		r.take()
@@ -341,7 +342,7 @@ func (r *itemReader) afterBlank(sh shape) bool {
 }
 
 // noteRun notes for the printer a run of blank lines above the current line
-// that one blank line would not replace, see freezeRuns.
+// that one blank line would not replace, see freezeKeptGaps.
 //
 // Not in parser.rb. Under one blank line, the next turn of the loop checks a
 // delimiter, a dlist attribute line and an active continuation before
@@ -352,7 +353,20 @@ func (r *itemReader) noteRun(sh shape) {
 	delimiter := sh.kind == shapeDelimiter && !r.hasText
 	attributes := r.dlist && bracketed(sh.kind)
 	if r.continuation == continuationActive || delimiter || attributes {
-		r.p.notes.runs = append(r.p.notes.runs, r.p.lines[r.at].full.Start)
+		r.p.notes.keptGaps = append(r.p.notes.keptGaps, r.p.lines[r.at].full.Start)
+	}
+}
+
+// noteBareTerm notes for the printer the blank lines above a term without text
+// under block attribute lines, see freezeKeptGaps.
+//
+// Not in parser.rb. Under a blank line, a term above that still waits for text
+// takes the line as its text, see afterBlank. Without one, Asciidoctor reads
+// the line as a nested list whose term waits for text in turn, so it takes the
+// block under it.
+func (r *itemReader) noteBareTerm(at int) {
+	if !r.hasText && r.bareTerm(at) && r.shape(at-1).kind == shapeBlank {
+		r.p.notes.keptGaps = append(r.p.notes.keptGaps, r.p.lines[at].full.Start)
 	}
 }
 
@@ -405,17 +419,23 @@ func (r *itemReader) noteNestedList(kinds nestable) bool {
 		r.withinNested = true
 		return true
 	}
-	term, ok := termShape(r.p.src, r.p.lines[r.at])
-	if !ok {
+	if _, ok := termShape(r.p.src, r.p.lines[r.at]); !ok {
 		return false
 	}
 	// Ruby: within_nested_list = true
 	r.withinNested = true
 	// Ruby: has_text = false if nested_list_type == :dlist && $3.nil_or_empty?
-	if term.span.End == r.p.lines[r.at].text.End {
+	if r.bareTerm(r.at) {
 		r.hasText = false
 	}
 	return true
+}
+
+// bareTerm reports whether the line at is a term with nothing after its
+// separator.
+func (r *itemReader) bareTerm(at int) bool {
+	term, ok := termShape(r.p.src, r.p.lines[at])
+	return ok && term.span.End == r.p.lines[at].text.End
 }
 
 // siblingItem is is_sibling_list_item?, see siblingAt.

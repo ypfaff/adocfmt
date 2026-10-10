@@ -6,12 +6,12 @@ import (
 )
 
 // printerNotes are what reading the list items found for the printer: the
-// blank-line runs and the literal paragraphs that decide which lines an item
+// blank lines and the literal paragraphs that decide which lines an item
 // takes, see freezeItemGaps.
 type printerNotes struct {
-	// runs are where runs of blank lines end that one blank line would not
-	// replace, see noteRun.
-	runs []int
+	// keptGaps are where the blank lines end that the printer has to leave as
+	// they are, see noteRun and noteBareTerm.
+	keptGaps []int
 	// literals are the literal paragraphs collected whole, see takeLiteral.
 	literals []itemLiteral
 }
@@ -33,17 +33,16 @@ func (n *printerNotes) addLiterals(item *ListItem, literals []Span) {
 // item that found it: in front of the next item, or of the block under the
 // list.
 func (p *parser) freezeItemGaps(nodes []Node) {
-	p.notes.freezeRuns(nodes)
+	p.notes.freezeKeptGaps(nodes)
 	p.notes.freezeUnderLiterals(nodes)
 	p.notes.freezeInsideLiterals()
 	p.freezeAboveIndented(nodes, false)
 }
 
-// freezeRuns freezes the runs of blank lines that one blank line would not
-// replace.
-func (n *printerNotes) freezeRuns(nodes []Node) {
+// freezeKeptGaps freezes the gaps noted for the printer.
+func (n *printerNotes) freezeKeptGaps(nodes []Node) {
 	ends := map[int]bool{}
-	for _, end := range n.runs {
+	for _, end := range n.keptGaps {
 		ends[end] = true
 	}
 	eachNode(nodes, func(node Node) {
