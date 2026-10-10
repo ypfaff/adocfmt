@@ -65,8 +65,8 @@ The rendering that counts is Asciidoctor's, the reference implementation of Asci
 The checks render both sides and compare three things.
 
 Rendering::
-Both HTML renderings, with every run of whitespace collapsed to a single space.
-Where a paragraph wraps is invisible in the rendered page, because HTML shows any run of whitespace as one space.
+Both HTML renderings, with every run of whitespace collapsed to a single space, and none in front of a line break.
+Where a paragraph wraps is invisible in the rendered page, because HTML shows any run of whitespace as one space, and none at the end of a line.
 
 Verbatim content::
 The content of every code and literal block, byte for byte.
