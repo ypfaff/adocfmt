@@ -119,6 +119,52 @@ adocfmt: p: open p/locked: permission denied
 p/open/a.adoc
 ----
 
+[#ignore-file]
+== Leave a file unformatted
+
+A file that carries the comment `// adocfmt: ignore-file` above its document title stays exactly as it is:
+
+* `--write` does not touch the file.
+* `--check` does not list it and exits with 0 for it.
+* Without either flag, adocfmt writes the input to stdout byte for byte, from a file or from stdin.
+
+[source,asciidoc]
+----
+// adocfmt: ignore-file tables aligned by hand
+= API reference
+----
+
+Spelling::
+Two slashes, then any number of spaces or tabs, then `adocfmt: ignore-file` in lowercase, with one space after the colon.
+After it, a space or a tab can start a reason, which adocfmt ignores.
+Spellings such as `// ADOCFMT: ignore-file`, `// adocfmt-ignore-file` or `// adocfmt ignore-file` are ordinary comments.
+
+Placement::
+Only blank lines, other comment lines and comment blocks may stand above the comment, after the YAML front matter if the file has any.
+The comment must be a comment line of its own, not a line inside a `////` comment block.
++
+[cols="1,1"]
+|===
+| Honored | Not honored
+
+a|
+....
+---
+title: API reference
+---
+
+// Tables aligned by hand.
+// adocfmt: ignore-file
+= API reference
+....
+a|
+....
+= API reference
+// adocfmt: ignore-file
+:toc:
+....
+|===
+
 [#exit-codes]
 == Exit codes
 

@@ -19,12 +19,8 @@ var frontMatterFence = []byte("---")
 // It fails on input it must not silently repair: anything but UTF-8, and mixed
 // line endings.
 func Parse(src []byte) (*Document, error) {
-	doc := &Document{Src: src}
-	start := 0
-	if bytes.HasPrefix(src, byteOrderMark) {
-		doc.BOM = Span{0, len(byteOrderMark)}
-		start = len(byteOrderMark)
-	}
+	start := bodyStart(src)
+	doc := &Document{Src: src, BOM: Span{0, start}}
 	if !utf8.Valid(src[start:]) {
 		return nil, errors.New("source is not valid UTF-8")
 	}
@@ -52,6 +48,14 @@ func Parse(src []byte) (*Document, error) {
 
 	doc.Findings = p.findings
 	return doc, nil
+}
+
+// bodyStart is where the source starts behind its byte order mark.
+func bodyStart(src []byte) int {
+	if bytes.HasPrefix(src, byteOrderMark) {
+		return len(byteOrderMark)
+	}
+	return 0
 }
 
 // ReadsAs reports whether lines that replace the node's own still read as a

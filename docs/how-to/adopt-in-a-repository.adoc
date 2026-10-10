@@ -23,8 +23,8 @@ adocfmt --write .
 ----
 +
 adocfmt walks the directory and formats every file that ends in `.adoc` or `.asciidoc`.
-This includes files you do not maintain yourself, such as vendored dependencies.
 To format only some of the repository, name those paths instead of `.`, for example `adocfmt --write docs README.adoc`.
+<<leave-out>> shows how to keep files out for good.
 For the details of the walk, see xref:../reference/cli.adoc#files[Which files are collected].
 . Fix the documents that adocfmt refuses.
 adocfmt leaves a refused document unchanged and prints one line on stderr for each finding:
@@ -56,3 +56,17 @@ If your repository squashes or rebases changes when it merges them, use the hash
 Pass only AsciiDoc files, because adocfmt formats every file you name, whatever its extension.
 . Make CI fail when a file is not formatted.
 For the steps, see xref:check-in-ci.adoc[Check formatting in CI].
+
+[#leave-out]
+== Leave files out
+
+To keep adocfmt away from a file, add `// adocfmt: ignore-file` above its document title:
+
+[source,asciidoc]
+----
+// adocfmt: ignore-file
+= API reference
+----
+
+adocfmt then leaves the file as it is, in every mode.
+For the details, see xref:../reference/cli.adoc#ignore-file[Leave a file unformatted].
