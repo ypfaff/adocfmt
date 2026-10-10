@@ -2,6 +2,7 @@ package printer
 
 import (
 	"bytes"
+	"os"
 	"testing"
 
 	"github.com/ypfaff/adocfmt/internal/block"
@@ -10,7 +11,8 @@ import (
 // FuzzPrintIsIdentity searches for source the tree does not partition. The
 // seeds are the line shapes classify tells apart, in the arrangements that
 // make it backtrack: a list continuation with nothing to carry lost its blank
-// lines this way.
+// lines this way. Every document TestPrintIsIdentity reads is a seed too, so
+// the search also starts from shapes no seed here spells out.
 //
 //	go test -fuzz=FuzzPrintIsIdentity ./internal/printer
 func FuzzPrintIsIdentity(f *testing.F) {
@@ -55,6 +57,13 @@ func FuzzPrintIsIdentity(f *testing.F) {
 		"trailing.  \nbreak +  \n \t\n",
 	} {
 		f.Add([]byte(seed))
+	}
+	for _, path := range documents(f) {
+		src, err := os.ReadFile(path)
+		if err != nil {
+			f.Fatal(err)
+		}
+		f.Add(src)
 	}
 
 	f.Fuzz(func(t *testing.T, src []byte) {
