@@ -34,13 +34,21 @@ func TestFormatIsIdempotent(t *testing.T) {
 			if err != nil {
 				t.Skipf("refused: %v", err)
 			}
-			twice, err := Format(once)
-			if err != nil {
-				t.Fatalf("output of the first run is refused: %v", err)
-			}
-			if !bytes.Equal(once, twice) {
-				t.Errorf("the second run differs at %s", firstDifferingLine(once, twice))
-			}
+			checkSecondRun(t, once)
 		})
+	}
+}
+
+// checkSecondRun formats the output of a first run again and fails if the
+// second run refuses it or changes it.
+func checkSecondRun(t *testing.T, once []byte) {
+	t.Helper()
+
+	twice, err := Format(once)
+	if err != nil {
+		t.Fatalf("output of the first run is refused: %v", err)
+	}
+	if !bytes.Equal(once, twice) {
+		t.Errorf("the second run differs at %s", firstDifferingLine(once, twice))
 	}
 }
