@@ -13,10 +13,10 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 )
 
-// Each corpus line also runs edited, which carries it across the boundaries
+// Each line of the Asciidoctor cases also runs edited, which carries it across the boundaries
 // classify draws: a prefix that may turn it into metadata, a comment, an entry,
 // a list item, a quote, an escaped or an indented line; after the first char,
 // where a name starts, a space or a letter that Ruby counts and ASCII does not;
@@ -99,12 +99,12 @@ var kindNames = map[shapeKind]string{
 	shapeContinuation: "continuation",
 }
 
-// oracleLines returns every distinct line of the corpus and its edits, in
-// corpus order. They keep their trailing whitespace, so each side strips it
+// oracleLines returns every distinct line of the Asciidoctor cases and its
+// edits, in the order of the cases. They keep their trailing whitespace, so each side strips it
 // itself. Blank lines are left out, since Asciidoctor skips them before it
 // reads a block.
 func oracleLines() ([]string, error) {
-	files, err := corpus.Files(corpusDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func edits(l string) []string {
 
 // asciidoctorKinds runs line_kinds.rb over the lines once and returns the
 // kind it prints for each. It fails on an Asciidoctor other than the one the
-// corpus is pinned to, so an upgrade reruns the comparison on purpose.
+// cases are pinned to, so an upgrade reruns the comparison on purpose.
 func asciidoctorKinds(lines []string) ([]string, error) {
 	var in bytes.Buffer
 	enc := json.NewEncoder(&in)
@@ -161,8 +161,8 @@ func asciidoctorKinds(lines []string) ([]string, error) {
 	}
 
 	kinds := strings.Fields(string(out))
-	if kinds[0] != corpus.Version {
-		return nil, fmt.Errorf("asciidoctor is %s, the corpus is pinned to %s", kinds[0], corpus.Version)
+	if kinds[0] != asciidoctorcases.Version {
+		return nil, fmt.Errorf("asciidoctor is %s, the cases are pinned to %s", kinds[0], asciidoctorcases.Version)
 	}
 	return kinds[1:], nil
 }

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/format"
 	"github.com/ypfaff/adocfmt/internal/golden"
 )
@@ -27,7 +27,7 @@ func FuzzFormatIsRenderEquivalent(f *testing.F) {
 		f.Fatal("ruby is not on the PATH")
 	}
 
-	files, err := corpus.Files(casesDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		f.Fatal(err)
 	}

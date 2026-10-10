@@ -87,7 +87,7 @@ link:../../internal/renderequivalence/compare_test.go[`TestChecksCatchCorruption
 The Asciidoctor cases are the main input, because breadth gives confidence.
 There is one file per test input of the Asciidoctor test suite.
 Those inputs sit inside Ruby test files, so link:../../tools/fetch-asciidoctor-cases[`tools/fetch-asciidoctor-cases`] extracts them.
-link:../../internal/corpus/corpus.go[`corpus.go`] pins the Asciidoctor release that the tool extracts from, which is also the release that the checks run with.
+link:../../internal/asciidoctorcases/cases.go[`cases.go`] pins the Asciidoctor release that the tool extracts from, which is also the release that the checks run with.
 After you change it, regenerate the cases:
 
 [source,shell]

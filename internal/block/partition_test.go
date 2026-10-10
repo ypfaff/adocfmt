@@ -4,22 +4,22 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 )
 
-// corpusDir is relative to this package.
-const corpusDir = "../../" + corpus.Dir
+// asciidoctorCasesDir is relative to this package.
+const asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
 
 // TestParsePartitions guards what the package documentation promises: the tree
 // partitions its source. A byte no span owns disappears when printed, a byte two
 // spans own is printed twice, and neither shows in a rendering comparison.
 func TestParsePartitions(t *testing.T) {
-	files, err := corpus.Files(corpusDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range files {
-		t.Run(corpus.Name(corpusDir, path), func(t *testing.T) {
+		t.Run(asciidoctorcases.Name(asciidoctorCasesDir, path), func(t *testing.T) {
 			t.Parallel()
 
 			src, err := os.ReadFile(path)

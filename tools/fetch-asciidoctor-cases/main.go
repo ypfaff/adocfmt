@@ -20,12 +20,12 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/repo"
 )
 
 const (
-	asciidoctorTag = "v" + corpus.Version
+	asciidoctorTag = "v" + asciidoctorcases.Version
 	asciidoctorURL = "https://github.com/asciidoctor/asciidoctor"
 )
 
@@ -36,7 +36,7 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Println(corpus.Version)
+		fmt.Println(asciidoctorcases.Version)
 		return
 	}
 
@@ -50,7 +50,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	casesDir := filepath.Join(root, corpus.Dir)
+	casesDir := filepath.Join(root, asciidoctorcases.Dir)
 
 	checkout, err := os.MkdirTemp("", "asciidoctor")
 	if err != nil {
@@ -94,7 +94,7 @@ func run() error {
 	if err := writeReadme(casesDir, total); err != nil {
 		return err
 	}
-	log.Printf("%d cases in %s", total, corpus.Dir)
+	log.Printf("%d cases in %s", total, asciidoctorcases.Dir)
 	return nil
 }
 
@@ -139,7 +139,7 @@ func writeReadme(casesDir string, cases int) error {
 }
 
 // readme is the README the generator leaves next to the cases. It names the
-// pinned tag, so a test can tell whether the cases still match corpus.Version.
+// pinned tag, so a test can tell whether the cases still match asciidoctorcases.Version.
 func readme(cases int) string {
 	return fmt.Sprintf(`= Asciidoctor cases
 

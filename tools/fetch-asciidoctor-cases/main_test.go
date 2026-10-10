@@ -5,16 +5,16 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 )
 
-const casesDir = "../../" + corpus.Dir
+const casesDir = "../../" + asciidoctorcases.Dir
 
-// TestReadmeMatchesCases fails when corpus.Version changes but the cases were
-// not regenerated. CI installs the Asciidoctor that corpus.Version names, so
+// TestReadmeMatchesCases fails when asciidoctorcases.Version changes but the cases were
+// not regenerated. CI installs the Asciidoctor that asciidoctorcases.Version names, so
 // without this check the old cases would quietly run against the new release.
 func TestReadmeMatchesCases(t *testing.T) {
-	files, err := corpus.Files(casesDir)
+	files, err := asciidoctorcases.Files(casesDir)
 	if err != nil {
 		t.Fatal(err)
 	}

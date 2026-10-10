@@ -14,8 +14,8 @@ import (
 	"github.com/ypfaff/adocfmt/internal/renderequivalence"
 )
 
-// casesDir is relative to this package.
-const casesDir = "../../" + golden.Dir
+// goldenDir is relative to this package.
+const goldenDir = "../../" + golden.Dir
 
 func TestGoldenCases(t *testing.T) {
 	for _, dir := range goldenCases(t) {
@@ -86,7 +86,7 @@ func TestGoldenCasesRenderEquivalent(t *testing.T) {
 func goldenCases(t testing.TB) []string {
 	t.Helper()
 
-	cases, err := golden.Cases(casesDir)
+	cases, err := golden.Cases(goldenDir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func goldenCases(t testing.TB) []string {
 }
 
 func caseName(dir string) string {
-	return strings.TrimPrefix(filepath.ToSlash(dir), casesDir+"/")
+	return strings.TrimPrefix(filepath.ToSlash(dir), goldenDir+"/")
 }
 
 func readCase(t testing.TB, dir, name string) []byte {

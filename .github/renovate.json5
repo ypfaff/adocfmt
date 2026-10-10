@@ -26,7 +26,7 @@
     {
       // The Asciidoctor that testdata/asciidoctor-cases comes from and CI installs.
       customType: 'regex',
-      managerFilePatterns: ['/^internal/corpus/corpus\\.go$/'],
+      managerFilePatterns: ['/^internal/asciidoctorcases/cases\\.go$/'],
       matchStrings: ['const Version = "(?<currentValue>[^"]+)"'],
       depNameTemplate: 'asciidoctor',
       datasourceTemplate: 'rubygems',

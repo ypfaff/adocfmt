@@ -11,7 +11,7 @@ var (
 	//
 	// Only single-quoted heredocs are taken. The quotes stop Ruby from
 	// interpolating, so the body is literal AsciiDoc; the unquoted form may hold
-	// #{...} expressions, which would reach the corpus as broken markup.
+	// #{...} expressions, which would reach the cases as broken markup.
 	heredocStart = regexp.MustCompile(`input = <<~'([A-Za-z_]+)'`)
 
 	// testName matches the enclosing `test '...' do`, whose name becomes the
@@ -105,7 +105,7 @@ func fileName(testName string) string {
 	return name
 }
 
-// path is where a case goes, relative to the corpus directory.
+// path is where a case goes, relative to the cases directory.
 func (c testCase) path(dir string, number int) string {
 	return fmt.Sprintf("%s/%04d-%s.adoc", dir, number, c.name)
 }
