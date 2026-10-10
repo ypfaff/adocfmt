@@ -15,6 +15,9 @@
 # Local planning / scratch files
 tmp/
 
+# Fuzz findings
+**/testdata/fuzz/
+
 # Build output
 bin/
 dist/

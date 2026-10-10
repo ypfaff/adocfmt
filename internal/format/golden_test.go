@@ -83,7 +83,7 @@ func TestGoldenCasesRenderEquivalent(t *testing.T) {
 	}
 }
 
-func goldenCases(t *testing.T) []string {
+func goldenCases(t testing.TB) []string {
 	t.Helper()
 
 	cases, err := golden.Cases(casesDir)
@@ -97,7 +97,7 @@ func caseName(dir string) string {
 	return strings.TrimPrefix(filepath.ToSlash(dir), casesDir+"/")
 }
 
-func readCase(t *testing.T, dir, name string) []byte {
+func readCase(t testing.TB, dir, name string) []byte {
 	t.Helper()
 
 	src, err := os.ReadFile(filepath.Join(dir, name))

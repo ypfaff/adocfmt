@@ -34,17 +34,7 @@ Raw mode walks the tree the same way as formatting mode, but prints every node a
 
 link:../../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every Asciidoctor case and every golden case back and compares bytes.
 link:../../internal/block/partition_test.go[`TestParsePartitions`] checks that the nodes cover the source without gaps or overlaps, so a failure names the node that lost or repeated bytes.
-link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`] searches for source that the Asciidoctor cases do not cover.
-Its seeds are a few line shapes written into the test, plus every document that `TestPrintIsIdentity` reads.
-They run as ordinary cases with every `go test`.
-The search mutates the seeds and runs on demand:
-
-[source,shell]
-----
-go test -fuzz=FuzzPrintIsIdentity ./internal/printer
-----
-
-An input that the search finds breaking the test is saved under `testdata/fuzz` and runs from then on.
+<<fuzzing,Fuzzing>> searches for source that the cases do not cover.
 
 [#classification]
 == Classification
@@ -159,3 +149,29 @@ That case catches a rule that keeps reformatting its own output.
 
 Git stores every file in the repository with LF line endings.
 A case that tests CRLF line endings therefore needs a line in link:../../.gitattributes[`.gitattributes`] that exempts its files, such as `testdata/golden/list-markers/crlf/* -text`.
+
+[#fuzzing]
+== Fuzzing
+
+The checks above run over fixed cases.
+Two fuzz targets search for source that the cases do not cover.
+
+link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`]::
+The <<identity,identity>> check.
+Its seeds are a few line shapes written into the test, plus every document that `TestPrintIsIdentity` reads.
+
+link:../../internal/format/fuzz_test.go[`FuzzFormatIsIdempotent`]::
+Formatting a formatted document changes nothing, and adocfmt never refuses its own output.
+Its seeds are every Asciidoctor case and every golden input.
+
+The seeds run as ordinary cases with every `go test`.
+The search mutates them and runs on demand, one target at a time:
+
+[source,shell]
+----
+go test -fuzz=FuzzPrintIsIdentity ./internal/printer
+go test -fuzz=FuzzFormatIsIdempotent ./internal/format
+----
+
+The search stops at the first input that breaks the test and saves it under `testdata/fuzz`.
+Fix the cause and pin it with a golden case or a case in `parse_test.go`, rather than committing the saved file.
