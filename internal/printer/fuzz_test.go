@@ -2,10 +2,10 @@ package printer
 
 import (
 	"bytes"
-	"os"
 	"testing"
 
 	"github.com/ypfaff/adocfmt/internal/block"
+	"github.com/ypfaff/adocfmt/internal/testdocs"
 )
 
 // FuzzPrintIsIdentity searches for source the tree does not partition. The
@@ -58,12 +58,8 @@ func FuzzPrintIsIdentity(f *testing.F) {
 	} {
 		f.Add([]byte(seed))
 	}
-	for _, path := range documents(f) {
-		src, err := os.ReadFile(path)
-		if err != nil {
-			f.Fatal(err)
-		}
-		f.Add(src)
+	for _, doc := range testdocs.Documents(f) {
+		f.Add(doc.Src)
 	}
 
 	f.Fuzz(func(t *testing.T, src []byte) {

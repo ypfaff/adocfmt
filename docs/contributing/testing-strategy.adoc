@@ -98,12 +98,11 @@ go run ./tools/fetch-asciidoctor-cases
 The parser mirrors some of Asciidoctor's patterns and constants, and its comments name each one, such as `BlockTitleRx` or `PARAGRAPH_STYLES`.
 Compare them between the two releases in `lib/asciidoctor/rx.rb` and `lib/asciidoctor.rb`, because the <<classification,classification check>> sees only the lines that the cases hold.
 
-link:../../internal/renderequivalence/cases_test.go[`TestAsciidoctorCases`] formats every case and compares the result with the original.
-link:../../internal/format/golden_test.go[`TestGoldenCasesRenderEquivalent`] does the same for every <<golden-files,golden case>>, comparing the input with the expectation.
+link:../../internal/renderequivalence/cases_test.go[`TestFormatIsRenderEquivalent`] formats every Asciidoctor case and both files of every <<golden-files,golden case>>, and compares the result with the original.
 
 Some Asciidoctor cases are documents that adocfmt refuses, as xref:../decision-records/0003-refuse-what-the-scanner-cannot-read.adoc[decision record 0003] describes.
 The `refused` list in link:../../internal/renderequivalence/cases_test.go[`cases_test.go`] pins which ones, grouped by cause.
-If a case on that list formats after all, `TestAsciidoctorCases` fails.
+If a case on that list formats after all, `TestFormatIsRenderEquivalent` fails.
 
 The Asciidoctor cases have two blind spots: they hold little prose, and each conditional in them is rendered in one reading only.
 Golden cases cover both with expectations written for them.
@@ -162,11 +161,11 @@ Its seeds are a few line shapes written into the test, plus every document that 
 
 link:../../internal/format/fuzz_test.go[`FuzzFormatIsIdempotent`]::
 Formatting a formatted document changes nothing, and adocfmt never refuses its own output.
-Its seeds are every Asciidoctor case and every golden input.
+Its seeds are the documents that `TestFormatIsIdempotent` reads.
 
 link:../../internal/renderequivalence/fuzz_test.go[`FuzzFormatIsRenderEquivalent`]::
 Formatting does not change what the <<render-equivalence,rendered document>> shows.
-Its seeds are the same as those of `FuzzFormatIsIdempotent`.
+Its seeds are the documents that `TestFormatIsRenderEquivalent` reads.
 Like the other render checks, it needs Asciidoctor and is skipped with `-short`.
 
 The seeds run as ordinary cases with every `go test`.
