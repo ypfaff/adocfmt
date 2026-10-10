@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
-	"strings"
 )
 
 // Dir holds the cases, relative to the repository root.
@@ -38,11 +37,4 @@ func Files(root string) ([]string, error) {
 		return nil, fmt.Errorf("no cases in %s; run go run ./tools/fetch-asciidoctor-cases", root)
 	}
 	return files, nil
-}
-
-// Name is the case name of a file below root: its path without the root and
-// the extension, so it reads the same on every platform.
-func Name(root, path string) string {
-	rel := strings.TrimPrefix(filepath.ToSlash(path), filepath.ToSlash(root)+"/")
-	return strings.TrimSuffix(rel, ".adoc")
 }

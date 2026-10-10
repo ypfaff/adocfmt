@@ -1,22 +1,16 @@
 package renderequivalence
 
 import (
-	"os"
 	"os/exec"
-	"path/filepath"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/format"
-	"github.com/ypfaff/adocfmt/internal/golden"
+	"github.com/ypfaff/adocfmt/internal/testdocs"
 )
 
-// goldenDir is relative to this package.
-const goldenDir = "../../" + golden.Dir
-
 // FuzzFormatIsRenderEquivalent searches for source whose formatted form
-// Asciidoctor renders differently. The seeds are every Asciidoctor case and
-// every golden input.
+// Asciidoctor renders differently. The seeds are the documents
+// TestFormatIsRenderEquivalent reads.
 //
 //	go test -fuzz=FuzzFormatIsRenderEquivalent ./internal/renderequivalence
 func FuzzFormatIsRenderEquivalent(f *testing.F) {
@@ -27,23 +21,8 @@ func FuzzFormatIsRenderEquivalent(f *testing.F) {
 		f.Fatal("ruby is not on the PATH")
 	}
 
-	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
-	if err != nil {
-		f.Fatal(err)
-	}
-	cases, err := golden.Cases(goldenDir)
-	if err != nil {
-		f.Fatal(err)
-	}
-	for _, dir := range cases {
-		files = append(files, filepath.Join(dir, golden.InputFile))
-	}
-	for _, path := range files {
-		src, err := os.ReadFile(path)
-		if err != nil {
-			f.Fatal(err)
-		}
-		f.Add(src)
+	for _, doc := range testdocs.Documents(f) {
+		f.Add(doc.Src)
 	}
 
 	f.Fuzz(func(t *testing.T, src []byte) {

@@ -2,19 +2,10 @@ package printer
 
 import (
 	"bytes"
-	"os"
-	"path/filepath"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/block"
-	"github.com/ypfaff/adocfmt/internal/golden"
-)
-
-// The two directories are relative to this package.
-const (
-	asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
-	goldenDir           = "../../" + golden.Dir
+	"github.com/ypfaff/adocfmt/internal/testdocs"
 )
 
 // TestPrintIsIdentity pins the one guarantee the tree gives: with every rule
@@ -22,50 +13,19 @@ const (
 // checks cannot stand in for this, because they collapse the whitespace a lost
 // blank line would show up in.
 func TestPrintIsIdentity(t *testing.T) {
-	for name, path := range documents(t) {
-		t.Run(name, func(t *testing.T) {
+	for _, doc := range testdocs.Documents(t) {
+		t.Run(doc.Name, func(t *testing.T) {
 			t.Parallel()
 
-			src, err := os.ReadFile(path)
+			tree, err := block.Parse(doc.Src)
 			if err != nil {
 				t.Fatal(err)
 			}
-			doc, err := block.Parse(src)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if got := PrintRaw(doc); !bytes.Equal(got, src) {
-				t.Errorf("output differs from the source at byte %d", firstDifference(got, src))
+			if got := PrintRaw(tree); !bytes.Equal(got, doc.Src) {
+				t.Errorf("output differs from the source at byte %d", firstDifference(got, doc.Src))
 			}
 		})
 	}
-}
-
-// documents lists every AsciiDoc file the tests own, by name: the Asciidoctor
-// cases and both sides of every golden case.
-func documents(t testing.TB) map[string]string {
-	t.Helper()
-
-	docs := map[string]string{}
-	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, path := range files {
-		docs[asciidoctorcases.Name(asciidoctorCasesDir, path)] = path
-	}
-
-	cases, err := golden.Cases(goldenDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, dir := range cases {
-		for _, file := range []string{golden.InputFile, golden.GoldenFile} {
-			path := filepath.Join(dir, file)
-			docs[asciidoctorcases.Name(goldenDir, path)] = path
-		}
-	}
-	return docs
 }
 
 func firstDifference(a, b []byte) int {

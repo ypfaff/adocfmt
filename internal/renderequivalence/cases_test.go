@@ -1,16 +1,12 @@
 package renderequivalence
 
 import (
-	"os"
 	"os/exec"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/format"
+	"github.com/ypfaff/adocfmt/internal/testdocs"
 )
-
-// asciidoctorCasesDir is relative to this package.
-const asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
 
 // notRenderable names the cases Asciidoctor cannot render here, and why.
 // Everything else has to render, so a broken installation fails the run
@@ -68,34 +64,24 @@ func byCase(byCause map[string][]string) map[string]string {
 	return cases
 }
 
-func TestAsciidoctorCases(t *testing.T) {
+func TestFormatIsRenderEquivalent(t *testing.T) {
 	if testing.Short() {
-		t.Skip("renders every case with Asciidoctor")
+		t.Skip("renders every document with Asciidoctor")
 	}
 	if _, err := exec.LookPath("ruby"); err != nil {
 		t.Fatal("ruby is not on the PATH")
 	}
 
-	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, path := range files {
-		name := asciidoctorcases.Name(asciidoctorCasesDir, path)
-		t.Run(name, func(t *testing.T) {
+	for _, doc := range testdocs.Documents(t) {
+		t.Run(doc.Name, func(t *testing.T) {
 			t.Parallel()
 
-			if reason, ok := notRenderable[name]; ok {
+			if reason, ok := notRenderable[doc.Name]; ok {
 				t.Skip(reason)
 			}
 
-			src, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			formatted, err := format.Format(src)
-			reason, refused := refused[name]
+			formatted, err := format.Format(doc.Src)
+			reason, refused := refused[doc.Name]
 			switch {
 			case refused && err == nil:
 				t.Fatal("formats; remove it from refused")
@@ -104,7 +90,7 @@ func TestAsciidoctorCases(t *testing.T) {
 			case err != nil:
 				t.Fatal(err)
 			}
-			findings, err := Differences(src, formatted)
+			findings, err := Differences(doc.Src, formatted)
 			if err != nil {
 				t.Fatal(err)
 			}
