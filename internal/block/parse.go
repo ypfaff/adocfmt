@@ -344,7 +344,7 @@ func (p *parser) metaLine(b *base, closer []byte, textOnly bool) bool {
 		p.reach(b, sh)
 		p.at++
 	case MetaAttrEntry:
-		open = p.entry(b)
+		open = p.entry(b, closer)
 	case MetaCommentBlock:
 		p.commentBlock()
 	default:
@@ -480,7 +480,7 @@ func (p *parser) body(b base, closer []byte, textOnly bool) Node {
 		}
 		return p.contentBlock(b, sh, closer)
 	case shapeAttrEntry:
-		return p.attribute(b)
+		return p.attribute(b, closer)
 	case shapeDirective:
 		return p.directive(b, sh)
 	case shapeContinuation:
@@ -583,7 +583,7 @@ func (p *parser) headerBody(b *base) {
 		sh := p.shape()
 		switch {
 		case sh.kind == shapeAttrEntry:
-			p.entry(b)
+			p.entry(b, nil)
 		case sh.kind == shapeDelimiter && sh.char == '/':
 			p.commentBlock()
 		case sh.kind == shapeDirective:
@@ -627,9 +627,9 @@ func isRevisionLine(text []byte) bool {
 	return false
 }
 
-func (p *parser) attribute(b base) Node {
+func (p *parser) attribute(b base, closer []byte) Node {
 	start := p.pos()
-	p.entry(&b)
+	p.entry(&b, closer)
 	b.lines = Span{start, p.pos()}
 	return &Attribute{base: b}
 }
@@ -638,14 +638,16 @@ func (p *parser) attribute(b base) Node {
 // continue its value. Asciidoctor takes every line up to a blank one for as
 // long as the line before ends in the entry's own wrap marker, whatever the
 // line looks like. A directive among them it resolves first, so the entry
-// freezes the way a paragraph around a directive does.
+// freezes the way a paragraph around a directive does. Inside a delimited
+// block Asciidoctor reads only the lines up to the closing delimiter, so the
+// value ends there too.
 //
 // It reports whether a blank line is what ended the value, see Meta.Open.
-func (p *parser) entry(b *base) bool {
+func (p *parser) entry(b *base, closer []byte) bool {
 	e, _ := parseAttrEntry(p.text(p.lines[p.at]))
 	p.bind(e)
 	p.at++
-	for open := e.wrap != ""; open && !p.done(); p.at++ {
+	for open := e.wrap != ""; open && !p.done() && !p.closes(closer); p.at++ {
 		sh := p.shape()
 		if sh.kind == shapeBlank {
 			return true

@@ -142,6 +142,13 @@ Header "= Title\n:a: one \\\n:hardbreaks:\n" title "Title"
 Paragraph "a\nb\n"`,
 		},
 		{
+			name: "the closing delimiter of the enclosing block ends the value",
+			src:  "====\n:a: one \\\n====\n",
+			want: `
+Container "====\n"
+  Attribute ":a: one \\\n"`,
+		},
+		{
 			name: "a name may hold spaces, dots and slashes, and is sanitized before it binds",
 			src:  ":a b: v\n:a.b: v\n:a/b: v\n:Hard Breaks:\n\na\nb\n",
 			want: `

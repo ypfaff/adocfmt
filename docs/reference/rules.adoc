@@ -365,7 +365,7 @@ term:: text
 Asciidoctor drops comments before it renders, so nothing ties a comment to the block beneath it.
 Removing that blank line would make a comment that stands on its own read as a comment about the block below it.
 * The blank line under an attribute entry whose last line still ends in `{backslash}` or `{plus}`.
-The value runs on to the next blank line.
+The value runs on to the next blank line or to the end of the block it stands in.
 Removing that blank line would make the block below part of the attribute value instead of rendering it.
 * The lines below front matter, down to the first blank line: adocfmt adds no blank line between them.
 Asciidoctor skips front matter only when it is told to.
