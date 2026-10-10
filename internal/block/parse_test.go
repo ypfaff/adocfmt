@@ -703,6 +703,26 @@ List "::"
 Verbatim "----\n"`,
 		},
 		{
+			name: "under a term without text, the blank line between a block attribute line and a nested term without text stays",
+			src:  "a::\n[]\n\nb:::\n\nc\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    List gap! meta("[]\n") ":::"
+      ListItem "b:::\n"
+Paragraph "c\n"`,
+		},
+		{
+			name: "under a term without text, the blank line between a block attribute line and a nested term with text may go",
+			src:  "a::\n[]\n\nb::: x\n\nc\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    List meta("[]\n") ":::"
+      ListItem "b::: x\n"
+Paragraph "c\n"`,
+		},
+		{
 			name: "a callout list after metadata and a blank line ends the list, the item keeps the metadata",
 			src:  "* a\n[[id]]\n\n<1> b\n",
 			want: `
