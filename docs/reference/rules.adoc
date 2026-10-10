@@ -19,6 +19,7 @@ A line that a rule writes ends the same way as the rest of the file.
 No other rule changes them, because their content is known only after Asciidoctor resolves the directive.
 * adocfmt refuses a document that it cannot read reliably.
 It reports what it found and writes nothing.
+* A file with the comment `// adocfmt: ignore-file` above its document title is left exactly as it is; see xref:cli.adoc#ignore-file[Leave a file unformatted].
 * Formatting a formatted document changes nothing.
 * No rule changes what the rendered document shows.
 The rendering that counts is Asciidoctor's, the reference implementation of AsciiDoc.

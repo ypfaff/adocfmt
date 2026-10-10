@@ -39,7 +39,13 @@ func (r *Refusal) Error() string {
 // A document the parser reported findings on is refused with all of them,
 // because formatting the part it did understand would report success on a
 // document it barely touched.
+//
+// A document that says adocfmt: ignore-file above its title comes back as it
+// is, unread, so a refusal behind the directive goes unreported too.
 func Format(src []byte) ([]byte, error) {
+	if block.IgnoresFile(src) {
+		return src, nil
+	}
 	doc, err := block.Parse(src)
 	if err != nil {
 		return nil, err

@@ -7,7 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
+
+// ignoredSrc would change if adocfmt formatted it.
+const ignoredSrc = "// adocfmt: ignore-file\nText.   \n\n\n== Section ==\n"
 
 func TestRun(t *testing.T) {
 	dir := t.TempDir()
@@ -31,6 +35,7 @@ func TestRun(t *testing.T) {
 		write(filepath.Join("tree", filepath.FromSlash(name)), "Text.   \n")
 	}
 	refused := write("refused.adoc", "ifdef::extra[]\n\n----\ncode\n")
+	ignored := write("ignored.adoc", ignoredSrc)
 	mixed := write("mixed.adoc", "a\r\nb\n")
 	missing := filepath.Join(dir, "missing.adoc")
 
@@ -79,6 +84,23 @@ func TestRun(t *testing.T) {
 			stdout: filepath.Join(walked, "a.adoc") + "\n" +
 				filepath.Join(walked, "b.asciidoc") + "\n" +
 				filepath.Join(walked, "nested", "c.adoc") + "\n",
+		},
+		{
+			name: "check says nothing about a file that says adocfmt: ignore-file",
+			args: []string{"--check", ignored},
+			code: exitOK,
+		},
+		{
+			name:   "a file that says adocfmt: ignore-file is output as it is",
+			args:   []string{ignored},
+			code:   exitOK,
+			stdout: ignoredSrc,
+		},
+		{
+			name:   "stdin that says adocfmt: ignore-file is output as it is",
+			stdin:  ignoredSrc,
+			code:   exitOK,
+			stdout: ignoredSrc,
 		},
 		{
 			name:   "a refusal outweighs a file that would change",
@@ -247,6 +269,33 @@ func TestRunWritesNoFile(t *testing.T) {
 				t.Errorf("the file changed to %q, want %q", after, src)
 			}
 		})
+	}
+}
+
+// TestRunWritesNoIgnoredFile pins that --write does not even rewrite a file
+// that says adocfmt: ignore-file with the same bytes.
+func TestRunWritesNoIgnoredFile(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), "doc.adoc")
+	if err := os.WriteFile(path, []byte(ignoredSrc), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	old := time.Date(2001, time.January, 1, 0, 0, 0, 0, time.UTC)
+	if err := os.Chtimes(path, old, old); err != nil {
+		t.Fatal(err)
+	}
+
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"--write", path}, nil, &stdout, &stderr); code != exitOK {
+		t.Errorf("got exit %d, want %d (stderr: %s)", code, exitOK, &stderr)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !info.ModTime().Equal(old) {
+		t.Errorf("the file was rewritten: its time moved to %v", info.ModTime())
 	}
 }
 

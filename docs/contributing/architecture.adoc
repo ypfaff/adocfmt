@@ -31,6 +31,7 @@ The parser reads the source into a block tree.
 It reads only as much structure as the rules need, so inline markup, for example, stays text.
 If it reports findings, adocfmt refuses the document.
 Otherwise, the printer writes the tree back with the rules applied.
+A document that says `// adocfmt: ignore-file` above its title skips all of this and comes back unread.
 
 xref:../decision-records/0002-block-tree-and-canonical-printer.adoc[Decision record 0002] explains why the formatter has this shape.
 xref:../decision-records/0003-refuse-what-the-scanner-cannot-read.adoc[Decision record 0003] explains why a document with findings is refused whole.
@@ -84,7 +85,7 @@ Only the xref:testing-strategy.adoc#identity[identity check] uses it.
 xref:../reference/cli.adoc[The CLI reference] describes its behavior.
 
 | link:../../internal/format[`internal/format`]
-| `Format`, which parses a document and then refuses or prints it.
+| `Format`, which parses a document and then refuses or prints it, or returns it unread if it says `// adocfmt: ignore-file`.
 
 | link:../../internal/block[`internal/block`]
 | The parser and the block tree.
