@@ -101,7 +101,7 @@ xref:../reference/cli.adoc[The CLI reference] describes its behavior.
 | link:../../internal/golden[`internal/golden`]
 | Code that finds the golden cases.
 
-| link:../../internal/corpus[`internal/corpus`]
+| link:../../internal/asciidoctorcases[`internal/asciidoctorcases`]
 | Code that finds the Asciidoctor cases.
 
 | link:../../internal/repo[`internal/repo`]

@@ -5,25 +5,25 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 )
 
-// corpusDir is relative to this package.
-const corpusDir = "../../" + corpus.Dir
+// asciidoctorCasesDir is relative to this package.
+const asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
 
 // TestFormatIsIdempotent holds the guarantee that a second run has nothing
-// left to do, over every case in the corpus. See docs/reference/rules.adoc.
+// left to do, over every Asciidoctor case. See docs/reference/rules.adoc.
 //
 // A refused document has no output to format a second time. Which cases those
 // are is pinned in internal/renderequivalence, so one that newly refuses fails
 // there instead of quietly dropping out of this test.
 func TestFormatIsIdempotent(t *testing.T) {
-	files, err := corpus.Files(corpusDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range files {
-		t.Run(corpus.Name(corpusDir, path), func(t *testing.T) {
+		t.Run(asciidoctorcases.Name(asciidoctorCasesDir, path), func(t *testing.T) {
 			t.Parallel()
 
 			src, err := os.ReadFile(path)

@@ -15,7 +15,7 @@ The `toolchain` line there names the release CI builds with, and an older Go dow
 
 Asciidoctor::
 The release that the tests run with.
-link:../../internal/corpus/corpus.go[`internal/corpus`] pins it, and link:../../tools/fetch-asciidoctor-cases/main.go[`tools/fetch-asciidoctor-cases`] prints it for you.
+link:../../internal/asciidoctorcases/cases.go[`internal/asciidoctorcases`] pins it, and link:../../tools/fetch-asciidoctor-cases/main.go[`tools/fetch-asciidoctor-cases`] prints it for you.
 Install it as a Ruby gem:
 +
 [source,shell]

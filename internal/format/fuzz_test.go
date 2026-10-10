@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/golden"
 )
 
@@ -14,7 +14,7 @@ import (
 //
 //	go test -fuzz=FuzzFormatIsIdempotent ./internal/format
 func FuzzFormatIsIdempotent(f *testing.F) {
-	files, err := corpus.Files(corpusDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		f.Fatal(err)
 	}

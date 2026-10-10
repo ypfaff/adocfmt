@@ -6,15 +6,15 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/block"
-	"github.com/ypfaff/adocfmt/internal/corpus"
 	"github.com/ypfaff/adocfmt/internal/golden"
 )
 
 // The two directories are relative to this package.
 const (
-	corpusDir = "../../" + corpus.Dir
-	goldenDir = "../../" + golden.Dir
+	asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
+	goldenDir           = "../../" + golden.Dir
 )
 
 // TestPrintIsIdentity pins the one guarantee the tree gives: with every rule
@@ -47,12 +47,12 @@ func documents(t testing.TB) map[string]string {
 	t.Helper()
 
 	docs := map[string]string{}
-	files, err := corpus.Files(corpusDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range files {
-		docs[corpus.Name(corpusDir, path)] = path
+		docs[asciidoctorcases.Name(asciidoctorCasesDir, path)] = path
 	}
 
 	cases, err := golden.Cases(goldenDir)
@@ -62,7 +62,7 @@ func documents(t testing.TB) map[string]string {
 	for _, dir := range cases {
 		for _, file := range []string{golden.InputFile, golden.GoldenFile} {
 			path := filepath.Join(dir, file)
-			docs[corpus.Name(goldenDir, path)] = path
+			docs[asciidoctorcases.Name(goldenDir, path)] = path
 		}
 	}
 	return docs

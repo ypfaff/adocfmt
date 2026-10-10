@@ -5,12 +5,12 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/ypfaff/adocfmt/internal/corpus"
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/format"
 )
 
-// casesDir is relative to this package.
-const casesDir = "../../" + corpus.Dir
+// asciidoctorCasesDir is relative to this package.
+const asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
 
 // notRenderable names the cases Asciidoctor cannot render here, and why.
 // Everything else has to render, so a broken installation fails the run
@@ -76,12 +76,12 @@ func TestAsciidoctorCases(t *testing.T) {
 		t.Fatal("ruby is not on the PATH")
 	}
 
-	files, err := corpus.Files(casesDir)
+	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, path := range files {
-		name := corpus.Name(casesDir, path)
+		name := asciidoctorcases.Name(asciidoctorCasesDir, path)
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
