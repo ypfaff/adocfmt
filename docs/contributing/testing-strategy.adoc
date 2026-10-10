@@ -35,7 +35,8 @@ Raw mode walks the tree the same way as formatting mode, but prints every node a
 link:../../internal/printer/printer_test.go[`TestPrintIsIdentity`] prints every Asciidoctor case and every golden case back and compares bytes.
 link:../../internal/block/partition_test.go[`TestParsePartitions`] checks that the nodes cover the source without gaps or overlaps, so a failure names the node that lost or repeated bytes.
 link:../../internal/printer/fuzz_test.go[`FuzzPrintIsIdentity`] searches for source that the Asciidoctor cases do not cover.
-Its seeds are fixed inputs that run as ordinary cases with every `go test`.
+Its seeds are a few line shapes written into the test, plus every document that `TestPrintIsIdentity` reads.
+They run as ordinary cases with every `go test`.
 The search mutates the seeds and runs on demand:
 
 [source,shell]

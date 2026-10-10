@@ -43,7 +43,7 @@ func TestPrintIsIdentity(t *testing.T) {
 
 // documents lists every AsciiDoc file the tests own, by name: the Asciidoctor
 // cases and both sides of every golden case.
-func documents(t *testing.T) map[string]string {
+func documents(t testing.TB) map[string]string {
 	t.Helper()
 
 	docs := map[string]string{}
