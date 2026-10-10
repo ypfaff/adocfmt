@@ -1,8 +1,7 @@
 // Package sentence reflows the text of a paragraph to one sentence per line.
 //
 // It reads inline syntax only as far as the reflow needs it: where a sentence
-// ends, and which spans pass their text through and so are never split or
-// joined inside.
+// ends, and which spans a split or a join inside would break.
 package sentence
 
 import (
@@ -224,6 +223,11 @@ func spanEnd(src []byte, i int) (int, bool) {
 			return spacedMacro(src, i+len(name))
 		}
 	}
+	for _, name := range spacedReferences {
+		if bytes.HasPrefix(rest, []byte(name)) {
+			return spacedReference(src, i+len(name))
+		}
+	}
 	switch {
 	case rest[0] == '+' || rest[0] == '`':
 		return constrained(src, i)
@@ -273,6 +277,20 @@ func spacedMacro(src []byte, i int) (int, bool) {
 		return 0, false
 	}
 	return bracket(src, i+open)
+}
+
+// spacedReferences open the attribute references that may hold spaces, as
+// Asciidoctor's AttributeReferenceRx reads them.
+var spacedReferences = []string{"{set:", "{counter:", "{counter2:"}
+
+// spacedReference returns the end of such a reference whose text after the
+// colon starts at i. That text holds at least one char, so a } right after
+// the colon belongs to it.
+func spacedReference(src []byte, i int) (int, bool) {
+	if i == len(src) {
+		return 0, false
+	}
+	return closeAt(src, i+1, "}")
 }
 
 // bracket returns the end of the attribute list a macro opens at i, counting

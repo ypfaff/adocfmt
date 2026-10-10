@@ -7,3 +7,7 @@ b</pre>+++ as it is.
 The image:Step one. Setup.png[] shows it.
 See image:my
 file.png[] now.
+
+Count {counter:item. Next} here.
+Count {counter:00
+0} too.
