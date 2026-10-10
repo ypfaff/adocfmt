@@ -1,42 +1,12 @@
 package block
 
-import (
-	"os"
-	"testing"
+import "testing"
 
-	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
-)
-
-// asciidoctorCasesDir is relative to this package.
-const asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
-
-// TestParsePartitions guards what the package documentation promises: the tree
-// partitions its source. A byte no span owns disappears when printed, a byte two
-// spans own is printed twice, and neither shows in a rendering comparison.
-func TestParsePartitions(t *testing.T) {
-	files, err := asciidoctorcases.Files(asciidoctorCasesDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, path := range files {
-		t.Run(asciidoctorcases.Name(asciidoctorCasesDir, path), func(t *testing.T) {
-			t.Parallel()
-
-			src, err := os.ReadFile(path)
-			if err != nil {
-				t.Fatal(err)
-			}
-			doc, err := Parse(src)
-			if err != nil {
-				t.Fatal(err)
-			}
-			checkPartition(t, doc)
-		})
-	}
-}
-
-// checkPartition walks the tree in the order the printer emits it and fails at
-// the first span that does not start where the previous one ended.
+// checkPartition guards what the package documentation promises: the tree
+// partitions its source. A byte no span owns disappears when printed, and a
+// byte two spans own is printed twice. It walks the tree in the order the
+// printer emits it and fails at the first span that does not start where the
+// previous one ended.
 func checkPartition(t *testing.T, doc *Document) {
 	t.Helper()
 

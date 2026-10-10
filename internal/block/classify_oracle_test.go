@@ -16,6 +16,9 @@ import (
 	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 )
 
+// asciidoctorCasesDir is relative to this package.
+const asciidoctorCasesDir = "../../" + asciidoctorcases.Dir
+
 // Each line of the Asciidoctor cases also runs edited, which carries it across the boundaries
 // classify draws: a prefix that may turn it into metadata, a comment, an entry,
 // a list item, a quote, an escaped or an indented line; after the first char,
