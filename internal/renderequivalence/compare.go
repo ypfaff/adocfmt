@@ -78,7 +78,7 @@ func isComment(line string) bool {
 // formatting preserved everything a reader sees.
 func Differences(src, formatted []byte) ([]string, error) {
 	// Rendering is deterministic, so identical sources cannot differ in
-	// anything the checks look at, and each render is a process start.
+	// anything the checks look at.
 	if bytes.Equal(src, formatted) {
 		return nil, nil
 	}

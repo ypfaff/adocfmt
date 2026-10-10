@@ -54,8 +54,7 @@ go build ./...
 go test ./...
 ----
 
-The full run renders documents with Asciidoctor and loads it from Ruby, so Asciidoctor has to be on your `PATH` and `ruby` has to find the gem.
-The `gem install` above sets up both.
+The full run loads Asciidoctor from Ruby, so `ruby` has to find the gem that the `gem install` above sets up.
 To run only the tests that need no Asciidoctor, add `-short`:
 
 [source,shell]
