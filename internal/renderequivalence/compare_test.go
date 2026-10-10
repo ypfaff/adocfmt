@@ -37,7 +37,7 @@ func TestComments(t *testing.T) {
 // hands them output that differs in a known way instead, and asserts that the
 // check meant to catch that difference is the one that reports it.
 func TestChecksCatchCorruption(t *testing.T) {
-	const src = "= Title\n\n// a comment\nSome prose.\n\n----\nkeep   these   spaces\n----\n"
+	const src = "= Title\nAnna Muster\n\n// a comment\nSome prose.\n\n----\nkeep   these   spaces\n----\n"
 
 	tests := []struct {
 		name    string
@@ -45,6 +45,7 @@ func TestChecksCatchCorruption(t *testing.T) {
 		want    string
 	}{
 		{"changed prose", strings.Replace(src, "Some prose.", "Other prose.", 1), "rendering differs"},
+		{"changed author", strings.Replace(src, "Anna Muster", "Anna Meier", 1), "rendering differs"},
 		{"dropped comment", strings.Replace(src, "// a comment\n", "", 1), "comments differ"},
 		// Whitespace inside a listing survives normalizeHTML, so only the
 		// byte-exact verbatim check can see this one.

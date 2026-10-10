@@ -40,13 +40,10 @@ func startAsciidoctor() (*renderer, error) {
 	return &renderer{in: json.NewEncoder(in), out: json.NewDecoder(out)}, nil
 }
 
-// render converts src to embedded HTML with Asciidoctor.
+// render converts src to an HTML page with Asciidoctor.
 //
 // Warnings are dropped: malformed input is a legitimate test case, and the same
 // warning appears on both sides of every comparison.
-//
-// showtitle is set because embedded output leaves the document title out, which
-// would hide every rule that rewrites it.
 func render(src []byte) (string, error) {
 	r, err := asciidoctor()
 	if err != nil {
