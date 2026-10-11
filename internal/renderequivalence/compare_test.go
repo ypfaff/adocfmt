@@ -26,9 +26,9 @@ func TestVerbatimBlocks(t *testing.T) {
 }
 
 func TestComments(t *testing.T) {
-	src := strings.Join([]string{"// line", "text", "////", "block", "////", "  // indented", "///", "///text", "//"}, "\n")
+	src := strings.Join([]string{"// line", "text", "////", "block", "////", "  // indented", "///", "///text", "//", "//\x00"}, "\n")
 	got := comments([]byte(src))
-	if want := []string{"// line", "////", "////", "// indented", "//"}; !slices.Equal(got, want) {
+	if want := []string{"// line", "////", "////", "//", "//"}; !slices.Equal(got, want) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }

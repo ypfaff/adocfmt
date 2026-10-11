@@ -84,6 +84,7 @@ The check renders the document with Asciidoctor before and after formatting and 
 * The HTML, with every run of whitespace collapsed, because a browser shows it as one space anyway.
 * The content of every code and literal block, byte for byte, because whitespace carries meaning there.
 * The comment lines of the source, because Asciidoctor drops them before they reach the HTML.
+A line counts only where `//` opens it, as in Asciidoctor.
 
 [#classification]
 == Classification

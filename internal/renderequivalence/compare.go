@@ -46,9 +46,9 @@ func verbatimBlocks(rendered string) []string {
 	return blocks
 }
 
-// comments returns every comment line of an AsciiDoc source, in order, trimmed.
-// Asciidoctor drops comments before they reach the HTML, so this is the one
-// check that reads the sources.
+// comments returns every comment line of an AsciiDoc source, in order, with
+// its trailing whitespace off. Asciidoctor drops comments before they reach the
+// HTML, so this is the one check that reads the sources.
 //
 // Any comment line counts, including a line of code inside a listing block.
 // Both sides are scanned the same way, so such a line reports a difference only
@@ -56,12 +56,17 @@ func verbatimBlocks(rendered string) []string {
 func comments(src []byte) []string {
 	var found []string
 	for _, line := range strings.Split(string(src), "\n") {
-		if trimmed := strings.TrimSpace(line); isComment(trimmed) {
-			found = append(found, trimmed)
+		if content := strings.TrimRight(line, rubySpace); isComment(content) {
+			found = append(found, content)
 		}
 	}
 	return found
 }
+
+// rubySpace is what Ruby's String#rstrip strips, which Asciidoctor does to
+// every line before it reads it. The parser holds the same set; the check keeps
+// its own, so it does not take its answer from the code it checks.
+const rubySpace = " \t\v\f\r\x00"
 
 // isComment recognizes a line comment or a comment block delimiter. Asciidoctor
 // reads // as a comment only when no third slash follows, so /// is text, while
