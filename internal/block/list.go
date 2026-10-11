@@ -212,7 +212,8 @@ func (p *parser) attached(closer []byte) []tree.Node {
 // carried reads the blocks a continuation line attaches to the item. That is
 // the block under it. Where attribute entries come first, it is those entries
 // and the block under them, because Asciidoctor applies an entry and attaches
-// the next block instead.
+// the next block instead. Where a further + follows across a blank line, it is
+// that + and the block under it, which Asciidoctor reads under both.
 //
 // A continuation with nothing left to carry gives the blank lines back, so they
 // end up in the gap of the next item or the tail of the enclosing block rather
@@ -230,7 +231,7 @@ func (p *parser) carried(closer []byte) []tree.Node {
 		}
 		node := p.node(gap, closer)
 		nodes = append(nodes, node)
-		if _, ok := node.(*tree.Attribute); !ok {
+		if !carriesOn(node) {
 			return nodes
 		}
 	}
@@ -246,6 +247,16 @@ func (p *parser) siblingAt(at int, marker string) (shape, bool) {
 		sh, ok = termShape(p.src, l)
 	}
 	return sh, ok && sh.marker == marker
+}
+
+// carriesOn reports whether a continuation carries the block under the node too.
+func carriesOn(node tree.Node) bool {
+	switch node.(type) {
+	case *tree.Attribute, *tree.Continuation:
+		return true
+	default:
+		return false
+	}
 }
 
 func (p *parser) inList() bool { return len(p.markers) > 0 }

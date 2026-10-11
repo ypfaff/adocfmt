@@ -1623,6 +1623,16 @@ List "*"
     Paragraph "text\n"`,
 		},
 		{
+			name: "the block under the second one is carried too, so it reads on past an item line",
+			src:  ". o\n+\n\n+\nmore\n- d\n",
+			want: `
+List "."
+  ListItem ". o\n"
+    Continuation gap! "+\n"
+    Continuation gap! "+\n"
+    Paragraph! "more\n- d\n"`,
+		},
+		{
 			name: "a + under comment lines right under the item's line counts as no blank line, since they are the metadata of the block below",
 			src:  "* a\n// c\n+\ntext\n- b\n",
 			want: `
