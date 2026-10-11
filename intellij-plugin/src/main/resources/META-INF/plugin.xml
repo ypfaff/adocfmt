@@ -12,5 +12,11 @@
                              instance="io.github.ypfaff.adocfmt.intellij.AdocfmtConfigurable"
                              nonDefaultProject="true"/>
         <notificationGroup id="adocfmt refused" displayType="BALLOON"/>
+        <notificationGroup id="Enable adocfmt" displayType="STICKY_BALLOON"/>
     </extensions>
+
+    <projectListeners>
+        <listener class="io.github.ypfaff.adocfmt.intellij.EnableNotifier"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
 </idea-plugin>

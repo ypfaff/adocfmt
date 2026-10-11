@@ -53,7 +53,7 @@ public final class AdocfmtFormattingService extends AsyncDocumentFormattingServi
   }
 
   // The extensions the CLI picks up in a directory, in any case.
-  private static boolean isAsciiDoc(String fileName) {
+  static boolean isAsciiDoc(String fileName) {
     String extension = FileUtilRt.getExtension(fileName);
     return extension.equalsIgnoreCase("adoc") || extension.equalsIgnoreCase("asciidoc");
   }
