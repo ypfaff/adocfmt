@@ -96,7 +96,9 @@ Both print the archive name followed by `OK`.
 +
 [source,shell]
 ----
-gh attestation verify "adocfmt_${VERSION}_${PLATFORM}.tar.gz" --repo ypfaff/adocfmt
+gh attestation verify "adocfmt_${VERSION}_${PLATFORM}.tar.gz" \
+  --repo ypfaff/adocfmt \
+  --signer-workflow ypfaff/adocfmt/.github/workflows/release.yml
 ----
 . Extract the binary:
 +
