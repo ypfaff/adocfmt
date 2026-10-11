@@ -49,7 +49,9 @@ func (n *printerNotes) freezeKeptGaps(nodes []tree.Node) {
 	}
 	eachNode(nodes, func(node tree.Node) {
 		for _, gap := range gaps(node) {
-			gap.Frozen = gap.Frozen || (!gap.Span.Empty() && ends[gap.Span.End])
+			if !gap.Span.Empty() && ends[gap.Span.End] {
+				gap.Stage = tree.Exact
+			}
 		}
 	})
 }
@@ -69,7 +71,9 @@ func (n *printerNotes) freezeUnderLiterals(nodes []tree.Node) {
 		}
 		for _, item := range list.Items[1:] {
 			gap := &item.Gap
-			gap.Frozen = gap.Frozen || (!gap.Span.Empty() && ends[gap.Span.Start])
+			if !gap.Span.Empty() && ends[gap.Span.Start] {
+				gap.Stage = tree.Exact
+			}
 		}
 	})
 }
@@ -83,8 +87,9 @@ func (n *printerNotes) freezeInsideLiterals() {
 		for _, child := range literal.item.Children {
 			eachNode(below(child), func(node tree.Node) {
 				above := gapAbove(node)
-				inside := literal.lines.Start < above.Span.End && above.Span.End < literal.lines.End
-				above.Frozen = above.Frozen || inside
+				if literal.lines.Start < above.Span.End && above.Span.End < literal.lines.End {
+					above.Stage = tree.Exact
+				}
 			})
 		}
 	}
@@ -99,8 +104,9 @@ func (p *parser) freezeAboveIndented(nodes []tree.Node, inItem bool) {
 		gap, lines := blockGap(node), node.Base().Lines
 		if inItem && len(node.Base().Meta) > 0 && !gap.Span.Empty() && !lines.Empty() {
 			first := p.lineAt(lines.Start)
-			indented := isIndented(p.text(first)) && !opensAnyList(p.src, first)
-			gap.Frozen = gap.Frozen || indented
+			if isIndented(p.text(first)) && !opensAnyList(p.src, first) {
+				gap.Stage = tree.Exact
+			}
 		}
 		belowInItem := inItem
 		switch node.(type) {

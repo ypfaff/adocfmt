@@ -220,7 +220,10 @@ func (p *parser) gap() tree.Gap {
 	for !p.done() && p.shape().kind == shapeBlank {
 		p.at++
 	}
-	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}, Frozen: p.freeze}
+	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}}
+	if p.freeze {
+		gap.Stage = tree.Exact
+	}
 	// A freeze reaches to the next blank line of the source rather than to the
 	// next node: what a directive brings in, and what the front matter fence
 	// opens, may run on into the lines below it. Which of them ends it depends
@@ -256,7 +259,7 @@ func (p *parser) track(sh shape) {
 // where that block really starts and ends.
 func (p *parser) reach(b *tree.NodeBase, sh shape) {
 	p.track(sh)
-	b.Frozen, b.Gap.Frozen, p.freeze = true, true, true
+	b.Frozen, b.Gap.Stage, p.freeze = true, tree.Exact, true
 }
 
 // directiveSince reports whether the parser has read a directive line at
@@ -264,11 +267,11 @@ func (p *parser) reach(b *tree.NodeBase, sh shape) {
 // directive stands in its lines, which makes its end uncertain.
 func (p *parser) directiveSince(offset int) bool { return p.directiveEnd > offset }
 
-// newBase starts the node below gap. A frozen gap with no blank line in it
+// newBase starts the node below gap. An exact gap with no blank line in it
 // means the reach of a directive or the front matter goes on into this node,
 // see gap. What that brings in may continue the node, so it starts frozen.
 func newBase(gap tree.Gap) tree.NodeBase {
-	return tree.NodeBase{Gap: gap, Frozen: gap.Frozen && gap.Span.Empty()}
+	return tree.NodeBase{Gap: gap, Frozen: gap.Stage == tree.Exact && gap.Span.Empty()}
 }
 
 // region identifies the innermost open conditional region, or -1 outside any.
@@ -327,7 +330,7 @@ func (p *parser) skips(gap tree.Gap, opts readOpts) bool {
 
 // metaGap is the gap under a metadata line. In a list item it takes a + the
 // item's buffer holds as a blank line, which Asciidoctor reads past to the
-// block under it, as it does a blank line. The gap freezes, since its lines
+// block under it, as it does a blank line. The gap is exact, since its lines
 // are not all blank. Where no block follows, the blank lines under the + go
 // back, as they do under a continuation, see carried; block then finds a
 // blank line and binds the metadata to nothing.
@@ -340,7 +343,7 @@ func (p *parser) metaGap() tree.Gap {
 		if p.done() {
 			p.rewind(m)
 		}
-		gap = tree.Gap{Span: tree.Span{Start: gap.Span.Start, End: p.pos()}, Frozen: true}
+		gap = tree.Gap{Span: tree.Span{Start: gap.Span.Start, End: p.pos()}, Stage: tree.Exact}
 	}
 	return gap
 }
@@ -521,7 +524,7 @@ func (p *parser) body(b tree.NodeBase, opts readOpts) tree.Node {
 		if (opts.carried && b.Gap.Span.Empty()) || len(b.Meta) > 0 {
 			return p.plusText(b, opts, endsCarriedPlus)
 		}
-		b.Gap.Frozen = true
+		b.Gap.Stage = tree.Exact
 		b.Lines = p.take()
 		return &tree.Continuation{NodeBase: b}
 	default:
@@ -912,7 +915,7 @@ func (p *parser) plusText(b tree.NodeBase, opts readOpts, ends func(shape) bool)
 	start := p.pos()
 	p.at++
 	p.textRun(&b, opts, ends)
-	b.Frozen, b.Gap.Frozen = true, true
+	b.Frozen, b.Gap.Stage = true, tree.Exact
 	b.Lines = tree.Span{Start: start, End: p.pos()}
 	return &tree.Paragraph{NodeBase: b}
 }

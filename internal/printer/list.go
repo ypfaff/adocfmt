@@ -102,10 +102,10 @@ func written(src []byte, item *tree.ListItem, picked string) string {
 // leaves every line of it as it stands, the space behind a marker included:
 // what those lines mean is known only once Asciidoctor has resolved the
 // directive. The parser reports the directives it read within the list as
-// List.Extensible, and a directive beside the list freezes the gap between
-// them.
+// List.Extensible, and a directive beside the list makes the gap between
+// them exact.
 func (k *picker) reached(list *tree.List, next tree.Node) bool {
-	return list.Extensible || above(list).Frozen || (next != nil && above(next).Frozen)
+	return list.Extensible || above(list).Stage == tree.Exact || (next != nil && above(next).Stage == tree.Exact)
 }
 
 // rewritable reports whether the list may be written with the marker.

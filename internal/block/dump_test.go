@@ -39,11 +39,11 @@ func (d *dumper) node(node tree.Node, depth int) {
 	if node.Base().Frozen {
 		d.writef("!")
 	}
-	if node.Base().Gap.Frozen {
+	if node.Base().Gap.Stage == tree.Exact {
 		d.writef(" gap!")
 	}
 	// A bang on the fence marks a body a directive may extend, the way it marks
-	// a frozen node and a frozen gap. A list has no fence to carry it.
+	// a frozen node and an exact gap. A list has no fence to carry it.
 	if delim, ok := fenceOf(node); ok && delim.Extensible {
 		d.writef(" delim!")
 	}
@@ -52,7 +52,7 @@ func (d *dumper) node(node tree.Node, depth int) {
 	}
 	for _, meta := range node.Base().Meta {
 		// A bang marks a metadata line whose gap below carries meaning, the way
-		// it marks a frozen node and a frozen gap.
+		// it marks a frozen node and an exact gap.
 		if meta.Open {
 			d.writef(" meta!(%s)", d.quote(meta.Lines))
 			continue
