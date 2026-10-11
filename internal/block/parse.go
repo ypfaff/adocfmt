@@ -43,7 +43,7 @@ func Parse(src []byte) (*tree.Document, error) {
 	if matter := p.frontMatter(); matter != nil {
 		doc.Nodes = append(doc.Nodes, matter)
 	}
-	nodes, tail := p.nodes(nil)
+	nodes, tail := p.nodes(nil, readOpts{})
 	doc.Nodes = append(doc.Nodes, nodes...)
 	doc.Tail = tail
 	p.freezeItemGaps(doc.Nodes)
@@ -133,17 +133,6 @@ type parser struct {
 	// directiveEnd is where the last directive line the parser read ends, see
 	// directiveSince.
 	directiveEnd int
-	// markers are the list markers of the open lists, innermost last.
-	markers []string
-	// carrying is true while the parser reads the block a continuation
-	// attaches to an item, see skips.
-	carrying bool
-	// first is how Asciidoctor reads the first block of the list item being
-	// read, from where listItem sets it up to where node reads that block.
-	first firstBlock
-	// preWrap holds inside a delimited block with the pre-wrap role, which
-	// the browser hands down to every paragraph in it, see keepsLineBreaks.
-	preWrap bool
 	// regions are the open conditional regions, innermost last, each by the
 	// line that opened it. A delimiter that opens in one and closes in another
 	// means two documents in one.
@@ -165,6 +154,34 @@ type parser struct {
 
 	findings []tree.Finding
 }
+
+// readOpts are the options a block is read with, as Asciidoctor passes options
+// to next_block. Unlike the parser's fields, they hold only for the block and
+// the blocks in it.
+type readOpts struct {
+	// lists are the markers of the open lists, innermost last. The last is
+	// list_type: the block belongs to an item of that list.
+	lists []string
+	// textOnly is text_only: the first block of a list item is read as text
+	// only, see body.
+	textOnly bool
+	// breakAtList is break_at_list, which node works out for the block it
+	// reads: a paragraph ends at any item line, see endsProse.
+	breakAtList bool
+	// carried holds for the blocks a + attaches to an item. Asciidoctor reads
+	// that + as a blank line it skips, see skips, and a further + right under
+	// it as text, see body.
+	carried bool
+	// opened holds where comment lines under the item's line opened the first
+	// block, which Asciidoctor reads as its metadata. Blank lines and + lines
+	// between metadata lines it skips without counting them, see skips.
+	opened bool
+	// preWrap holds inside a delimited block with the pre-wrap role, which the
+	// browser hands down to every paragraph in it, see keepsLineBreaks.
+	preWrap bool
+}
+
+func (o readOpts) inList() bool { return len(o.lists) > 0 }
 
 func (p *parser) done() bool { return p.at >= p.limit() }
 
@@ -296,60 +313,42 @@ func (p *parser) region() int {
 	return p.regions[len(p.regions)-1]
 }
 
-func (p *parser) nodes(closer []byte) ([]tree.Node, tree.Gap) {
+func (p *parser) nodes(closer []byte, opts readOpts) ([]tree.Node, tree.Gap) {
 	var nodes []tree.Node
 	for {
 		gap := p.gap()
 		if p.done() || p.closes(closer) {
 			return nodes, gap
 		}
-		nodes = append(nodes, p.node(gap, closer))
+		nodes = append(nodes, p.node(gap, closer, opts))
 	}
 }
 
 // node reads the metadata lines at the current position and the block they
 // bind to. In a list item, the block ends at an item line, and the item's
-// first block is read as text only, see firstBlock, unless Asciidoctor skips a
-// blank line in front of it, see skips.
-func (p *parser) node(gap tree.Gap, closer []byte) tree.Node {
-	first := p.first
-	p.first = firstBlock{}
-	skipped := p.skips(gap, first.opened)
-	breakAtList := p.inList() && !skipped
-	textOnly := first.textOnly && !skipped
+// first block is read as text only, unless Asciidoctor skips a blank line in
+// front of it, see skips.
+func (p *parser) node(gap tree.Gap, closer []byte, opts readOpts) tree.Node {
+	skipped := p.skips(gap, opts)
+	opts.breakAtList = opts.inList() && !skipped
+	opts.textOnly = opts.textOnly && !skipped
 
 	b := newBase(gap)
-	for p.metaLine(&b, closer, textOnly) {
+	for p.metaLine(&b, closer, opts) {
 		b.Gap = p.metaGap()
 	}
-	node := p.block(b, closer, textOnly, breakAtList)
-	// Below comment lines that opened the first block, a + is one more line
-	// Asciidoctor skips among its metadata, so the block under it is the first.
-	if _, ok := node.(*tree.Continuation); ok && first.opened {
-		p.first = first
-	}
-	return node
-}
-
-// firstBlock is how Asciidoctor reads the first block of a list item.
-type firstBlock struct {
-	// textOnly is the text_only option of next_block, see body.
-	textOnly bool
-	// opened holds where comment lines under the item's line opened the block,
-	// which Asciidoctor reads as its metadata. Blank lines and + lines between
-	// metadata lines it skips without counting them, see skips.
-	opened bool
+	return p.block(b, closer, opts)
 }
 
 // skips reports whether Asciidoctor skips a blank line in front of the block
 // under gap and counts it: one the buffer of the item being read holds, or a +
-// it holds as one, see carrying. In front of a block that comment lines
-// opened, it counts none, see firstBlock.
-func (p *parser) skips(gap tree.Gap, opened bool) bool {
-	if opened {
+// it holds as one, see readOpts.carried. In front of a block that comment
+// lines opened, it counts none, see readOpts.opened.
+func (p *parser) skips(gap tree.Gap, opts readOpts) bool {
+	if opts.opened {
 		return false
 	}
-	if p.carrying {
+	if opts.carried {
 		return true
 	}
 	for at := p.at - 1; at >= 0 && p.lines[at].full.Start >= gap.Span.Start; at-- {
@@ -382,13 +381,13 @@ func (p *parser) metaGap() tree.Gap {
 
 // metaLine reads the metadata line at the current position into b and reports
 // whether there was one.
-func (p *parser) metaLine(b *tree.NodeBase, closer []byte, textOnly bool) bool {
+func (p *parser) metaLine(b *tree.NodeBase, closer []byte, opts readOpts) bool {
 	if p.done() || p.closes(closer) {
 		return false
 	}
 	sh := p.shape()
 	kind, ok := metaKind(sh)
-	if !ok || (len(b.Meta) == 0 && !opensMeta(kind)) || (textOnly && !textOnlyMeta(kind)) {
+	if !ok || (len(b.Meta) == 0 && !opensMeta(kind)) || (opts.textOnly && !textOnlyMeta(kind)) {
 		return false
 	}
 	start := p.pos()
@@ -445,12 +444,12 @@ func (p *parser) commentBlock() {
 // block is the node the metadata lines in b bind to. None follows at the end
 // of the source, the enclosing block or the list item, nor where a blank line
 // follows: only metaGap leaves one, where the item ends below it.
-func (p *parser) block(b tree.NodeBase, closer []byte, textOnly, breakAtList bool) tree.Node {
+func (p *parser) block(b tree.NodeBase, closer []byte, opts readOpts) tree.Node {
 	if p.done() || p.closes(closer) || p.shape().kind == shapeBlank {
 		return p.orphan(b)
 	}
 	reaches := p.directiveInMeta(b)
-	node := p.body(b, closer, textOnly, breakAtList)
+	node := p.body(b, closer, opts)
 	p.freeze = p.freeze || reaches
 	return node
 }
@@ -500,15 +499,15 @@ func metaKind(sh shape) (tree.MetaKind, bool) {
 // blocks precedesTitle names came before it, and no block title stands above
 // it, see titled.
 //
-// In a block read as text only, see firstBlock, Asciidoctor looks for no
+// In a block read as text only, see readOpts.textOnly, Asciidoctor looks for no
 // break, no block macro and no attribute entry: such a line is text, unless it
 // reads as an item, since Asciidoctor still looks for a list. Nor does it look
 // for a Markdown quote, a quoted paragraph, an admonition label or a literal
 // paragraph, which the parser still reads as Opaque, Admonition or Literal;
 // that only costs formatting.
-func (p *parser) body(b tree.NodeBase, closer []byte, textOnly, breakAtList bool) tree.Node {
+func (p *parser) body(b tree.NodeBase, closer []byte, opts readOpts) tree.Node {
 	sh := p.shape()
-	if textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
+	if opts.textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
 		sh.kind = shapeText
 		if item, ok := listShape(p.text(p.lines[p.at]), p.lines[p.at].text.Start); ok {
 			sh = item
@@ -517,7 +516,7 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly, breakAtList bool
 	atStart := p.atStart && !titled(p.src, b.Meta)
 	p.atStart = atStart && precedesTitle(sh)
 
-	sectionLevel := closer == nil && len(p.markers) == 0
+	sectionLevel := closer == nil && !opts.inList()
 	if sectionLevel && startsTitle(sh.kind) {
 		if underline, level, ok := p.setextUnderline(); ok {
 			if atStart && level == 0 {
@@ -528,7 +527,7 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly, breakAtList bool
 	}
 	switch sh.kind {
 	case shapeDelimiter:
-		return p.delimited(b, sh)
+		return p.delimited(b, sh, opts)
 	case shapeHeading:
 		if atStart && sh.level == 0 {
 			return p.header(b, sh.span, p.at)
@@ -537,7 +536,7 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly, breakAtList bool
 			b.Lines = p.take()
 			return &tree.Heading{NodeBase: b, Marker: sh.char, Level: sh.level, Title: sh.span}
 		}
-		return p.contentBlock(b, sh, closer, breakAtList)
+		return p.contentBlock(b, sh, closer, opts)
 	case shapeAttrEntry:
 		return p.attribute(b, closer)
 	case shapeDirective:
@@ -549,43 +548,43 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly, breakAtList bool
 		// other outside a list, which contentBlock reads: text, or code under a
 		// verbatim style. Inside a list a strict verbatim style makes it code
 		// too; otherwise it is read as it stands, frozen.
-		if !p.inList() || strictVerbatimStyles[styleOf(p.src, b.Meta)] {
-			return p.contentBlock(b, sh, closer, breakAtList)
+		if !opts.inList() || strictVerbatimStyles[styleOf(p.src, b.Meta)] {
+			return p.contentBlock(b, sh, closer, opts)
 		}
-		if (p.carrying && b.Gap.Span.Empty()) || len(b.Meta) > 0 {
-			return p.plusText(b, closer, endsCarriedPlus)
+		if (opts.carried && b.Gap.Span.Empty()) || len(b.Meta) > 0 {
+			return p.plusText(b, closer, opts, endsCarriedPlus)
 		}
 		b.Gap.Frozen = true
 		b.Lines = p.take()
 		return &tree.Continuation{NodeBase: b}
 	default:
-		return p.contentBlock(b, sh, closer, breakAtList)
+		return p.contentBlock(b, sh, closer, opts)
 	}
 }
 
 // contentBlock reads a block whose kind a verbatim style above it overrides:
 // Asciidoctor checks the style before it looks at the line, and then reads to
 // the next blank line whatever the lines look like.
-func (p *parser) contentBlock(b tree.NodeBase, sh shape, closer []byte, breakAtList bool) tree.Node {
+func (p *parser) contentBlock(b tree.NodeBase, sh shape, closer []byte, opts readOpts) tree.Node {
 	if strictVerbatimStyles[styleOf(p.src, b.Meta)] {
-		p.textRun(&b, closer, p.endsVerbatimAfter(p.at))
+		p.textRun(&b, closer, opts, p.endsVerbatimAfter(p.at))
 		return &tree.Literal{NodeBase: b}
 	}
 	switch sh.kind {
 	case shapeContinuation:
-		return p.plusText(b, closer, endsText)
+		return p.plusText(b, closer, opts, endsText)
 	case shapeMarker:
-		return p.list(b, sh, closer)
+		return p.list(b, sh, closer, opts)
 	case shapeIndented:
-		return p.literal(b, closer, breakAtList)
+		return p.literal(b, closer, opts)
 	case shapeBreak, shapeMacro:
 		b.Lines = p.take()
 		return &tree.Opaque{NodeBase: b}
 	case shapeQuote:
-		p.textRun(&b, closer, p.endsProse(b, breakAtList))
+		p.textRun(&b, closer, opts, p.endsProse(b, opts))
 		return &tree.Opaque{NodeBase: b}
 	default:
-		return p.paragraph(b, closer, breakAtList)
+		return p.paragraph(b, closer, opts)
 	}
 }
 
@@ -798,13 +797,13 @@ func (p *parser) setext(b tree.NodeBase, level, underline int) tree.Node {
 //   - Opaque, where Asciidoctor reads it as something else, see readsOpaque.
 //   - Literal, where its line breaks show on the page, see keepsLineBreaks.
 //   - Admonition, where a label such as NOTE: opens it.
-func (p *parser) paragraph(b tree.NodeBase, closer []byte, breakAtList bool) tree.Node {
+func (p *parser) paragraph(b tree.NodeBase, closer []byte, opts readOpts) tree.Node {
 	first := p.at
-	p.textRun(&b, closer, p.endsProse(b, breakAtList))
+	p.textRun(&b, closer, opts, p.endsProse(b, opts))
 	switch {
 	case p.readsOpaque(b, first):
 		return &tree.Opaque{NodeBase: b}
-	case p.keepsLineBreaks(b):
+	case p.keepsLineBreaks(b, opts):
 		return &tree.Literal{NodeBase: b}
 	case admonition(p.text(p.lines[first])):
 		return &tree.Admonition{NodeBase: b}
@@ -833,10 +832,10 @@ func (p *parser) readsOpaque(b tree.NodeBase, first int) bool {
 //   - the pre-wrap role, on the paragraph or on a block around it;
 //   - substitutions of its own, which can pass raw HTML through;
 //   - a document attribute in force that binds lines, see lineBound.
-func (p *parser) keepsLineBreaks(b tree.NodeBase) bool {
+func (p *parser) keepsLineBreaks(b tree.NodeBase, opts readOpts) bool {
 	return styledVerbatim(p.src, b.Meta) ||
 		hasOption(p.src, b.Meta, hardbreaksOption) ||
-		hasRole(p.src, b.Meta, preWrapRole) || p.preWrap ||
+		hasRole(p.src, b.Meta, preWrapRole) || opts.preWrap ||
 		hasAttr(p.src, b.Meta, substitutionsAttr) ||
 		len(p.lineBound) > 0
 }
@@ -858,8 +857,8 @@ func admonition(line []byte) bool {
 
 // literal is an indented paragraph, which AsciiDoc reads as verbatim content.
 // It ends where prose does.
-func (p *parser) literal(b tree.NodeBase, closer []byte, breakAtList bool) tree.Node {
-	p.textRun(&b, closer, p.endsProse(b, breakAtList))
+func (p *parser) literal(b tree.NodeBase, closer []byte, opts readOpts) tree.Node {
+	p.textRun(&b, closer, opts, p.endsProse(b, opts))
 	return &tree.Literal{NodeBase: b}
 }
 
@@ -867,7 +866,7 @@ func (p *parser) literal(b tree.NodeBase, closer []byte, breakAtList bool) tree.
 // says is no longer part of it. A directive line inside the block does not end
 // it but freezes it, see reach. A line that has to stay a line of its own
 // freezes the block too, see pinsLine.
-func (p *parser) textRun(b *tree.NodeBase, closer []byte, ends func(shape) bool) {
+func (p *parser) textRun(b *tree.NodeBase, closer []byte, opts readOpts, ends func(shape) bool) {
 	start := p.pos()
 	for !p.done() && !p.closes(closer) {
 		sh := p.shape()
@@ -877,7 +876,7 @@ func (p *parser) textRun(b *tree.NodeBase, closer []byte, ends func(shape) bool)
 		if sh.kind == shapeDirective {
 			p.reach(b, sh)
 		}
-		b.Frozen = b.Frozen || pinsLine(sh, p.text(p.lines[p.at]), p.inList()) ||
+		b.Frozen = b.Frozen || pinsLine(sh, p.text(p.lines[p.at]), opts.inList()) ||
 			p.dropsMissing && onlyReferences(p.text(p.lines[p.at]))
 		p.at++
 	}
@@ -931,8 +930,8 @@ func (p *parser) endsVerbatimAfter(first int) func(shape) bool {
 // item with no blank line skipped in front of it, see skips, it ends at any
 // item line. One with a paragraph style does not, since Asciidoctor reads it
 // as the block that style names.
-func (p *parser) endsProse(b tree.NodeBase, breakAtList bool) func(shape) bool {
-	if breakAtList && !paragraphStyles[styleOf(p.src, b.Meta)] {
+func (p *parser) endsProse(b tree.NodeBase, opts readOpts) func(shape) bool {
+	if opts.breakAtList && !paragraphStyles[styleOf(p.src, b.Meta)] {
 		return p.endsItemText
 	}
 	return endsText
@@ -942,10 +941,10 @@ func (p *parser) endsProse(b tree.NodeBase, breakAtList bool) func(shape) bool {
 // Asciidoctor reads as one paragraph with it. The + renders as the text it is,
 // and a further one among those lines Asciidoctor drops, so what the paragraph
 // shows is not the lines that stand here and none of them may move.
-func (p *parser) plusText(b tree.NodeBase, closer []byte, ends func(shape) bool) tree.Node {
+func (p *parser) plusText(b tree.NodeBase, closer []byte, opts readOpts, ends func(shape) bool) tree.Node {
 	start := p.pos()
 	p.at++
-	p.textRun(&b, closer, ends)
+	p.textRun(&b, closer, opts, ends)
 	b.Frozen, b.Gap.Frozen = true, true
 	b.Lines = tree.Span{Start: start, End: p.pos()}
 	return &tree.Paragraph{NodeBase: b}
@@ -957,7 +956,7 @@ func (p *parser) directive(b tree.NodeBase, sh shape) tree.Node {
 	return &tree.Directive{NodeBase: b}
 }
 
-func (p *parser) delimited(b tree.NodeBase, sh shape) tree.Node {
+func (p *parser) delimited(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
 	openAt := p.at
 	open := p.lines[p.at]
 	// A fence may carry a language after the backticks; only the bare fence
@@ -976,11 +975,8 @@ func (p *parser) delimited(b tree.NodeBase, sh shape) tree.Node {
 	var node tree.Node
 	if sh.content == contentCompound {
 		// The block confines the reader: no list open outside it is open inside.
-		markers, preWrap := p.markers, p.preWrap
-		p.markers = nil
-		p.preWrap = preWrap || hasRole(p.src, b.Meta, preWrapRole)
-		children, tail := p.nodes(closer)
-		p.markers, p.preWrap = markers, preWrap
+		inside := readOpts{preWrap: opts.preWrap || hasRole(p.src, b.Meta, preWrapRole)}
+		children, tail := p.nodes(closer, inside)
 		delim.Extensible = p.extensible(raw, openAt+1)
 		if at, ok := p.closesInside(closer, openAt+1); ok {
 			p.report(at, "closes the block opened above it")
