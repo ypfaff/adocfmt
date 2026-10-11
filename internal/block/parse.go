@@ -323,7 +323,7 @@ func (p *parser) node(gap tree.Gap, opts readOpts) tree.Node {
 		b.Gap = p.metaGap(open)
 	}
 	if p.indentedUnderMeta(b) {
-		b.Gap.Stage = tree.Exact
+		b.Gap.Stage = max(b.Gap.Stage, tree.KeepCount)
 	}
 	return p.block(b, opts)
 }

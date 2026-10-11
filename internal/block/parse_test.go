@@ -754,7 +754,7 @@ Verbatim "----\nx\n----\n"`,
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal gap! meta~("[x]\n") "  code\n"
+    Literal gap~ meta~("[x]\n") "  code\n"
     List gap~ "*"
       ListItem "* b\n"`,
 		},
