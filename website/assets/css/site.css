@@ -138,6 +138,8 @@ h1 { margin: 0 0 24px; font-size: 2.1rem; letter-spacing: -.02em; }
 .adoc ul, .adoc ol { margin: 0 0 16px; padding-left: 24px; }
 .adoc li { margin: 4px 0; }
 .adoc li > p { margin: 0; }
+/* Item text has no margin, so a block after it needs its own; a nested list stays tight. */
+.adoc :is(li, dd) > p + :not(.ulist, .olist) { margin-top: 8px; }
 .adoc strong { color: var(--heading); }
 
 .adoc code {
