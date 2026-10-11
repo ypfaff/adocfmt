@@ -189,6 +189,7 @@ func (r *itemReader) step() bool {
 		r.take()
 	// Ruby: else
 	default:
+		r.noteAwaitedText(r.at)
 		r.hasText = r.hasText || sh.kind != shapeBlank
 		r.noteNestedList(r.nestable())
 		r.take()
@@ -423,14 +424,17 @@ func (r *itemReader) nestedAt(at int, kinds nestable) (opens, term bool) {
 	return ok, ok
 }
 
-// noteAwaitedText notes the blank lines above the line at, which a term still
-// waiting for text takes as its text, see afterBlank, so their gap keeps its
-// count. Without them, Asciidoctor reads a line that opens a nested list as
-// that list: from there the item is within a nested list, and a term without
-// text waits for text in turn.
+// noteAwaitedText notes the gap above the line at while a term still waits for
+// text, so it keeps its count. Under a blank line the term takes the line as
+// its text, see afterBlank. Without one, Asciidoctor reads a line that opens a
+// nested list as that list: from there the item is within a nested list, and a
+// term without text waits for text in turn.
 //
 // Not in parser.rb.
 func (r *itemReader) noteAwaitedText(at int) {
+	if r.hasText {
+		return
+	}
 	opens, term := r.nestedAt(at, r.nestable())
 	if opens && (!r.withinNested || term && r.bareTerm(at)) {
 		r.note(at, tree.KeepCount)
