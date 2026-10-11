@@ -252,24 +252,31 @@ func (p *parser) attached(first, opts readOpts) []tree.Node {
 // end up in the gap of the next item or the tail of the enclosing block rather
 // than in no node at all.
 //
+// The gap under a + is exact: at most one blank line attaches the block below
+// to the item, two or more end the list.
+//
 // The first block is read with the options first, the others with opts, see
 // under.
 func (p *parser) carried(first, opts readOpts) []tree.Node {
 	first.carried, opts.carried = true, true
 	next := first
 	var nodes []tree.Node
-	for {
+	for underPlus := true; ; {
 		m := p.mark()
 		gap := p.itemGap()
 		if p.done() {
 			p.rewind(m)
 			return nodes
 		}
+		if underPlus {
+			gap.Stage = tree.Exact
+		}
 		node := p.node(gap, next)
 		nodes = append(nodes, node)
 		if !carriesOn(node) {
 			return nodes
 		}
+		_, underPlus = node.(*tree.Continuation)
 		next = p.under(node, next, opts)
 	}
 }
