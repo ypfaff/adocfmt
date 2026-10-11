@@ -116,6 +116,10 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GORELEASER_CURRENT_TAG: v${{ steps.version.outputs.version }}
 
+      # One provenance for every archive in the checksums. It names the commit
+      # the run started on, not the tagged one the run commits on top, because
+      # the signing certificate takes the commit from the run. The tagged commit
+      # changes only action.yml, which no archive contains.
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         id: provenance
         with:
@@ -132,6 +136,7 @@ jobs:
         run: |
           provenance="dist/adocfmt_${VERSION}.intoto.jsonl"
           cp "${BUNDLE}" "${provenance}"
+          # One archive is enough to check the signature they all share.
           gh attestation verify "dist/adocfmt_${VERSION}_linux_amd64.tar.gz" \
             --bundle "${provenance}" \
             --repo "${GITHUB_REPOSITORY}" \
