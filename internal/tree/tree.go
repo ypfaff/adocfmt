@@ -19,16 +19,19 @@ type Span struct {
 // Empty reports whether the span covers no bytes.
 func (s Span) Empty() bool { return s.Start == s.End }
 
-// Gap is the blank lines in front of a node.
-//
-// Stage says how far a rule may change them. The parser sets it where the
-// blank lines carry meaning: before a list continuation they select the level
-// the following block attaches to, under front matter or a directive they
-// decide whether two blocks merge when rendered, and in and under a list item
-// they decide which lines the item takes, see block.freezeItemGaps.
+// Gap is the blank lines in front of a node. Most of them only space the
+// document out, and the printer writes them as it likes. Some carry meaning,
+// and the parser says so in Stage.
 type Gap struct {
-	Span  Span
+	Span Span
+	// Stage is how far a rule may change the blank lines.
 	Stage Stage
+	// BesideDirective marks a gap next to an include, a conditional or the
+	// front matter. Only Asciidoctor knows what those bring in, so the blocks
+	// on both sides may turn out to be one. Such a gap is always exact, and the
+	// rules that rewrite a fence or a list marker leave the blocks beside it
+	// alone.
+	BesideDirective bool
 }
 
 // Stage is how far a rule may change the blank lines of a gap.

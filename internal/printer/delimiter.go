@@ -101,7 +101,7 @@ func rewritable(node tree.Node, delim tree.Delimiter) bool {
 	if delim.Width < minWidth || delim.Char == '/' || delim.Extensible || !delim.Closed() {
 		return false
 	}
-	return above(node).Stage != tree.Exact
+	return !above(node).BesideDirective
 }
 
 // below adds the width of every line printed inside a container that would
