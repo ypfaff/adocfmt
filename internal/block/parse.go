@@ -46,7 +46,6 @@ func Parse(src []byte) (*tree.Document, error) {
 	nodes, tail := p.nodes(readOpts{})
 	doc.Nodes = append(doc.Nodes, nodes...)
 	doc.Tail = tail
-	p.freezeItemGaps(doc.Nodes)
 	for _, at := range p.regions {
 		p.report(at, "conditional region has no endif")
 	}
@@ -122,7 +121,10 @@ func lineEnding(src []byte) (tree.LineEnding, error) {
 // newParser starts reading src at the top, behind its byte order mark.
 func newParser(src []byte) *parser {
 	lines := splitLines(src, bodyStart(src))
-	return &parser{src: src, lines: lines, reader: &reader{end: len(lines)}, atStart: true, lineBound: map[string]bool{}}
+	return &parser{
+		src: src, lines: lines, reader: &reader{end: len(lines)}, atStart: true,
+		lineBound: map[string]bool{}, significant: map[int]tree.Stage{},
+	}
 }
 
 type parser struct {
@@ -153,9 +155,11 @@ type parser struct {
 	// lineBound. Asciidoctor then drops a line that only missing references
 	// stand on, so such a line stays a line of its own, see onlyReferences.
 	dropsMissing bool
-	// notes collects, for the printer, the blank lines and literal
-	// paragraphs the items found, see freezeItemGaps.
-	notes printerNotes
+	// significant holds, by the line under them, the stage of the blank lines
+	// that decide which lines a list item takes, as itemEnd finds them. It
+	// reaches below the item that found them, to the next item or the block
+	// under the list.
+	significant map[int]tree.Stage
 
 	findings []tree.Finding
 }
@@ -220,10 +224,11 @@ func (p *parser) gap() tree.Gap {
 	for !p.done() && p.shape().kind == shapeBlank {
 		p.at++
 	}
-	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}}
-	if p.freeze {
-		gap.Stage, gap.BesideDirective = tree.Exact, true
+	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}, Stage: p.significant[p.at]}
+	if p.freeze || p.reader.inLiteral(gap.Span.End) {
+		gap.Stage = tree.Exact
 	}
+	gap.BesideDirective = p.freeze
 	// A freeze reaches to the next blank line of the source rather than to the
 	// next node: what a directive brings in, and what the front matter fence
 	// opens, may run on into the lines below it. Which of them ends it depends
@@ -315,7 +320,22 @@ func (p *parser) node(gap tree.Gap, opts readOpts) tree.Node {
 		}
 		b.Gap = p.metaGap(open)
 	}
+	if p.indentedUnderMeta(b) {
+		b.Gap.Stage = tree.Exact
+	}
 	return p.block(b, opts)
+}
+
+// indentedUnderMeta reports whether, in a list item, blank lines stand between
+// the metadata in b and an indented line that opens no nested list. Below
+// them, the item takes the lines down to the next blank line whole, see
+// takeLiteral; without them, one by one.
+func (p *parser) indentedUnderMeta(b tree.NodeBase) bool {
+	if p.reader.item == nil || len(b.Meta) == 0 || b.Gap.Span.Empty() || p.done() {
+		return false
+	}
+	l := p.lines[p.at]
+	return isIndented(p.text(l)) && !opensAnyList(p.src, l)
 }
 
 // skips reports whether Asciidoctor skips a blank line in front of the block

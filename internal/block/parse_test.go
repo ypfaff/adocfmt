@@ -658,7 +658,7 @@ Literal "  more\n* d\n"`,
 List "*"
   ListItem "* a\n"
     Literal gap~ "  code\n"
-    Verbatim gap~ "----\nx\n----\n"
+    Verbatim gap! "----\nx\n----\n"
   ListItem gap! "* b\n"`,
 		},
 		{
@@ -691,7 +691,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  code\n"
-    Verbatim gap~ "----\nx\n\n  more\n----\n"`,
+    Verbatim gap! "----\nx\n\n  more\n----\n"`,
 		},
 		{
 			name: "so does one under a continuation, and the next term ends it",
@@ -701,7 +701,7 @@ List "::"
   ListItem "a:: b\n"
     Continuation gap! "+\n"
     Literal gap! "  code\n"
-    Verbatim meta~("[source]\n") "----\nx\n----\n"
+    Verbatim gap! meta!("[source]\n") "----\nx\n----\n"
   ListItem "c:: d\n"`,
 		},
 		{
@@ -711,9 +711,9 @@ List "::"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  lit\n"
-    Verbatim gap~ "----\nx\n----\n"
-    List gap~ "*"
-      ListItem gap! "* b\n"`,
+    Verbatim gap! "----\nx\n----\n"
+    List gap! "*"
+      ListItem "* b\n"`,
 		},
 		{
 			name: "a term of a nested list ends the literal paragraph, while the item around the list takes the block",
@@ -725,7 +725,7 @@ List "*"
       ListItem "c:: d\n"
         Literal gap~ "  code\n"
       ListItem gap! "e:: f\n"
-    Verbatim gap~ "----\nx\n----\n"`,
+    Verbatim gap! "----\nx\n----\n"`,
 		},
 		{
 			name: "no blank line may come between the blocks inside a delimited block there either",
@@ -734,7 +734,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  lit\n"
-    Container gap~ "====\n"
+    Container gap! "====\n"
       Paragraph gap! "text\n"
       Verbatim gap! "----\nx\n----\n"`,
 		},
@@ -755,8 +755,8 @@ Verbatim "----\nx\n----\n"`,
 List "*"
   ListItem "* a\n"
     Literal gap! meta~("[x]\n") "  code\n"
-    List gap~ "*"
-      ListItem gap! "* b\n"`,
+    List gap! "*"
+      ListItem "* b\n"`,
 		},
 		{
 			name: "the blank line between metadata and an indented line in a delimited block in an item may go",

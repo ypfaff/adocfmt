@@ -26,12 +26,24 @@ func (p *parser) list(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
 
 	gap := tree.Gap{Span: tree.Span{Start: start, End: start}}
 	for {
-		item := p.listItem(gap, sh, items)
+		item, literal := p.listItem(gap, sh, items)
 		list.Items = append(list.Items, item)
 
 		m := p.mark()
 		gap = p.gap()
-		// In a description list the next term ends the literal, see takeLiteral.
+		// An item ends in a literal in two ways that differ: a literal collected
+		// whole may hold further blocks below it, and a literal last in the
+		// item need not be collected whole, such as one under [literal]. So
+		// both are asked.
+		//
+		// Blank lines under a literal collected whole end it, see takeLiteral;
+		// without them the next item would join it.
+		if literal && !gap.Span.Empty() {
+			gap.Stage = tree.Exact
+		}
+		// Under a literal last in the item they keep their count too, see
+		// endsInLiteral, except in a description list, where the next term
+		// ends it.
 		if !list.Description && endsInLiteral(item) {
 			gap.Stage = max(gap.Stage, tree.KeepCount)
 		}
@@ -86,15 +98,15 @@ func (p *parser) directiveBelow() bool {
 // listItem reads the item on the current line in two steps, as Asciidoctor
 // does: itemEnd finds the lines the item takes, and the parser reads the
 // item's text and blocks from those lines only. opts are the options of the
-// item's blocks.
-func (p *parser) listItem(gap tree.Gap, sh shape, opts readOpts) *tree.ListItem {
+// item's blocks. It also reports whether the item's lines end in a literal
+// paragraph collected whole, by it or an item around it, see takeLiteral.
+func (p *parser) listItem(gap tree.Gap, sh shape, opts readOpts) (*tree.ListItem, bool) {
 	start := p.pos()
 	item := &tree.ListItem{NodeBase: newBase(gap), Marker: sh.span}
 	marker := p.at
 	bare := sh.span.End == p.lines[marker].text.End
 
-	lines, literals := p.itemEnd(sh, bare)
-	p.notes.addLiterals(item, literals)
+	lines := p.itemEnd(sh, bare)
 	p.enter(lines)
 	defer p.leave()
 
@@ -125,7 +137,7 @@ func (p *parser) listItem(gap tree.Gap, sh shape, opts readOpts) *tree.ListItem 
 	}
 	item.Children = p.attached(first, opts)
 	item.Lines = tree.Span{Start: start, End: p.pos()}
-	return item
+	return item, p.reader.literalEnds(item.Lines.End)
 }
 
 // startsTextOnly reports whether Asciidoctor reads the first block of the item

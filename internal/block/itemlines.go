@@ -21,18 +21,23 @@ type itemLines struct {
 	// nested item never reads one of the latter as a blank line: it stands
 	// above the nested list, or a callout list reads it as a + still.
 	placeholders map[int]bool
+	// literals are the literal paragraphs the buffer collected whole, see
+	// takeLiteral.
+	literals []tree.Span
 }
 
 // itemEnd finds where the item on the current line ends, and returns the
 // reader of its lines. Asciidoctor collects the lines of an item into a buffer
 // before it reads any block in them, so a block does not decide where the item
-// ends; the item decides where the block may end. It also returns the literal
-// paragraphs collected whole, for the printer, see takeLiteral.
+// ends; the item decides where the block may end.
+//
+// Where it finds blank lines that decide which lines the item takes, it notes
+// how far their gap may change in parser.significant, which gap reads.
 //
 // It ports read_lines_for_list_item from Asciidoctor's parser.rb. A comment
 // starting with "Ruby:" quotes the code a part stands for, "Not in parser.rb:"
 // marks what the port adds, and "Not ported:" what it leaves out and why.
-func (p *parser) itemEnd(sh shape, bare bool) (*reader, []tree.Span) {
+func (p *parser) itemEnd(sh shape, bare bool) *reader {
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
 		p: p, marker: sh.marker, dlist: dlist,
@@ -49,8 +54,11 @@ func (p *parser) itemEnd(sh shape, bare bool) (*reader, []tree.Span) {
 	if r.detached >= 0 {
 		r.placeholders[r.detached] = true
 	}
-	lines := &itemLines{first: p.at + 1, skipped: r.skipped, blanked: r.detached, placeholders: r.placeholders}
-	return &reader{end: r.end, item: lines}, r.literals
+	lines := &itemLines{
+		first: p.at + 1, skipped: r.skipped, blanked: r.detached,
+		placeholders: r.placeholders, literals: r.literals,
+	}
+	return &reader{end: r.end, item: lines}
 }
 
 // itemReader holds the state of read_lines_for_list_item.
@@ -73,7 +81,7 @@ type itemReader struct {
 
 	at  int
 	end int
-	// skipped and placeholders are what itemLines says they are.
+	// skipped, placeholders and literals are what itemLines says they are.
 	skipped      map[int]bool
 	placeholders map[int]bool
 	literals     []tree.Span
@@ -326,8 +334,8 @@ func (r *itemReader) afterBlank(sh shape) bool {
 	return true
 }
 
-// noteRun notes for the printer a run of blank lines above the current line
-// that one blank line would not replace, see freezeKeptGaps.
+// noteRun notes a run of blank lines above the current line that one blank
+// line would not replace, so its gap stays exact.
 //
 // Not in parser.rb. Under one blank line, the next turn of the loop checks a
 // delimiter, a dlist attribute line and an active continuation before
@@ -338,12 +346,12 @@ func (r *itemReader) noteRun(sh shape) {
 	delimiter := sh.kind == shapeDelimiter && !r.hasText
 	attributes := r.dlist && bracketed(sh.kind)
 	if r.continuation == continuationActive || delimiter || attributes {
-		r.p.notes.keptGaps = append(r.p.notes.keptGaps, r.p.lines[r.at].full.Start)
+		r.p.significant[r.at] = tree.Exact
 	}
 }
 
-// noteBareTerm notes for the printer the blank lines above a term without text
-// under block attribute lines, see freezeKeptGaps.
+// noteBareTerm notes the blank lines above a term without text under block
+// attribute lines, so their gap stays exact.
 //
 // Not in parser.rb. Under a blank line, a term above that still waits for text
 // takes the line as its text, see afterBlank. Without one, Asciidoctor reads
@@ -351,7 +359,7 @@ func (r *itemReader) noteRun(sh shape) {
 // block under it.
 func (r *itemReader) noteBareTerm(at int) {
 	if !r.hasText && r.bareTerm(at) && r.shape(at-1).kind == shapeBlank {
-		r.p.notes.keptGaps = append(r.p.notes.keptGaps, r.p.lines[at].full.Start)
+		r.p.significant[at] = tree.Exact
 	}
 }
 
@@ -361,7 +369,7 @@ func (r *itemReader) noteBareTerm(at int) {
 // the paragraph later, Asciidoctor ends it at a delimiter or an attribute line
 // like any other, and at an item line where it reads the paragraph as prose
 // ends, see parser.literal, so the lines may hold further blocks, see
-// freezeInsideLiterals.
+// reader.inLiteral.
 func (r *itemReader) takeLiteral() {
 	from := r.at
 	r.take()
@@ -372,7 +380,7 @@ func (r *itemReader) takeLiteral() {
 		}
 		r.take()
 	}
-	// Not in parser.rb: noted for the printer.
+	// Not in parser.rb: noted for the gaps in and under it.
 	r.literals = append(r.literals, tree.Span{Start: r.p.lines[from].full.Start, End: r.p.lines[r.at-1].full.End})
 }
 
