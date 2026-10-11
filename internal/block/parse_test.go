@@ -941,14 +941,47 @@ List "::"
 Paragraph "c\n"`,
 		},
 		{
-			name: "under a term without text, the blank line between a block attribute line and a nested term with text may go",
+			name: "so does the one above a nested term with text, which a + below it reads otherwise without it",
 			src:  "a::\n[]\n\nb::: x\n\nc\n",
 			want: `
 List "::"
   ListItem "a::\n"
-    List meta~("[]\n") ":::"
+    List gap~ meta~("[]\n") ":::"
       ListItem "b::: x\n"
 Paragraph "c\n"`,
+		},
+		{
+			name: "and the one above any other nested list",
+			src:  "a::\n[source]\n\n. d\n+\n+\n----\nx\n----\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    Literal! gap~ meta~("[source]\n") ". d\n"
+    Continuation gap! "+\n"
+    Paragraph! gap! "+\n"
+Verbatim "----\nx\n----\n"`,
+		},
+		{
+			name: "the blank line above a term the item of an outer term takes as text stays, as without it the term waits for text",
+			src:  "a:: t\nb;;\n\nb;;\n\nc\nd\n",
+			want: `
+List "::"
+  ListItem "a:: t\n"
+    List gap~ ";;"
+      ListItem "b;;\n"
+      ListItem gap~ "b;;\n"
+Paragraph "c\nd\n"`,
+		},
+		{
+			name: "so does the one under a nested term without text in a term without text",
+			src:  "a::\nb:::\n\nc:::\n\nd\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    List gap~ ":::"
+      ListItem "b:::\n"
+      ListItem gap~ "c:::\n"
+Paragraph "d\n"`,
 		},
 		{
 			name: "a callout list after metadata and a blank line ends the list, the item keeps the metadata",

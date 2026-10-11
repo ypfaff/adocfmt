@@ -246,7 +246,6 @@ func (r *itemReader) takeAttributes() bool {
 		if !keep {
 			return false
 		}
-		r.noteBareTerm(next)
 	}
 	for r.at < next {
 		r.take()
@@ -315,6 +314,7 @@ func (r *itemReader) afterBlank(sh shape) bool {
 	// below are Ruby's elsif has_text branch; its is_sibling_list_item? check
 	// already ran in step or after the run.
 	case !r.hasText:
+		r.noteAwaitedText(r.at)
 		// Ruby: buffer.pop unless within_nested_list
 		if !r.withinNested {
 			r.skipped[r.blank] = true
@@ -347,19 +347,6 @@ func (r *itemReader) noteRun(sh shape) {
 	attributes := r.dlist && bracketed(sh.kind)
 	if r.continuation == continuationActive || delimiter || attributes {
 		r.note(r.at, tree.Exact)
-	}
-}
-
-// noteBareTerm notes the blank lines above a term without text under block
-// attribute lines, so their gap keeps its count.
-//
-// Not in parser.rb. Under a blank line, a term above that still waits for text
-// takes the line as its text, see afterBlank. Without one, Asciidoctor reads
-// the line as a nested list whose term waits for text in turn, so it takes the
-// block under it.
-func (r *itemReader) noteBareTerm(at int) {
-	if !r.hasText && r.bareTerm(at) && r.shape(at-1).kind == shapeBlank {
-		r.note(at, tree.KeepCount)
 	}
 }
 
@@ -412,22 +399,42 @@ func (r *itemReader) nestable() nestable {
 // within a nested list, and that a term without text makes it wait for text
 // again.
 func (r *itemReader) noteNestedList(kinds nestable) bool {
-	sh, ok := listShape(r.text(r.at), r.p.lines[r.at].text.Start)
-	if kinds == nestableLists && ok && sh.marker != calloutMarker {
-		// Ruby: within_nested_list = true
-		r.withinNested = true
-		return true
-	}
-	if _, ok := termShape(r.p.src, r.p.lines[r.at]); !ok {
+	opens, term := r.nestedAt(r.at, kinds)
+	if !opens {
 		return false
 	}
 	// Ruby: within_nested_list = true
 	r.withinNested = true
 	// Ruby: has_text = false if nested_list_type == :dlist && $3.nil_or_empty?
-	if r.bareTerm(r.at) {
+	if term && r.bareTerm(r.at) {
 		r.hasText = false
 	}
 	return true
+}
+
+// nestedAt reports whether the line at opens a nested list of the kinds given,
+// and whether it does as a term, the one kind whose text Asciidoctor looks at.
+func (r *itemReader) nestedAt(at int, kinds nestable) (opens, term bool) {
+	sh, ok := listShape(r.text(at), r.p.lines[at].text.Start)
+	if kinds == nestableLists && ok && sh.marker != calloutMarker {
+		return true, false
+	}
+	_, ok = termShape(r.p.src, r.p.lines[at])
+	return ok, ok
+}
+
+// noteAwaitedText notes the blank lines above the line at, which a term still
+// waiting for text takes as its text, see afterBlank, so their gap keeps its
+// count. Without them, Asciidoctor reads a line that opens a nested list as
+// that list: from there the item is within a nested list, and a term without
+// text waits for text in turn.
+//
+// Not in parser.rb.
+func (r *itemReader) noteAwaitedText(at int) {
+	opens, term := r.nestedAt(at, r.nestable())
+	if opens && (!r.withinNested || term && r.bareTerm(at)) {
+		r.note(at, tree.KeepCount)
+	}
 }
 
 // bareTerm reports whether the line at is a term with nothing after its
