@@ -10,11 +10,11 @@ This page describes the `adocfmt` command: its flags, which files it reads, its 
 
 == Usage
 
-[source,console]
+[source,shell]
 ----
-$ adocfmt README.adoc     # prints the formatted file
-$ adocfmt --write docs    # formats the AsciiDoc files under docs/ in place
-$ adocfmt --check docs    # lists the files that are not formatted
+adocfmt README.adoc     # prints the formatted file
+adocfmt --write docs    # formats the AsciiDoc files under docs/ in place
+adocfmt --check docs    # lists the files that are not formatted
 ----
 
 `adocfmt --help` prints the flags.
@@ -35,12 +35,11 @@ Lists on stdout every file that is not formatted, one path per line, and exits w
 A file that is formatted is not listed.
 Without a path, it reads stdin and prints `<stdin>` if the input is not formatted.
 You cannot combine it with `--write`.
+For example, if only `docs/setup.adoc` is not formatted, `adocfmt --check docs` prints:
 +
-[source,console]
-----
-$ adocfmt --check docs
+....
 docs/setup.adoc
-----
+....
 
 `--version`::
 Prints the version.
@@ -57,11 +56,11 @@ Without `--write` or `--check`, adocfmt formats one document and writes the resu
 * A directory or a second path is an error.
 To format several files, use `--write`.
 
-[source,console]
-----
-$ printf '## Title\n' | adocfmt
+For example, `+printf '## Title\n' | adocfmt+` prints:
+
+....
 == Title
-----
+....
 
 Stdout carries the formatted document, the file names from `--check`, and the output of `--help` and `--version`.
 Everything else goes to stderr.
@@ -87,25 +86,21 @@ A subdirectory is walked at its place in that order.
 
 Names::
 adocfmt reports each file under the path you typed.
-Here `site-link` is a symlink to the directory `site`:
+Here `site-link` is a symlink to the directory `site`, and `adocfmt --check site-link` prints:
 +
-[source,console]
-----
-$ adocfmt --check site-link
+....
 site-link/index.adoc
-----
+....
 
 Errors::
 A path or file that cannot be read is reported and skipped, and the run goes on with the rest.
 If a subdirectory cannot be read, only the files inside it are skipped.
-In this example, `p/locked` cannot be read:
+In this example, `p/locked` cannot be read, and `adocfmt --check p` prints:
 +
-[source,console]
-----
-$ adocfmt --check p
+....
 adocfmt: p: open p/locked: permission denied
 p/open/a.adoc
-----
+....
 
 [#ignore-file]
 == Leave a file unformatted
@@ -172,17 +167,13 @@ If a run finds both an error and a file that is not formatted, it exits with 2.
 adocfmt goes on after an error, so one run reports every file that is not formatted and every error.
 A wrong command line is the exception: adocfmt reports it and stops before it reads any file.
 
-In this example, adocfmt refuses `docs/broken.adoc` and still lists the two other files that are not formatted:
+In this example, `adocfmt --check docs` refuses `docs/broken.adoc`, still lists the two other files that are not formatted, and exits with 2:
 
-[source,console]
-----
-$ adocfmt --check docs
+....
 docs/OLD.ASCIIDOC
 docs/broken.adoc:3: block has no closing delimiter
 docs/guide/setup.adoc
-$ echo $?
-2
-----
+....
 
 [#refusal]
 == Refusal findings
@@ -244,14 +235,13 @@ Remove it, or add the directive that opens the region.
 Asciidoctor rejects the directive on the reported line.
 An `ifdef` or `ifndef` needs an attribute name, as in `ifdef::name[]`.
 An `ifeval` needs an expression in the brackets and nothing before them, as in `ifeval::[{level} > 1]`.
-A malformed directive opens no region, so its `endif` is reported as well:
+A malformed directive opens no region, so its `endif` is reported as well.
+For example, `+printf 'ifdef::[]\nText.\nendif::[]\n' | adocfmt --check+` prints:
 +
-[source,console]
-----
-$ printf 'ifdef::[]\nText.\nendif::[]\n' | adocfmt --check
+....
 <stdin>:1: malformed preprocessor directive
 <stdin>:3: endif closes no conditional region
-----
+....
 
 [#unreadable]
 === Documents adocfmt cannot read
