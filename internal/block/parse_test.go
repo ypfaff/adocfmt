@@ -984,6 +984,18 @@ List "::"
 Paragraph "d\n"`,
 		},
 		{
+			name: "no blank line comes between a term whose nested terms end without text and the next term, which a blank line would make their text",
+			src:  "a:: t\nb:::\nb;;\nb:::\n\nx\n",
+			want: `
+List "::"
+  ListItem "a:: t\n"
+    List gap~ ":::"
+      ListItem "b:::\n"
+        List gap~ ";;"
+          ListItem "b;;\n"
+      ListItem gap~ "b:::\n\nx\n"`,
+		},
+		{
 			name: "a callout list after metadata and a blank line ends the list, the item keeps the metadata",
 			src:  "* a\n[[id]]\n\n<1> b\n",
 			want: `
@@ -1894,7 +1906,7 @@ Literal meta("[verse]\n") "detached\n"`,
 			want: `
 List "::"
   ListItem "term::\n"
-    List meta~("[start=3]\n") "1."
+    List gap~ meta~("[start=3]\n") "1."
       ListItem "1. one\n"`,
 		},
 		{
