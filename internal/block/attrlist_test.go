@@ -3,6 +3,8 @@ package block
 import (
 	"slices"
 	"testing"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // TestBlockOptions pins the spellings Asciidoctor 2.0.26 reads as setting an
@@ -40,6 +42,43 @@ func TestBlockOptions(t *testing.T) {
 	for _, test := range tests {
 		if got := blockOptions([]byte(test.src)); !slices.Equal(got, test.want) {
 			t.Errorf("blockOptions(%s) = %q, want %q", test.src, got, test.want)
+		}
+	}
+}
+
+// TestBlockRoles pins the roles Asciidoctor 2.0.26 gives a block, checked
+// against the classes it renders.
+func TestBlockRoles(t *testing.T) {
+	tests := []struct {
+		lines []string
+		want  []string
+	}{
+		{[]string{"[.pre-wrap]"}, []string{"pre-wrap"}},
+		{[]string{"[.lead.pre-wrap]"}, []string{"lead", "pre-wrap"}},
+		{[]string{"[quote#id.pre-wrap%step]"}, []string{"pre-wrap"}},
+		{[]string{`[".pre-wrap"]`}, []string{"pre-wrap"}},
+		{[]string{"[role=pre-wrap]"}, []string{"pre-wrap"}},
+		{[]string{"[role='pre-wrap']"}, []string{"pre-wrap"}},
+		{[]string{"[role= pre-wrap ]"}, []string{"pre-wrap"}},
+		{[]string{`[role="lead pre-wrap"]`}, []string{"lead", "pre-wrap"}},
+		{[]string{"[.pre-wrap,role=lead]"}, []string{"lead", "pre-wrap"}},
+		{[]string{"[role=lead]", "[.pre-wrap]"}, []string{"lead", "pre-wrap"}},
+		{[]string{"[.pre-wrap]", "[.lead]"}, []string{"pre-wrap", "lead"}},
+		{[]string{"[.pre-wrap]", "[role=lead]"}, []string{"lead"}},
+		{[]string{"[role=lead,.pre-wrap]"}, []string{"lead"}},
+		{[]string{"[.pre wrap]"}, nil},
+		{[]string{"[roles=pre-wrap]"}, nil},
+	}
+
+	for _, test := range tests {
+		var src []byte
+		var meta []tree.Meta
+		for _, line := range test.lines {
+			meta = append(meta, tree.Meta{Kind: tree.MetaAttributes, Lines: tree.Span{Start: len(src), End: len(src) + len(line)}})
+			src = append(src, line...)
+		}
+		if got := blockRoles(src, meta); !slices.Equal(got, test.want) {
+			t.Errorf("blockRoles(%q) = %q, want %q", test.lines, got, test.want)
 		}
 	}
 }

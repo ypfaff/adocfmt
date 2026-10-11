@@ -394,6 +394,20 @@ Attribute ":attribute-missing!:\n"
 Paragraph "a\n{x}\nb\n"`,
 		},
 		{
+			name: "the pre-wrap role makes the line breaks content",
+			src: "[.pre-wrap]\na\nb\n\n[role=pre-wrap]\na\nb\n\n[role=\"lead pre-wrap\"]\na\nb\n\n" +
+				"[.lead.pre-wrap]\na\nb\n\n[role=lead]\n[.pre-wrap]\na\nb\n\n" +
+				"[.pre-wrap]\n[role=lead]\na\nb\n\n[role=lead,.pre-wrap]\na\nb\n",
+			want: `
+Literal meta("[.pre-wrap]\n") "a\nb\n"
+Literal meta("[role=pre-wrap]\n") "a\nb\n"
+Literal meta("[role=\"lead pre-wrap\"]\n") "a\nb\n"
+Literal meta("[.lead.pre-wrap]\n") "a\nb\n"
+Literal meta("[role=lead]\n") meta("[.pre-wrap]\n") "a\nb\n"
+Paragraph meta("[.pre-wrap]\n") meta("[role=lead]\n") "a\nb\n"
+Paragraph meta("[role=lead,.pre-wrap]\n") "a\nb\n"`,
+		},
+		{
 			name: "metadata binds across a blank line",
 			src:  "[#id]\n\nText.\n",
 			want: `

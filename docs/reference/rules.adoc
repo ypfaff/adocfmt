@@ -706,7 +706,7 @@ Then run it.
 ====
 * A paragraph whose line breaks show on the page.
 https://docs.asciidoctor.org/asciidoc/latest/blocks/verses/[Verse] and https://docs.asciidoctor.org/asciidoc/latest/verbatim/literal-blocks/[literal] paragraphs show every line break.
-So does a paragraph with the https://docs.asciidoctor.org/asciidoc/latest/blocks/hard-line-breaks/[`hardbreaks` option], set on the paragraph or for the whole document.
+So does a paragraph with the https://docs.asciidoctor.org/asciidoc/latest/blocks/hard-line-breaks/[`hardbreaks` option], set on the paragraph or for the whole document, and so does a paragraph with the `pre-wrap` role, which Asciidoctor's default stylesheet shows with its line breaks.
 A paragraph with its own https://docs.asciidoctor.org/asciidoc/latest/subs/apply-subs-to-blocks/[`subs`] can pass raw HTML through, and raw HTML can show a line break.
 +
 .Example

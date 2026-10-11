@@ -117,7 +117,7 @@ func blockOptions(s []byte) []string {
 		name, value, named := cutAttr(attr)
 		switch {
 		case !named && i == 0:
-			opts = append(opts, shorthandOptions(name)...)
+			opts = append(opts, shorthand(name, '%')...)
 		case named && (name == "options" || name == "opts"):
 			opts = append(opts, splitOptions(value)...)
 		case named && strings.HasSuffix(name, "-option"):
@@ -125,6 +125,39 @@ func blockOptions(s []byte) []string {
 		}
 	}
 	return opts
+}
+
+// preWrapRole shows the line breaks of the source as written, through the
+// default stylesheet, so its lines are content too.
+const preWrapRole = "pre-wrap"
+
+// hasRole reports whether the attribute lines above the block give it the role.
+func hasRole(src []byte, meta []tree.Meta, role string) bool {
+	return slices.Contains(blockRoles(src, meta), role)
+}
+
+// blockRoles lists the roles the attribute lines above a block give it, as
+// Asciidoctor collects them: role= replaces the roles before it, and .role in
+// the shorthand of the first attribute adds to them, even to a role= after it.
+func blockRoles(src []byte, meta []tree.Meta) []string {
+	var roles []string
+	for _, m := range meta {
+		if m.Kind != tree.MetaAttributes {
+			continue
+		}
+		var added []string
+		for i, attr := range attrList(src[m.Lines.Start:m.Lines.End]) {
+			name, value, named := cutAttr(attr)
+			switch {
+			case !named && i == 0:
+				added = shorthand(name, '.')
+			case named && name == "role":
+				roles = strings.Fields(value)
+			}
+		}
+		roles = append(roles, added...)
+	}
+	return roles
 }
 
 // substitutionsAttr sets which substitutions the text of a block goes through.
@@ -218,24 +251,25 @@ func unquote(s []byte) string {
 	return string(s)
 }
 
-// shorthandOptions reads the %opt parts out of the style shorthand
-// [style#id.role%opt]. A space anywhere means the attribute is no shorthand.
-func shorthandOptions(style string) []string {
+// shorthand reads the parts that mark opens out of the style shorthand
+// [style#id.role%opt], % for options and . for roles. A space anywhere means
+// the attribute is no shorthand.
+func shorthand(style string, mark byte) []string {
 	if strings.ContainsRune(style, ' ') {
 		return nil
 	}
-	var opts []string
+	var parts []string
 	for at := 0; at < len(style); {
 		end := len(style)
 		if next := strings.IndexAny(style[at+1:], ".#%"); next >= 0 {
 			end = at + 1 + next
 		}
-		if style[at] == '%' && end > at+1 {
-			opts = append(opts, style[at+1:end])
+		if style[at] == mark && end > at+1 {
+			parts = append(parts, style[at+1:end])
 		}
 		at = end
 	}
-	return opts
+	return parts
 }
 
 // splitOptions reads the value of options= the way Asciidoctor does: a list

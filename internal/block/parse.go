@@ -718,11 +718,11 @@ func (p *parser) setext(b tree.NodeBase, level int) tree.Node {
 }
 
 // paragraph reads prose, unless its line breaks carry meaning: a verbatim
-// style, the hardbreaks option, substitutions of its own, or a document
-// attribute in force that binds lines makes it a Literal. A quoted paragraph
-// is Opaque like the Markdown quote, since Asciidoctor lifts its last line out
-// as the attribution. So is one with a style or a block macro on its first
-// line that only an extension knows, see extensionStyle and
+// style, the hardbreaks option, the pre-wrap role, substitutions of its own,
+// or a document attribute in force that binds lines makes it a Literal. A
+// quoted paragraph is Opaque like the Markdown quote, since Asciidoctor lifts
+// its last line out as the attribution. So is one with a style or a block
+// macro on its first line that only an extension knows, see extensionStyle and
 // isCustomBlockMacro. A label opening its first line makes it an Admonition.
 func (p *parser) paragraph(b tree.NodeBase, closer []byte) tree.Node {
 	first := p.at
@@ -733,7 +733,8 @@ func (p *parser) paragraph(b tree.NodeBase, closer []byte) tree.Node {
 		extensionStyle(style) || isCustomBlockMacro(p.text(p.lines[first])):
 		return &tree.Opaque{NodeBase: b}
 	case styledVerbatim(p.src, b.Meta) || hasOption(p.src, b.Meta, hardbreaksOption) ||
-		hasAttr(p.src, b.Meta, substitutionsAttr) || len(p.lineBound) > 0:
+		hasRole(p.src, b.Meta, preWrapRole) || hasAttr(p.src, b.Meta, substitutionsAttr) ||
+		len(p.lineBound) > 0:
 		return &tree.Literal{NodeBase: b}
 	case admonition(p.text(p.lines[first])):
 		return &tree.Admonition{NodeBase: b}

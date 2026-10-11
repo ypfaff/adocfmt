@@ -1,0 +1,7 @@
+[.pre-wrap]
+First line
+second line.
+
+[role="lead pre-wrap"]
+First line
+second line.
