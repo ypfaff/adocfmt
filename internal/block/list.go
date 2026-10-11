@@ -39,7 +39,7 @@ func (p *parser) list(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
 		// Blank lines under a literal collected whole end it, see takeLiteral;
 		// without them the next item would join it.
 		if literal && !gap.Span.Empty() {
-			gap.Stage = tree.Exact
+			gap.Stage = max(gap.Stage, tree.KeepCount)
 		}
 		// Under a literal last in the item they keep their count too, see
 		// endsInLiteral, except in a description list, where the next term
