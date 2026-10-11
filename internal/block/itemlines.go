@@ -417,8 +417,8 @@ func (r *itemReader) nestable() nestable {
 // within a nested list, and that a term without text makes it wait for text
 // again.
 func (r *itemReader) noteNestedList(kinds nestable) bool {
-	sh := r.shape(r.at)
-	if kinds == nestableLists && sh.kind == shapeMarker && sh.marker != calloutMarker && !isTermMarker(sh.marker) {
+	sh, ok := listShape(r.text(r.at), r.p.lines[r.at].text.Start)
+	if kinds == nestableLists && ok && sh.marker != calloutMarker {
 		// Ruby: within_nested_list = true
 		r.withinNested = true
 		return true

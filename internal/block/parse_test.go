@@ -731,6 +731,60 @@ List "::"
 Literal meta("[source]\n") "* a:: b\n----\nx\n"`,
 		},
 		{
+			name: "so is a break shaped like an item of the list",
+			src:  "* a\n+\none two\n* * *\nthree\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Paragraph "one two\n"
+  ListItem "* * *\nthree\n"`,
+		},
+		{
+			name: "also across a blank line",
+			src:  "- one\n- two\n\n- - -\n",
+			want: `
+List "-"
+  ListItem "- one\n"
+  ListItem "- two\n"
+  ListItem "- - -\n"`,
+		},
+		{
+			name: "a break shaped like an item of another list stays in the item under a blank line, where it is a break",
+			src:  "- one\n- two\n\n* * *\n",
+			want: `
+List "-"
+  ListItem "- one\n"
+  ListItem "- two\n"
+    Opaque "* * *\n"`,
+		},
+		{
+			name: "right under the item's line it opens a nested list, since that block is read as text only",
+			src:  "- one\n* * *\n",
+			want: `
+List "-"
+  ListItem "- one\n"
+    List "*"
+      ListItem "* * *\n"`,
+		},
+		{
+			name: "under more text of the item it ends the text and is a break",
+			src:  "- one\ntwo\n* * *\n",
+			want: `
+List "-"
+  ListItem "- one\ntwo\n"
+    Opaque "* * *\n"`,
+		},
+		{
+			name: "a carried paragraph reads on past it and keeps it on its line",
+			src:  "- one\n+\ntwo\n* * *\nthree\n",
+			want: `
+List "-"
+  ListItem "- one\n"
+    Continuation gap! "+\n"
+    Paragraph! "two\n* * *\nthree\n"`,
+		},
+		{
 			name: "the blank line between metadata and an indented item of a nested list may go",
 			src:  "* a\n[horizontal]\n\n  b:: c\n",
 			want: `

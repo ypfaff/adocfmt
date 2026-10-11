@@ -456,14 +456,18 @@ func metaKind(sh shape) (tree.MetaKind, bool) {
 // it, see titled.
 //
 // In a block read as text only, see readsTextOnly, Asciidoctor looks for no
-// break, no block macro and no attribute entry: such a line is text. Nor does
-// it look for a Markdown quote, a quoted paragraph, an admonition label or a
-// literal paragraph, which the parser still reads as Opaque, Admonition or
-// Literal; that only costs formatting.
+// break, no block macro and no attribute entry: such a line is text, unless it
+// reads as an item, since Asciidoctor still looks for a list. Nor does it look
+// for a Markdown quote, a quoted paragraph, an admonition label or a literal
+// paragraph, which the parser still reads as Opaque, Admonition or Literal;
+// that only costs formatting.
 func (p *parser) body(b tree.NodeBase, closer []byte, textOnly bool) tree.Node {
 	sh := p.shape()
 	if textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
 		sh.kind = shapeText
+		if item, ok := listShape(p.text(p.lines[p.at]), p.lines[p.at].text.Start); ok {
+			sh = item
+		}
 	}
 	atStart := p.atStart && !titled(p.src, b.Meta)
 	p.atStart = atStart && precedesTitle(sh)
@@ -821,10 +825,13 @@ func endsText(sh shape) bool {
 	}
 }
 
-// endsItemText also stops at the next item, which keeps a term from being read
-// as the text of the item above it.
-func endsItemText(sh shape) bool {
-	return endsText(sh) || sh.kind == shapeMarker
+// endsItemText also stops at a line that starts like an item, which keeps a
+// term from being read as the text of the item above it. Asciidoctor asks
+// whether the line reads as an item rather than what it reads as, see
+// listShape, so a break shaped like an item ends the text too.
+func (p *parser) endsItemText(sh shape) bool {
+	_, item := listShape(p.text(p.lines[p.at]), 0)
+	return endsText(sh) || sh.kind == shapeMarker || item
 }
 
 // endsCarriedPlus is where the paragraph ends that a + under a carrying + opens.
@@ -857,7 +864,7 @@ func (p *parser) endsVerbatimAfter(first int) func(shape) bool {
 // line, an item line included.
 func (p *parser) endsProse(b tree.NodeBase) func(shape) bool {
 	if p.inList() && !p.carrying && !paragraphStyles[styleOf(p.src, b.Meta)] {
-		return endsItemText
+		return p.endsItemText
 	}
 	return endsText
 }

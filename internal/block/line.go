@@ -554,7 +554,8 @@ func isEvalExpression(s []byte) bool {
 // only at the start of a line; and an inline {set:} makes Asciidoctor drop the
 // whole line it stands on.
 func pinsLine(sh shape, s []byte, inList bool) bool {
-	if sh.kind == shapeComment || (sh.kind == shapeMarker && (inList || isTermMarker(sh.marker))) {
+	_, item := listShape(s, 0)
+	if sh.kind == shapeComment || (sh.kind == shapeMarker && isTermMarker(sh.marker)) || (inList && item) {
 		return true
 	}
 	if len(s) > 0 && s[0] == '\\' {
@@ -777,11 +778,31 @@ func termShape(src []byte, l line) (shape, bool) {
 	return shape{kind: shapeMarker, span: tree.Span{Start: start, End: start + width}, marker: key}, true
 }
 
+// listShape reads the line s, starting at offset start, as an item of an
+// unordered, ordered or callout list, whatever else it reads as, as
+// Asciidoctor's ListRxMap does for those lists. Asciidoctor tests a line that
+// way wherever it asks for an item rather than for the next block, so * * * and
+// - - - are items there, though breaks at the start of a block.
+func listShape(s []byte, start int) (shape, bool) {
+	body := bytes.TrimLeft(s, " \t")
+	if len(body) == 0 {
+		return shape{}, false
+	}
+	indent := len(s) - len(body)
+	sh, ok := markerShape(body, start+indent)
+	// Asciidoctor reads a callout only at the start of a line, as in classify.
+	if !ok || isTermMarker(sh.marker) || (sh.marker == calloutMarker && indent > 0) {
+		return shape{}, false
+	}
+	return sh, true
+}
+
 // opensAnyList reports whether the line opens an item of any list, which is
 // what Asciidoctor's AnyListRx matches.
 func opensAnyList(src []byte, l line) bool {
 	_, isTerm := termShape(src, l)
-	return isTerm || classify(src, l).kind == shapeMarker
+	_, isItem := listShape(src[l.text.Start:l.text.End], l.text.Start)
+	return isTerm || isItem
 }
 
 // descriptionMarker finds the term separator of a description list. The term

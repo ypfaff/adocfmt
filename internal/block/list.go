@@ -74,7 +74,7 @@ func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte) *tree.ListItem 
 	p.at++
 	for !p.done() {
 		inner := p.shape()
-		if endsItemText(inner) {
+		if p.endsItemText(inner) {
 			break
 		}
 		if inner.kind == shapeDirective {
@@ -121,19 +121,20 @@ func (p *parser) itemText(marker, behind int) tree.Span {
 // fold takes the lines under a blank line onto a term that has nothing on its
 // line and no line right under it, not even a comment. Asciidoctor reads them
 // as the term's text whatever they look like, so a break or a heading among
-// them is text, not a block of its own. A directive under the term leaves open
-// whether the term has text, so the lines fold into the frozen item then and
-// stay as they stand.
+// them is text, not a block of its own. Only a line that reads as an item is
+// not, see endsItemText. A directive under the term leaves open whether the
+// term has text, so the lines fold into the frozen item then and stay as they
+// stand.
 func (p *parser) fold(item *tree.ListItem, start int, closer []byte) {
 	m := p.mark()
 	p.gap()
-	if p.done() || !foldsOntoTerm(p.shape().kind) {
+	if p.done() || !foldsOntoTerm(p.shape().kind) || p.endsItemText(p.shape()) {
 		p.rewind(m)
 		return
 	}
 
 	var folded tree.NodeBase
-	p.textRun(&folded, closer, endsItemText)
+	p.textRun(&folded, closer, p.endsItemText)
 	item.Frozen = item.Frozen || folded.Frozen
 	item.Principal = tree.Span{Start: start, End: p.pos()}
 	// Folding keeps the gap in Principal instead of giving it back, so the
@@ -199,14 +200,15 @@ func (p *parser) carried(closer []byte) []tree.Node {
 }
 
 // siblingAt returns the item on the line at where it continues the list with
-// the marker. Asciidoctor takes any line with the separator of a description
-// list as its next term, see termShape.
+// the marker. Asciidoctor reads the line as an item of that list whatever else
+// it reads as, see listShape and termShape.
 func (p *parser) siblingAt(at int, marker string) (shape, bool) {
-	sh := classify(p.src, p.lines[at])
+	l := p.lines[at]
+	sh, ok := listShape(p.text(l), l.text.Start)
 	if isTermMarker(marker) {
-		sh, _ = termShape(p.src, p.lines[at])
+		sh, ok = termShape(p.src, l)
 	}
-	return sh, sh.kind == shapeMarker && sh.marker == marker
+	return sh, ok && sh.marker == marker
 }
 
 func (p *parser) inList() bool { return len(p.markers) > 0 }
