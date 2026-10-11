@@ -142,7 +142,7 @@ type parser struct {
 	// read, from where listItem sets it up to where node reads that block.
 	first firstBlock
 	// preWrap holds inside a delimited block with the pre-wrap role, which
-	// the browser hands down to every paragraph in it, see paragraph.
+	// the browser hands down to every paragraph in it, see keepsLineBreaks.
 	preWrap bool
 	// regions are the open conditional regions, innermost last, each by the
 	// line that opened it. A delimiter that opens in one and closes in another
@@ -792,31 +792,53 @@ func (p *parser) setext(b tree.NodeBase, level, underline int) tree.Node {
 	return &tree.Setext{NodeBase: b, Level: level, Title: title}
 }
 
-// paragraph reads prose, unless its line breaks carry meaning: a verbatim
-// style, the hardbreaks option, the pre-wrap role on it or on a delimited block
-// around it, substitutions of its own, or a document attribute in force that
-// binds lines makes it a Literal. A quoted paragraph is Opaque like the
-// Markdown quote, since Asciidoctor lifts its last line out as the attribution.
-// So is one with a style or a block macro on its first line that only an
-// extension knows, see extensionStyle and isCustomBlockMacro. A label opening
-// its first line makes it an Admonition.
+// paragraph reads the lines of a paragraph and tells which node they make.
+// Most are prose, a Paragraph. The exceptions:
+//
+//   - Opaque, where Asciidoctor reads it as something else, see readsOpaque.
+//   - Literal, where its line breaks show on the page, see keepsLineBreaks.
+//   - Admonition, where a label such as NOTE: opens it.
 func (p *parser) paragraph(b tree.NodeBase, closer []byte, breakAtList bool) tree.Node {
 	first := p.at
 	p.textRun(&b, closer, p.endsProse(b, breakAtList))
-	style := styleOf(p.src, b.Meta)
 	switch {
-	case !paragraphStyles[style] && quotedParagraph(p.src, p.lines[first:p.at]),
-		extensionStyle(style) || isCustomBlockMacro(p.text(p.lines[first])):
+	case p.readsOpaque(b, first):
 		return &tree.Opaque{NodeBase: b}
-	case styledVerbatim(p.src, b.Meta) || hasOption(p.src, b.Meta, hardbreaksOption) ||
-		hasRole(p.src, b.Meta, preWrapRole) || p.preWrap || hasAttr(p.src, b.Meta, substitutionsAttr) ||
-		len(p.lineBound) > 0:
+	case p.keepsLineBreaks(b):
 		return &tree.Literal{NodeBase: b}
 	case admonition(p.text(p.lines[first])):
 		return &tree.Admonition{NodeBase: b}
 	default:
 		return &tree.Paragraph{NodeBase: b}
 	}
+}
+
+// readsOpaque reports whether Asciidoctor reads the paragraph starting on the
+// line first as something other than prose:
+//
+//   - a quoted paragraph, whose last line it lifts out as the attribution;
+//   - one with a style, or a block macro on its first line, that only an
+//     extension knows, see extensionStyle and isCustomBlockMacro.
+func (p *parser) readsOpaque(b tree.NodeBase, first int) bool {
+	style := styleOf(p.src, b.Meta)
+	return (!paragraphStyles[style] && quotedParagraph(p.src, p.lines[first:p.at])) ||
+		extensionStyle(style) || isCustomBlockMacro(p.text(p.lines[first]))
+}
+
+// keepsLineBreaks reports whether the paragraph's line breaks show on the
+// page, so no rule may join its lines:
+//
+//   - a verbatim style such as [literal] or [source];
+//   - the hardbreaks option;
+//   - the pre-wrap role, on the paragraph or on a block around it;
+//   - substitutions of its own, which can pass raw HTML through;
+//   - a document attribute in force that binds lines, see lineBound.
+func (p *parser) keepsLineBreaks(b tree.NodeBase) bool {
+	return styledVerbatim(p.src, b.Meta) ||
+		hasOption(p.src, b.Meta, hardbreaksOption) ||
+		hasRole(p.src, b.Meta, preWrapRole) || p.preWrap ||
+		hasAttr(p.src, b.Meta, substitutionsAttr) ||
+		len(p.lineBound) > 0
 }
 
 // admonitionLabels are the labels that open an admonition paragraph.
