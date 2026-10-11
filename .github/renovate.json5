@@ -100,6 +100,13 @@
       enabled: false,
     },
     {
+      // The plugin builds against IntelliJ 2024.3, which runs on Java 21, so
+      // the JDK of the workflows moves only when the plugin's oldest IDE does.
+      matchDepNames: ['java-jdk'],
+      matchUpdateTypes: ['major'],
+      enabled: false,
+    },
+    {
       matchPackageNames: ['asciidoctor'],
       prBodyNotes: [
         'Follow docs/contributing/testing-strategy.adoc for a new Asciidoctor release.',
