@@ -658,7 +658,7 @@ Literal "  more\n* d\n"`,
 List "*"
   ListItem "* a\n"
     Literal gap~ "  code\n"
-    Verbatim gap! "----\nx\n----\n"
+    Verbatim gap~ "----\nx\n----\n"
   ListItem gap~ "* b\n"`,
 		},
 		{
@@ -691,7 +691,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  code\n"
-    Verbatim gap! "----\nx\n\n  more\n----\n"`,
+    Verbatim gap~ "----\nx\n\n  more\n----\n"`,
 		},
 		{
 			name: "so does one under a continuation, and the next term ends it",
@@ -701,7 +701,7 @@ List "::"
   ListItem "a:: b\n"
     Continuation gap! "+\n"
     Literal gap! "  code\n"
-    Verbatim gap! meta!("[source]\n") "----\nx\n----\n"
+    Verbatim gap~ meta~("[source]\n") "----\nx\n----\n"
   ListItem "c:: d\n"`,
 		},
 		{
@@ -711,8 +711,8 @@ List "::"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  lit\n"
-    Verbatim gap! "----\nx\n----\n"
-    List gap! "*"
+    Verbatim gap~ "----\nx\n----\n"
+    List gap~ "*"
       ListItem "* b\n"`,
 		},
 		{
@@ -724,8 +724,8 @@ List "*"
     List gap~ "::"
       ListItem "c:: d\n"
         Literal gap~ "  code\n"
-      ListItem gap! "e:: f\n"
-    Verbatim gap! "----\nx\n----\n"`,
+      ListItem gap~ "e:: f\n"
+    Verbatim gap~ "----\nx\n----\n"`,
 		},
 		{
 			name: "no blank line may come between the blocks inside a delimited block there either",
@@ -734,9 +734,9 @@ List "*"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  lit\n"
-    Container gap! "====\n"
-      Paragraph gap! "text\n"
-      Verbatim gap! "----\nx\n----\n"`,
+    Container gap~ "====\n"
+      Paragraph gap~ "text\n"
+      Verbatim gap~ "----\nx\n----\n"`,
 		},
 		{
 			name: "a comment under the continuation ends it, so the block stays out",
@@ -755,7 +755,7 @@ Verbatim "----\nx\n----\n"`,
 List "*"
   ListItem "* a\n"
     Literal gap! meta~("[x]\n") "  code\n"
-    List gap! "*"
+    List gap~ "*"
       ListItem "* b\n"`,
 		},
 		{
@@ -799,7 +799,7 @@ List "-"
     Continuation gap! "+\n"
     List gap! "::"
       ListItem "  t:: u\n"
-      ListItem gap! "b::\n"
+      ListItem gap~ "b::\n"
   ListItem gap~ "- d\n"`,
 		},
 		{
