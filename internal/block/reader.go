@@ -58,6 +58,31 @@ func (p *parser) past(at int) bool {
 // block and list item, the only place where sections exist.
 func (p *parser) atSectionLevel() bool { return p.reader.outer == nil }
 
+// inCommentMeta reports whether the lines the innermost item has read so far
+// are comment lines under its line, then blank lines and + lines only.
+// Asciidoctor reads them as the metadata of the item's first block: it looks
+// past comment lines for that block, and skips a blank line or a + among
+// metadata lines without counting it.
+func (p *parser) inCommentMeta() bool {
+	item := p.reader.item
+	if item == nil {
+		return false
+	}
+	at := item.first
+	for at < p.at && classify(p.src, p.lines[at]).kind == shapeComment {
+		at++
+	}
+	if at == item.first {
+		return false
+	}
+	for ; at < p.at; at++ {
+		if kind := classify(p.src, p.lines[at]).kind; kind != shapeBlank && kind != shapeContinuation {
+			return false
+		}
+	}
+	return true
+}
+
 // skipped and blanked report whether the buffer of an item being read leaves
 // the line out, or holds the + on it as a blank line. Every one of them counts:
 // Asciidoctor reads a nested item from the buffer of its parent, which it read

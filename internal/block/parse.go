@@ -177,10 +177,6 @@ type readOpts struct {
 	// that + as a blank line it skips, see skips, and a further + right under
 	// it as text, see body.
 	carried bool
-	// opened holds where comment lines under the item's line opened the first
-	// block, which Asciidoctor reads as its metadata. Blank lines and + lines
-	// between metadata lines it skips without counting them, see skips.
-	opened bool
 	// preWrap holds inside a delimited block or a list with the pre-wrap role,
 	// which the browser hands down to every paragraph in it, see
 	// keepsLineBreaks.
@@ -313,9 +309,9 @@ func (p *parser) node(gap tree.Gap, opts readOpts) tree.Node {
 // skips reports whether Asciidoctor skips a blank line in front of the block
 // under gap and counts it: one the buffer of the item being read holds, or a +
 // it holds as one, see readOpts.carried. In front of a block that comment
-// lines opened, it counts none, see readOpts.opened.
+// lines opened, it counts none, see inCommentMeta.
 func (p *parser) skips(gap tree.Gap, opts readOpts) bool {
-	if opts.opened {
+	if p.inCommentMeta() {
 		return false
 	}
 	if opts.carried {

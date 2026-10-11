@@ -9,6 +9,8 @@ import (
 // itemLines is how the buffer Asciidoctor collects for a list item holds its
 // lines, see itemEnd.
 type itemLines struct {
+	// first is the line under the item's line, where the buffer starts.
+	first int
 	// skipped are the blank lines the buffer leaves out, see reader.skipped.
 	skipped map[int]bool
 	// blanked is the + under a blank line, or -1. A nested item reads it as
@@ -47,7 +49,7 @@ func (p *parser) itemEnd(sh shape, bare bool) (*reader, []tree.Span) {
 	if r.detached >= 0 {
 		r.placeholders[r.detached] = true
 	}
-	lines := &itemLines{skipped: r.skipped, blanked: r.detached, placeholders: r.placeholders}
+	lines := &itemLines{first: p.at + 1, skipped: r.skipped, blanked: r.detached, placeholders: r.placeholders}
 	return &reader{end: r.end, item: lines}, r.literals
 }
 

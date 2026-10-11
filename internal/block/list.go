@@ -96,7 +96,7 @@ func (p *parser) listItem(gap tree.Gap, sh shape, opts readOpts) *tree.ListItem 
 	// are not: Asciidoctor reads them as the metadata of the block below.
 	first := opts
 	if p.onlyComments(marker + 1) {
-		first.textOnly, first.opened = p.startsTextOnly(marker, sh, bare), p.at > marker+1
+		first.textOnly = p.startsTextOnly(marker, sh, bare)
 	}
 	item.Children = p.attached(first, opts)
 	item.Lines = tree.Span{Start: start, End: p.pos()}
@@ -208,7 +208,7 @@ func (p *parser) attached(first, opts readOpts) []tree.Node {
 		node := p.node(gap, next)
 		children = append(children, node)
 		if _, ok := node.(*tree.Continuation); ok {
-			children = append(children, p.carried(under(node, next, opts), opts)...)
+			children = append(children, p.carried(p.under(node, next, opts), opts)...)
 		}
 		next = opts
 	}
@@ -242,16 +242,17 @@ func (p *parser) carried(first, opts readOpts) []tree.Node {
 		if !carriesOn(node) {
 			return nodes
 		}
-		next = under(node, next, opts)
+		next = p.under(node, next, opts)
 	}
 }
 
 // under returns the options of the block under node, which was read with
 // opts, where item are the options of an item's later blocks. Below comment
 // lines that opened the first block, a + is one more line Asciidoctor skips
-// among its metadata, so the block under it is the first still.
-func under(node tree.Node, opts, item readOpts) readOpts {
-	if _, ok := node.(*tree.Continuation); ok && opts.opened {
+// among its metadata, so the block under it is the first still, see
+// inCommentMeta.
+func (p *parser) under(node tree.Node, opts, item readOpts) readOpts {
+	if _, ok := node.(*tree.Continuation); ok && p.inCommentMeta() {
 		return opts
 	}
 	return item
