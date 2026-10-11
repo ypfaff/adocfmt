@@ -53,7 +53,7 @@ func (t *text) between(i int) []byte {
 	gap := t.src[t.words[i].end:t.words[i+1].start]
 	lineBreak := bytes.Contains(gap, lineEnd)
 	switch {
-	case lineBreak && t.hardBreak(i):
+	case lineBreak && (t.hardBreak(i) || t.dashBesideIndent(i, gap)):
 		return gap
 	case t.endsSentence(i), lineBreak && t.keepsLineEnd(i):
 		return lineEnd
@@ -101,6 +101,16 @@ func (t *text) wordEnd(i int) int {
 func (t *text) hardBreak(i int) bool {
 	start := t.words[i].start
 	return string(t.word(i)) == "+" && start > 0 && t.src[start-1] == ' '
+}
+
+// dashBesideIndent reports whether a -- stands on either side of the line end
+// in gap, and the next line is indented. Asciidoctor makes an em dash of a --
+// only next to a space or a line end, and eats one on each side. Joined, the
+// indent would stay where the line end went, or the space of the join would
+// make a dash of a -- that a tab kept plain.
+func (t *text) dashBesideIndent(i int, gap []byte) bool {
+	dash := string(t.word(i)) == "--" || string(t.word(i+1)) == "--"
+	return dash && gap[len(gap)-1] != '\n'
 }
 
 // endsSentence reports whether a sentence ends after word i.

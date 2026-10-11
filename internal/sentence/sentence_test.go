@@ -73,6 +73,14 @@ func TestReflow(t *testing.T) {
 		{"plus after a tab", "One\t+\ntwo.", "One\t+ two."},
 		{"plus alone on a line indented by spaces", "One\n  +\ntwo.", "One +\ntwo."},
 
+		{"dash on a line indented by a tab", "One\n\t-- two.", "One\n\t-- two."},
+		{"dash on a line indented by a space", "One\n -- two.", "One\n -- two."},
+		{"dash on a line below a period", "One.\n\t-- two.", "One.\n\t-- two."},
+		{"dash above an indented line", "One --\n two.", "One --\n two."},
+		{"dash at the line start", "One\n-- two.", "One -- two."},
+		{"dash at the line end", "One --\ntwo.", "One -- two."},
+		{"dash inside a word", "One\n\tx-- two.", "One x-- two."},
+
 		{"backtick span", "Run `a. B` now. Next.", "Run `a. B` now.\nNext."},
 		{"double backtick span", "Run ``a. B`` now.", "Run ``a. B`` now."},
 		{"period in a backtick span", "Run `make.` Next.", "Run `make.` Next."},
