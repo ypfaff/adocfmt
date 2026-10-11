@@ -1,5 +1,7 @@
 package block
 
+import "bytes"
+
 // reader holds the lines the parser may read for one block: from where it
 // stands up to end.
 //
@@ -9,13 +11,22 @@ package block
 // ends, and leaves it once the item is read. A nested item enters its own
 // reader inside that one, so the readers form a chain, with the innermost in
 // parser.reader.
+//
+// A delimited block enters a reader too, which ends at its closing line, see
+// closer.
 type reader struct {
 	// outer is the reader around this one, nil for the whole source.
 	outer *reader
 	// end is the first line the reader no longer holds.
 	end int
+	// closer is the closing line of a delimited block, nil for an item and the
+	// source. A delimited block does not know in advance where it ends, so its
+	// reader stops at the first line equal to closer. An item does: itemEnd works
+	// out its last line before the item is read, and end holds it.
+	closer []byte
 	// item is how Asciidoctor's buffer for the item holds its lines: which it
-	// leaves out, and which + it reads as a blank line. nil for the source.
+	// leaves out, and which + it reads as a blank line. nil for the source and
+	// a delimited block.
 	item *itemLines
 }
 
@@ -25,9 +36,27 @@ func (p *parser) enter(r *reader) {
 	p.reader = r
 }
 
+// enterBlock makes the parser read the delimited block that closer closes.
+// A delimiter closes only on a line equal to the one that opened it.
+func (p *parser) enterBlock(closer []byte) {
+	p.enter(&reader{end: p.reader.end, closer: closer})
+}
+
 func (p *parser) leave() { p.reader = p.reader.outer }
 
-func (p *parser) done() bool { return p.at >= p.reader.end }
+func (p *parser) done() bool { return p.past(p.at) }
+
+// past reports whether the line at is past the lines the reader holds: at its
+// end or on its closing line. Only the reader's own closer counts, as only the
+// innermost block is open for Asciidoctor, see closesInside.
+func (p *parser) past(at int) bool {
+	r := p.reader
+	return at >= r.end || r.closer != nil && bytes.Equal(p.text(p.lines[at]), r.closer)
+}
+
+// atSectionLevel reports whether the parser reads outside every delimited
+// block and list item, the only place where sections exist.
+func (p *parser) atSectionLevel() bool { return p.reader.outer == nil }
 
 // skipped and blanked report whether the buffer of an item being read leaves
 // the line out, or holds the + on it as a blank line. Every one of them counts:

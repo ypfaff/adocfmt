@@ -30,10 +30,10 @@ type itemLines struct {
 // It ports read_lines_for_list_item from Asciidoctor's parser.rb. A comment
 // starting with "Ruby:" quotes the code a part stands for, "Not in parser.rb:"
 // marks what the port adds, and "Not ported:" what it leaves out and why.
-func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (*reader, []tree.Span) {
+func (p *parser) itemEnd(sh shape, bare bool) (*reader, []tree.Span) {
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
-		p: p, closer: closer, marker: sh.marker, dlist: dlist,
+		p: p, marker: sh.marker, dlist: dlist,
 		hasText: !dlist || !bare, at: p.at + 1, detached: -1,
 		skipped: map[int]bool{}, placeholders: map[int]bool{},
 	}
@@ -53,8 +53,7 @@ func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (*reader, []tree.Sp
 
 // itemReader holds the state of read_lines_for_list_item.
 type itemReader struct {
-	p      *parser
-	closer []byte
+	p *parser
 	// marker is sibling_trait.
 	marker string
 	dlist  bool
@@ -433,10 +432,8 @@ func (r *itemReader) siblingItem(at int) bool {
 func (r *itemReader) hasMoreLines() bool { return r.within(r.at) }
 
 // within reports whether the item may still take the line at: the buffer ends
-// at the enclosing block's closing line as it does at the limit.
-func (r *itemReader) within(at int) bool {
-	return at < r.p.reader.end && (r.closer == nil || !bytes.Equal(r.text(at), r.closer))
-}
+// where the reader around the item does.
+func (r *itemReader) within(at int) bool { return !r.p.past(at) }
 
 // shape reads the line the way the buffer holds it: a + an enclosing item
 // blanked out is a blank line there.

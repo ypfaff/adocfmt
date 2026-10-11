@@ -9,13 +9,13 @@ import (
 // list reads a run of items sharing one marker. AsciiDoc nests on any change of
 // marker, not on indentation, so a different marker opens a nested list and a
 // marker of an enclosing list ends this one.
-func (p *parser) list(b tree.NodeBase, sh shape, closer []byte, opts readOpts) tree.Node {
+func (p *parser) list(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
 	start, from := p.pos(), p.at
 	list := &tree.List{
 		NodeBase:    b,
 		Marker:      sh.marker,
 		Open:        slices.Clone(opts.lists),
-		Section:     closer == nil && !opts.inList(),
+		Section:     p.atSectionLevel(),
 		Description: isTermMarker(sh.marker),
 	}
 	// A + that carries the list does not carry the blocks in its items.
@@ -26,7 +26,7 @@ func (p *parser) list(b tree.NodeBase, sh shape, closer []byte, opts readOpts) t
 
 	gap := tree.Gap{Span: tree.Span{Start: start, End: start}}
 	for {
-		list.Items = append(list.Items, p.listItem(gap, sh, closer, items))
+		list.Items = append(list.Items, p.listItem(gap, sh, items))
 
 		m := p.mark()
 		gap = p.gap()
@@ -62,13 +62,13 @@ func (p *parser) directiveBelow() bool {
 // does: itemEnd finds the lines the item takes, and the parser reads the
 // item's text and blocks from those lines only. opts are the options of the
 // item's blocks.
-func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte, opts readOpts) *tree.ListItem {
+func (p *parser) listItem(gap tree.Gap, sh shape, opts readOpts) *tree.ListItem {
 	start := p.pos()
 	item := &tree.ListItem{NodeBase: newBase(gap), Marker: sh.span}
 	marker := p.at
 	bare := sh.span.End == p.lines[marker].text.End
 
-	lines, literals := p.itemEnd(sh, bare, closer)
+	lines, literals := p.itemEnd(sh, bare)
 	p.notes.addLiterals(item, literals)
 	p.enter(lines)
 	defer p.leave()
@@ -88,7 +88,7 @@ func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte, opts readOpts) 
 	}
 	item.Principal = tree.Span{Start: start, End: p.pos()}
 	if bare && (p.at == marker+1 || p.directiveSince(start)) {
-		p.fold(item, start, closer, opts)
+		p.fold(item, start, opts)
 	}
 	item.Text = p.itemText(marker, sh.span.End)
 
@@ -98,7 +98,7 @@ func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte, opts readOpts) 
 	if p.onlyComments(marker + 1) {
 		first.textOnly, first.opened = p.startsTextOnly(marker, sh, bare), p.at > marker+1
 	}
-	item.Children = p.attached(closer, first, opts)
+	item.Children = p.attached(first, opts)
 	item.Lines = tree.Span{Start: start, End: p.pos()}
 	return item
 }
@@ -164,7 +164,7 @@ func (p *parser) itemText(marker, behind int) tree.Span {
 // not, see endsItemText. A directive under the term leaves open whether the
 // term has text, so the lines fold into the frozen item then and stay as they
 // stand.
-func (p *parser) fold(item *tree.ListItem, start int, closer []byte, opts readOpts) {
+func (p *parser) fold(item *tree.ListItem, start int, opts readOpts) {
 	m := p.mark()
 	p.gap()
 	if p.done() || !foldsOntoTerm(p.shape().kind) || p.endsItemText(p.shape()) {
@@ -173,7 +173,7 @@ func (p *parser) fold(item *tree.ListItem, start int, closer []byte, opts readOp
 	}
 
 	var folded tree.NodeBase
-	p.textRun(&folded, closer, opts, p.endsItemText)
+	p.textRun(&folded, opts, p.endsItemText)
 	item.Frozen = item.Frozen || folded.Frozen
 	item.Principal = tree.Span{Start: start, End: p.pos()}
 	// Folding keeps the gap in Principal instead of giving it back, so the
@@ -195,7 +195,7 @@ func foldsOntoTerm(kind shapeKind) bool {
 // the item, so whatever stands there belongs to the item, even a line that
 // reads as an item of an open list: that one opens a nested list. The first
 // block is read with the options first, the others with opts.
-func (p *parser) attached(closer []byte, first, opts readOpts) []tree.Node {
+func (p *parser) attached(first, opts readOpts) []tree.Node {
 	var children []tree.Node
 	next := first
 	for {
@@ -205,10 +205,10 @@ func (p *parser) attached(closer []byte, first, opts readOpts) []tree.Node {
 			p.rewind(m)
 			return children
 		}
-		node := p.node(gap, closer, next)
+		node := p.node(gap, next)
 		children = append(children, node)
 		if _, ok := node.(*tree.Continuation); ok {
-			children = append(children, p.carried(closer, under(node, next, opts), opts)...)
+			children = append(children, p.carried(under(node, next, opts), opts)...)
 		}
 		next = opts
 	}
@@ -226,7 +226,7 @@ func (p *parser) attached(closer []byte, first, opts readOpts) []tree.Node {
 //
 // The first block is read with the options first, the others with opts, see
 // under.
-func (p *parser) carried(closer []byte, first, opts readOpts) []tree.Node {
+func (p *parser) carried(first, opts readOpts) []tree.Node {
 	first.carried, opts.carried = true, true
 	next := first
 	var nodes []tree.Node
@@ -237,7 +237,7 @@ func (p *parser) carried(closer []byte, first, opts readOpts) []tree.Node {
 			p.rewind(m)
 			return nodes
 		}
-		node := p.node(gap, closer, next)
+		node := p.node(gap, next)
 		nodes = append(nodes, node)
 		if !carriesOn(node) {
 			return nodes

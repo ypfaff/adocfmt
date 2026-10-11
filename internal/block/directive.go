@@ -21,24 +21,13 @@ func IgnoresFile(src []byte) bool {
 			}
 			p.at++
 		case sh.kind == shapeDelimiter && sh.char == '/':
-			p.skipTopCommentBlock()
+			p.commentBlock()
 		default:
 			// Any other line, usually the title, ends the lines above it.
 			return false
 		}
 	}
 	return false
-}
-
-// skipTopCommentBlock moves past the comment block that opens on the current
-// line. Whether its closing line exists is left to Parse to report.
-func (p *parser) skipTopCommentBlock() {
-	closer := p.text(p.lines[p.at])
-	p.at++
-	p.skipVerbatim(closer, true)
-	if !p.done() {
-		p.at++
-	}
 }
 
 // isIgnoreFile reports whether a comment line says adocfmt: ignore-file.

@@ -60,6 +60,12 @@ No rule may add, remove, join or split lines in a frozen node, or change the bla
 Finding::
 Structure the parser cannot trust, such as a block that never closes, reported with its line number.
 
+== Parser
+
+The parser follows the shape of Asciidoctor's.
+Each list item and each delimited block reads its lines through a `reader` of its own, which ends at the end of the item or at the block's closing line.
+What holds for a block and the blocks in it, such as the lists open around it, goes down with the call as `readOpts`; a field of the `parser` holds only what carries on in document order, such as an open conditional region.
+
 == Printer and rules
 
 The printer walks the tree once, from top to bottom, with one function per node type.
