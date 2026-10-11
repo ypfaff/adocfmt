@@ -473,6 +473,21 @@ Container meta("[.pre-wrap]\n") "====\n"
 Paragraph "f\ng\n"`,
 		},
 		{
+			name: "and the role on a list, down to the paragraphs a + attaches to its items",
+			src:  "[.pre-wrap]\n* a\n+\nb\nc\n* d\n** e\n+\nf\ng\n\nh\ni\n",
+			want: `
+List meta("[.pre-wrap]\n") "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Literal "b\nc\n"
+  ListItem "* d\n"
+    List "**"
+      ListItem "** e\n"
+        Continuation gap! "+\n"
+        Literal "f\ng\n"
+Paragraph "h\ni\n"`,
+		},
+		{
 			name: "metadata binds across a blank line",
 			src:  "[#id]\n\nText.\n",
 			want: `

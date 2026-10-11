@@ -19,7 +19,10 @@ func (p *parser) list(b tree.NodeBase, sh shape, closer []byte, opts readOpts) t
 		Description: isTermMarker(sh.marker),
 	}
 	// A + that carries the list does not carry the blocks in its items.
-	items := readOpts{lists: append(slices.Clone(opts.lists), sh.marker), preWrap: opts.preWrap}
+	items := readOpts{
+		lists:   append(slices.Clone(opts.lists), sh.marker),
+		preWrap: opts.preWrap || hasRole(p.src, b.Meta, preWrapRole),
+	}
 
 	gap := tree.Gap{Span: tree.Span{Start: start, End: start}}
 	for {

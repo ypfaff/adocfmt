@@ -176,8 +176,9 @@ type readOpts struct {
 	// block, which Asciidoctor reads as its metadata. Blank lines and + lines
 	// between metadata lines it skips without counting them, see skips.
 	opened bool
-	// preWrap holds inside a delimited block with the pre-wrap role, which the
-	// browser hands down to every paragraph in it, see keepsLineBreaks.
+	// preWrap holds inside a delimited block or a list with the pre-wrap role,
+	// which the browser hands down to every paragraph in it, see
+	// keepsLineBreaks.
 	preWrap bool
 }
 
