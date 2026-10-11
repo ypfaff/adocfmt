@@ -21,16 +21,29 @@ func (s Span) Empty() bool { return s.Start == s.End }
 
 // Gap is the blank lines in front of a node.
 //
-// Frozen marks the ones that carry meaning: before a list continuation they
-// select the level the following block attaches to, under front matter or a
-// directive they decide whether two blocks merge when rendered, and in and
-// under a list item they decide which lines the item takes, see
-// block.freezeItemGaps. A frozen gap with no blank line in it is one where none
-// may be added.
+// Stage says how far a rule may change them. The parser sets it where the
+// blank lines carry meaning: before a list continuation they select the level
+// the following block attaches to, under front matter or a directive they
+// decide whether two blocks merge when rendered, and in and under a list item
+// they decide which lines the item takes, see block.freezeItemGaps.
 type Gap struct {
-	Span   Span
-	Frozen bool
+	Span  Span
+	Stage Stage
 }
+
+// Stage is how far a rule may change the blank lines of a gap.
+type Stage int
+
+const (
+	// Free leaves the blank lines to the printer.
+	Free Stage = iota
+	// KeepCount keeps whether there are blank lines: none stays none, one or
+	// more stay at least one.
+	KeepCount
+	// Exact keeps the gap as it stands: the number of blank lines carries
+	// meaning, or a line in it is not blank, such as a + read as one.
+	Exact
+)
 
 // Delimiter is the pair of lines fencing a delimited block: Char, then Fill
 // until the line is Width long. Fill is Char again, except in a table, where
@@ -233,7 +246,7 @@ type ListItem struct {
 }
 
 // Continuation is a lone + line. The blank lines before it select the list
-// level the following block attaches to, so its gap is frozen.
+// level the following block attaches to, so its gap is exact.
 type Continuation struct{ NodeBase }
 
 // Attribute is an attribute entry (:name: value) with the lines that continue

@@ -23,7 +23,7 @@ const (
 // blank line can push a later block out of it, so the rule only collapses a run
 // there.
 func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
-	if p.raw || g.Frozen || isContinuation(prev) {
+	if p.raw || g.Stage == tree.Exact || isContinuation(prev) {
 		p.span(g.Span)
 		return
 	}
@@ -49,7 +49,7 @@ func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 
 // tail emits the blank lines at the end of a document or a container, where no
 // node follows that could own them. Nothing there can merge with or split from
-// what precedes it, so even a frozen gap has nothing left to protect and the
+// what precedes it, so even an exact gap has nothing left to protect and the
 // file keeps ending on a single line ending.
 func (p *printer) tail(g tree.Gap) {
 	if p.raw {
@@ -64,7 +64,7 @@ func (p *printer) tail(g tree.Gap) {
 // below is a change the reader sees while the rendering does not. An attribute
 // entry marked open needs the blank line to end its value, see tree.Meta.Open.
 func (p *printer) bound(g tree.Gap, above tree.Meta) {
-	if p.raw || g.Frozen {
+	if p.raw || g.Stage == tree.Exact {
 		p.span(g.Span)
 		return
 	}
