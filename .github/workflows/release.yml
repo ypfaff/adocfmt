@@ -116,14 +116,35 @@ jobs:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
           GORELEASER_CURRENT_TAG: v${{ steps.version.outputs.version }}
 
-      # One provenance for every archive in the checksums. It names the commit
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # The plugin carries the binaries GoReleaser just built. Without the
+      # secrets, Gradle skips the signing, and the copy fails on the missing zip.
+      - name: Build and sign the IntelliJ plugin
+        working-directory: intellij-plugin
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          INTELLIJ_CERTIFICATE_CHAIN: ${{ secrets.INTELLIJ_CERTIFICATE_CHAIN }}
+          INTELLIJ_PRIVATE_KEY: ${{ secrets.INTELLIJ_PRIVATE_KEY }}
+          INTELLIJ_PRIVATE_KEY_PASSWORD: ${{ secrets.INTELLIJ_PRIVATE_KEY_PASSWORD }}
+        run: |
+          ./gradlew signPlugin -PpluginVersion="${VERSION}" -PgoreleaserDist=../dist
+          cp "build/distributions/adocfmt-intellij-plugin-${VERSION}-signed.zip" \
+            "../dist/adocfmt_${VERSION}_intellij-plugin.zip"
+
+      # One provenance for every archive and the plugin. It names the commit
       # the run started on, not the tagged one the run commits on top, because
       # the signing certificate takes the commit from the run. The tagged commit
       # changes only action.yml, which no archive contains.
       - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         id: provenance
         with:
-          subject-checksums: dist/checksums.txt
+          subject-path: |
+            dist/*.tar.gz
+            dist/*.zip
 
       # Scorecard's Signed-Releases check looks for the .intoto.jsonl name.
       # Publishing comes before the formula and the major tag, which both send
@@ -135,13 +156,17 @@ jobs:
           BUNDLE: ${{ steps.provenance.outputs.bundle-path }}
         run: |
           provenance="dist/adocfmt_${VERSION}.intoto.jsonl"
+          plugin="dist/adocfmt_${VERSION}_intellij-plugin.zip"
           cp "${BUNDLE}" "${provenance}"
-          # One archive is enough to check the signature they all share.
-          gh attestation verify "dist/adocfmt_${VERSION}_linux_amd64.tar.gz" \
-            --bundle "${provenance}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
-          gh release upload "v${VERSION}" "${provenance}"
+          # One archive is enough to check the signature they all share; the
+          # plugin comes from a pattern of its own.
+          for subject in "dist/adocfmt_${VERSION}_linux_amd64.tar.gz" "${plugin}"; do
+            gh attestation verify "${subject}" \
+              --bundle "${provenance}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --signer-workflow "${GITHUB_REPOSITORY}/.github/workflows/release.yml"
+          done
+          gh release upload "v${VERSION}" "${provenance}" "${plugin}"
           gh release edit "v${VERSION}" --draft=false --latest
 
       # After the release, because the checksums it writes into the formula exist

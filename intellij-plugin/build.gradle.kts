@@ -1,3 +1,4 @@
+import groovy.json.JsonSlurper
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease
@@ -42,6 +43,12 @@ intellijPlatform {
             untilBuild = provider { null }
         }
     }
+    // The release signs the plugin; a build without these leaves it unsigned.
+    signing {
+        certificateChain = providers.environmentVariable("INTELLIJ_CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("INTELLIJ_PRIVATE_KEY")
+        password = providers.environmentVariable("INTELLIJ_PRIVATE_KEY_PASSWORD")
+    }
     pluginVerification {
         ides {
             current()
@@ -57,8 +64,7 @@ intellijPlatform {
 
 val repository = layout.projectDirectory.dir("..")
 
-// adocfmt for this machine alone, in bin/<GOOS>-<GOARCH>/. The release puts
-// the binaries of all six platforms there instead.
+// adocfmt for this machine alone, in bin/<GOOS>-<GOARCH>/.
 val buildAdocfmt = tasks.register<Exec>("buildAdocfmt") {
     val binaries = layout.buildDirectory.dir("adocfmt")
     val platform = providers.exec { commandLine("go", "env", "GOOS", "GOARCH") }
@@ -71,9 +77,30 @@ val buildAdocfmt = tasks.register<Exec>("buildAdocfmt") {
     doNotTrackState("go build keeps its own cache")
 }
 
+// The release passes GoReleaser's dist/ to bundle its binaries for all six
+// platforms instead.
+val goreleaserDist = providers.gradleProperty("goreleaserDist")
+
+// The binaries in dist/ by GOOS-GOARCH. Their directories carry suffixes such as
+// _v1, so the paths come from artifacts.json, which gives them from the
+// directory GoReleaser ran in.
+fun goreleaserBinaries(dist: File): Map<String, File> {
+    @Suppress("UNCHECKED_CAST")
+    val artifacts = JsonSlurper().parse(dist.resolve("artifacts.json")) as List<Map<String, Any>>
+    return artifacts.filter { it["type"] == "Binary" }.associate {
+        "${it["goos"]}-${it["goarch"]}" to dist.parentFile.resolve(it["path"] as String)
+    }
+}
+
 tasks.withType<PrepareSandboxTask>().configureEach {
-    from(buildAdocfmt) {
-        into(pluginName.map { "$it/bin" })
+    into(pluginName.map { "$it/bin" }) {
+        if (goreleaserDist.isPresent) {
+            goreleaserBinaries(file(goreleaserDist.get())).forEach { (platform, binary) ->
+                from(binary) { into(platform) }
+            }
+        } else {
+            from(buildAdocfmt)
+        }
     }
     // The Apache License section 4 requires both with the binaries.
     from(repository.files("LICENSE", "NOTICE")) {
