@@ -542,11 +542,11 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly, breakAtList bool
 	case shapeContinuation:
 		// A + carries the block under it only inside a list, and only where no
 		// other + carries it already. Under metadata, one that carries is part
-		// of the gap, see metaGap; one that reaches here is a line of the block,
-		// which is read as it stands, frozen. Outside a list it is a line like
-		// any other, which contentBlock reads: text, or code under a verbatim
-		// style.
-		if !p.inList() {
+		// of the gap, see metaGap. One that reaches here is a line like any
+		// other outside a list, which contentBlock reads: text, or code under a
+		// verbatim style. Inside a list a strict verbatim style makes it code
+		// too; otherwise it is read as it stands, frozen.
+		if !p.inList() || strictVerbatimStyles[styleOf(p.src, b.Meta)] {
 			return p.contentBlock(b, sh, closer, breakAtList)
 		}
 		if (p.carrying && b.Gap.Span.Empty()) || len(b.Meta) > 0 {

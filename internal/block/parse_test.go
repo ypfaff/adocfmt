@@ -1670,22 +1670,32 @@ List "*"
     Literal gap! meta("[literal]\n") "One. Two.\n"`,
 		},
 		{
-			name: "a + right under the one it reads past is a line of the block, which stays as it stands",
+			name: "a + right under the one it reads past is the first line of the code",
 			src:  "* a\n[literal]\n+\n+\nOne. Two.\n",
 			want: `
 List "*"
   ListItem "* a\n"
-    Paragraph! gap! meta("[literal]\n") "+\nOne. Two.\n"`,
+    Literal gap! meta("[literal]\n") "+\nOne. Two.\n"`,
 		},
 		{
-			name: "past a nested list the item holds the + as it stands, so it is text under the metadata",
+			name: "past a nested list the item holds the + as it stands, so it is the first line of the code",
 			src:  "* a\nb::\n[literal]\n+\nOne. Two.\n",
 			want: `
 List "*"
   ListItem "* a\n"
     List "::"
       ListItem "b::\n"
-    Paragraph! gap! meta("[literal]\n") "+\nOne. Two.\n"`,
+    Literal meta("[literal]\n") "+\nOne. Two.\n"`,
+		},
+		{
+			name: "the code runs to the blank line, past a delimiter and an item line",
+			src:  "1. a\nu::\n[source]\n+\n----\ncode\n----\n- b\n",
+			want: `
+List "1."
+  ListItem "1. a\n"
+    List "::"
+      ListItem "u::\n"
+    Literal! meta("[source]\n") "+\n----\ncode\n----\n- b\n"`,
 		},
 		{
 			name: "it binds the same way in a nested item and under a +",
