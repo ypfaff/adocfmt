@@ -288,10 +288,11 @@ h1 { margin: 0 0 24px; font-size: 2.1rem; letter-spacing: -.02em; }
 .button:hover { text-decoration: none; filter: brightness(1.1); }
 
 .example { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 64px 0; }
-.example figure { margin: 0; min-width: 0; }
+/* A column, so the code fills the height the grid gives the figure. */
+.example figure { display: flex; flex-direction: column; margin: 0; min-width: 0; }
 .example figcaption { margin-bottom: 8px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-muted); }
 .example pre {
-  height: calc(100% - 28px);
+  flex: 1;
   margin: 0;
   padding: 16px 18px;
   overflow-x: auto;
@@ -374,7 +375,6 @@ html[data-pf-theme] {
   h1 { font-size: 1.75rem; }
   .home { padding: 48px 16px 32px; }
   .example { grid-template-columns: 1fr; margin: 48px 0; }
-  .example pre { height: auto; }
 
   .adoc table.before-after, .adoc table.before-after tbody, .adoc table.before-after tr,
   .adoc table.before-after td { display: block; width: 100%; margin: 0; }
