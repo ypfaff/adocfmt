@@ -98,7 +98,7 @@ If a subdirectory cannot be read, only the files inside it are skipped.
 In this example, `p/locked` cannot be read, and `adocfmt --check p` prints:
 +
 ....
-adocfmt: p: open p/locked: permission denied
+adocfmt: open p/locked: permission denied
 p/open/a.adoc
 ....
 

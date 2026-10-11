@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"io"
 	"io/fs"
 	"os"
@@ -51,9 +52,14 @@ func walk(dir string, stderr io.Writer) ([]string, int) {
 	// that one on, so its result is always nil.
 	_ = fs.WalkDir(os.DirFS(dir), ".", func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
+			// os.DirFS names the path below dir, which is not the path the
+			// user typed.
+			if pathErr, ok := errors.AsType[*fs.PathError](err); ok {
+				pathErr.Path = filepath.Join(dir, filepath.FromSlash(pathErr.Path))
+			}
 			// A directory that cannot be read costs only its own files, so
 			// report it and walk on.
-			code = max(code, fail(stderr, "%s: %v", dir, err))
+			code = max(code, fail(stderr, "%v", err))
 			return fs.SkipDir
 		}
 		if entry.Type().IsRegular() && hasExtension(path) {

@@ -211,7 +211,7 @@ func TestCollectReportsADirectoryItCannotRead(t *testing.T) {
 	if code != exitError {
 		t.Errorf("got exit %d, want %d", code, exitError)
 	}
-	if !strings.Contains(stderr.String(), "nested") {
-		t.Errorf("stderr is %q, want it to name the directory", &stderr)
+	if !strings.Contains(stderr.String(), shut) {
+		t.Errorf("stderr is %q, want it to name %s", &stderr, shut)
 	}
 }
