@@ -22,7 +22,7 @@ const (
 // since its marker trails it instead of leading the line. The items of the
 // other lists the rule writes without one.
 func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
-	if p.raw || g.Stage == tree.Exact || isContinuation(prev) {
+	if p.raw || g.Stage == tree.Exact {
 		p.span(g.Span)
 		return
 	}
@@ -86,15 +86,6 @@ func (p *printer) collapse(g tree.Gap) {
 }
 
 func (p *printer) blank() { p.out.WriteString(p.eol) }
-
-// isContinuation reports whether a lone + stands above the gap. In a list the
-// size of that run is the decision itself: at most one blank line attaches the
-// block below to the item, two or more end the list. Outside a list the + is
-// prose, and the parser freezes what follows it instead.
-func isContinuation(prev tree.Node) bool {
-	_, ok := prev.(*tree.Continuation)
-	return ok
-}
 
 // bareTerm reports whether the item is a term with no text and no blocks of its
 // own. Asciidoctor gives such a term the description of the term below.
