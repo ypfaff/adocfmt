@@ -346,12 +346,12 @@ func (r *itemReader) noteRun(sh shape) {
 	delimiter := sh.kind == shapeDelimiter && !r.hasText
 	attributes := r.dlist && bracketed(sh.kind)
 	if r.continuation == continuationActive || delimiter || attributes {
-		r.p.significant[r.at] = tree.Exact
+		r.note(r.at, tree.Exact)
 	}
 }
 
 // noteBareTerm notes the blank lines above a term without text under block
-// attribute lines, so their gap stays exact.
+// attribute lines, so their gap keeps its count.
 //
 // Not in parser.rb. Under a blank line, a term above that still waits for text
 // takes the line as its text, see afterBlank. Without one, Asciidoctor reads
@@ -359,8 +359,13 @@ func (r *itemReader) noteRun(sh shape) {
 // block under it.
 func (r *itemReader) noteBareTerm(at int) {
 	if !r.hasText && r.bareTerm(at) && r.shape(at-1).kind == shapeBlank {
-		r.p.significant[at] = tree.Exact
+		r.note(at, tree.KeepCount)
 	}
+}
+
+// note records the stage of the gap above the line at, see parser.significant.
+func (r *itemReader) note(at int, stage tree.Stage) {
+	r.p.significant[at] = max(r.p.significant[at], stage)
 }
 
 // takeLiteral takes an indented line with the lines under it up to a blank
