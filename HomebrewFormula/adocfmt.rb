@@ -8,23 +8,23 @@ class Adocfmt < Formula
 
   on_macos do
     on_arm do
-      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.0/adocfmt_0.4.0_darwin_arm64.tar.gz"
-      sha256 "3ce5dd2a0c53a47c3e57e21b2bf0384866412cad0ae75908caa3dd0dfc83c47c"
+      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.1/adocfmt_0.4.1_darwin_arm64.tar.gz"
+      sha256 "ceaef0817bde2c2121779a4bc7dab7106e92ead4f06328055d773eec1e58485f"
     end
     on_intel do
-      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.0/adocfmt_0.4.0_darwin_amd64.tar.gz"
-      sha256 "d8bd3ad7d76c77790da9d81f71b5e3d8b3a15671fc501b1d9c522608f6af82fa"
+      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.1/adocfmt_0.4.1_darwin_amd64.tar.gz"
+      sha256 "ad00f23f14460becdcb7864d3627845554cb57e3161af673ec3e7a0407df073f"
     end
   end
 
   on_linux do
     on_arm do
-      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.0/adocfmt_0.4.0_linux_arm64.tar.gz"
-      sha256 "797887a47b86a6979c204a2f3ad75561b5ccf88d242141d659c1818c7ac40cd3"
+      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.1/adocfmt_0.4.1_linux_arm64.tar.gz"
+      sha256 "4aeec08196216196291d30fbb5da793734f6c8a9f9d3828a17ec15e303ae272a"
     end
     on_intel do
-      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.0/adocfmt_0.4.0_linux_amd64.tar.gz"
-      sha256 "9e6836fc6b2782008a729718020a68140c86d03d96170a935e3bfe6ea1c309f8"
+      url "https://github.com/ypfaff/adocfmt/releases/download/v0.4.1/adocfmt_0.4.1_linux_amd64.tar.gz"
+      sha256 "7dff76ed15fedf30cd8e184e5ac6698f9be935b1a5ba6d5555b0ed5b98f3d411"
     end
   end
 
