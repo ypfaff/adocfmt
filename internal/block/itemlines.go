@@ -191,6 +191,7 @@ func (r *itemReader) step() bool {
 	default:
 		r.noteAwaitedText(r.at)
 		r.hasText = r.hasText || sh.kind != shapeBlank
+		r.noteTermOrItem(r.at)
 		r.noteNestedList(r.nestable())
 		r.take()
 	}
@@ -305,6 +306,7 @@ func (r *itemReader) afterBlank(sh shape) bool {
 		sh = r.shape(r.at)
 		r.noteRun(sh)
 	}
+	r.noteTermOrItem(r.at)
 
 	switch {
 	// Ruby: if this_line == LIST_CONTINUATION
@@ -411,6 +413,22 @@ func (r *itemReader) noteNestedList(kinds nestable) bool {
 		r.hasText = false
 	}
 	return true
+}
+
+// noteTermOrItem notes the blank lines above a line within a nested list that
+// reads both as a term without text and as an item of another list, so their
+// gap keeps its count. Without one above it, Asciidoctor looks for a
+// description list only, so the term waits for text; under one, it looks for
+// any list first and reads the item, which leaves has_text as it was.
+//
+// Not in parser.rb.
+func (r *itemReader) noteTermOrItem(at int) {
+	if !r.withinNested || !r.bareTerm(at) {
+		return
+	}
+	if opens, term := r.nestedAt(at, nestableLists); opens && !term {
+		r.note(at, tree.KeepCount)
+	}
 }
 
 // nestedAt reports whether the line at opens a nested list of the kinds given,

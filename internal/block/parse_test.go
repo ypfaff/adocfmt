@@ -996,6 +996,16 @@ List "::"
       ListItem gap~ "b:::\n\nx\n"`,
 		},
 		{
+			name: "no blank line comes above a nested term without text that reads as an item too, as below one it is that item",
+			src:  ". 0\n0:: 0\n* ::\n\n\n0\n",
+			want: `
+List "."
+  ListItem ". 0\n"
+    List gap~ "::"
+      ListItem "0:: 0\n"
+      ListItem gap~ "* ::\n\n\n0\n"`,
+		},
+		{
 			name: "a callout list after metadata and a blank line ends the list, the item keeps the metadata",
 			src:  "* a\n[[id]]\n\n<1> b\n",
 			want: `
