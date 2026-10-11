@@ -1,6 +1,11 @@
 package block
 
-import "bytes"
+import (
+	"bytes"
+	"slices"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
+)
 
 // reader holds the lines the parser may read for one block: from where it
 // stands up to end.
@@ -100,6 +105,24 @@ func (r *reader) blanked(at int) bool {
 // one that stands under a line as a + still, so blanked leaves it out.
 func (r *reader) placeholder(at int) bool {
 	return r.anyItem(func(l *itemLines) bool { return l.placeholders[at] })
+}
+
+// inLiteral reports whether offset falls inside a literal paragraph the buffer
+// of an item being read collected whole, past its first line, see
+// takeLiteral. Where its lines hold further blocks, a blank line between two
+// of them would end the item there.
+func (r *reader) inLiteral(offset int) bool {
+	return r.anyItem(func(l *itemLines) bool {
+		return slices.ContainsFunc(l.literals, func(s tree.Span) bool { return s.Start < offset && offset < s.End })
+	})
+}
+
+// literalEnds reports whether a literal paragraph the buffer of an item being
+// read collected whole ends at offset, see takeLiteral.
+func (r *reader) literalEnds(offset int) bool {
+	return r.anyItem(func(l *itemLines) bool {
+		return slices.ContainsFunc(l.literals, func(s tree.Span) bool { return s.End == offset })
+	})
 }
 
 // anyItem reports whether holds is true for the buffer of any item the reader
