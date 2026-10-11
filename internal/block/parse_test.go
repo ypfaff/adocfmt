@@ -630,7 +630,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Literal gap~ "  code\n"
-  ListItem gap! "* b\n"`,
+  ListItem gap~ "* b\n"`,
 		},
 		{
 			name: "an indented callout is a literal block, not an item",
@@ -647,7 +647,7 @@ List "<>"
 List "*"
   ListItem "* a\n"
     Literal! gap~ "  code\n* b\n"
-  ListItem gap! "* c\n"
+  ListItem gap~ "* c\n"
 Paragraph "Text.\n"
 Literal "  more\n* d\n"`,
 		},
@@ -659,7 +659,7 @@ List "*"
   ListItem "* a\n"
     Literal gap~ "  code\n"
     Verbatim gap! "----\nx\n----\n"
-  ListItem gap! "* b\n"`,
+  ListItem gap~ "* b\n"`,
 		},
 		{
 			name: "right under another block in an item it ends at an item line, which opens a nested list",
@@ -800,7 +800,7 @@ List "-"
     List gap! "::"
       ListItem "  t:: u\n"
       ListItem gap! "b::\n"
-  ListItem gap! "- d\n"`,
+  ListItem gap~ "- d\n"`,
 		},
 		{
 			name: "a line with the separator of a description list is its next term, whatever else it reads as",
