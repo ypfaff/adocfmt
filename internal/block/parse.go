@@ -141,6 +141,9 @@ type parser struct {
 	// first is how Asciidoctor reads the first block of the list item being
 	// read, from where listItem sets it up to where node reads that block.
 	first firstBlock
+	// preWrap holds inside a delimited block with the pre-wrap role, which
+	// the browser hands down to every paragraph in it, see paragraph.
+	preWrap bool
 	// regions are the open conditional regions, innermost last, each by the
 	// line that opened it. A delimiter that opens in one and closes in another
 	// means two documents in one.
@@ -790,12 +793,13 @@ func (p *parser) setext(b tree.NodeBase, level, underline int) tree.Node {
 }
 
 // paragraph reads prose, unless its line breaks carry meaning: a verbatim
-// style, the hardbreaks option, the pre-wrap role, substitutions of its own,
-// or a document attribute in force that binds lines makes it a Literal. A
-// quoted paragraph is Opaque like the Markdown quote, since Asciidoctor lifts
-// its last line out as the attribution. So is one with a style or a block
-// macro on its first line that only an extension knows, see extensionStyle and
-// isCustomBlockMacro. A label opening its first line makes it an Admonition.
+// style, the hardbreaks option, the pre-wrap role on it or on a delimited block
+// around it, substitutions of its own, or a document attribute in force that
+// binds lines makes it a Literal. A quoted paragraph is Opaque like the
+// Markdown quote, since Asciidoctor lifts its last line out as the attribution.
+// So is one with a style or a block macro on its first line that only an
+// extension knows, see extensionStyle and isCustomBlockMacro. A label opening
+// its first line makes it an Admonition.
 func (p *parser) paragraph(b tree.NodeBase, closer []byte, breakAtList bool) tree.Node {
 	first := p.at
 	p.textRun(&b, closer, p.endsProse(b, breakAtList))
@@ -805,7 +809,7 @@ func (p *parser) paragraph(b tree.NodeBase, closer []byte, breakAtList bool) tre
 		extensionStyle(style) || isCustomBlockMacro(p.text(p.lines[first])):
 		return &tree.Opaque{NodeBase: b}
 	case styledVerbatim(p.src, b.Meta) || hasOption(p.src, b.Meta, hardbreaksOption) ||
-		hasRole(p.src, b.Meta, preWrapRole) || hasAttr(p.src, b.Meta, substitutionsAttr) ||
+		hasRole(p.src, b.Meta, preWrapRole) || p.preWrap || hasAttr(p.src, b.Meta, substitutionsAttr) ||
 		len(p.lineBound) > 0:
 		return &tree.Literal{NodeBase: b}
 	case admonition(p.text(p.lines[first])):
@@ -950,10 +954,11 @@ func (p *parser) delimited(b tree.NodeBase, sh shape) tree.Node {
 	var node tree.Node
 	if sh.content == contentCompound {
 		// The block confines the reader: no list open outside it is open inside.
-		markers := p.markers
+		markers, preWrap := p.markers, p.preWrap
 		p.markers = nil
+		p.preWrap = preWrap || hasRole(p.src, b.Meta, preWrapRole)
 		children, tail := p.nodes(closer)
-		p.markers = markers
+		p.markers, p.preWrap = markers, preWrap
 		delim.Extensible = p.extensible(raw, openAt+1)
 		if at, ok := p.closesInside(closer, openAt+1); ok {
 			p.report(at, "closes the block opened above it")

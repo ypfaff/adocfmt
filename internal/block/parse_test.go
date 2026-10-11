@@ -460,6 +460,19 @@ Paragraph meta("[.pre-wrap]\n") meta("[role=lead]\n") "a\nb\n"
 Paragraph meta("[role=lead,.pre-wrap]\n") "a\nb\n"`,
 		},
 		{
+			name: "so does the role on a delimited block around the paragraph, however deep",
+			src:  "[.pre-wrap]\n====\na\nb\n\n--\n* c\n+\nd\ne\n--\n====\n\nf\ng\n",
+			want: `
+Container meta("[.pre-wrap]\n") "====\n"
+  Literal "a\nb\n"
+  Container "--\n"
+    List "*"
+      ListItem "* c\n"
+        Continuation gap! "+\n"
+        Literal "d\ne\n"
+Paragraph "f\ng\n"`,
+		},
+		{
 			name: "metadata binds across a blank line",
 			src:  "[#id]\n\nText.\n",
 			want: `
