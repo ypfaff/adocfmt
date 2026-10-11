@@ -26,10 +26,15 @@ func (p *parser) list(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
 
 	gap := tree.Gap{Span: tree.Span{Start: start, End: start}}
 	for {
-		list.Items = append(list.Items, p.listItem(gap, sh, items))
+		item := p.listItem(gap, sh, items)
+		list.Items = append(list.Items, item)
 
 		m := p.mark()
 		gap = p.gap()
+		// In a description list the next term ends the literal, see takeLiteral.
+		if !list.Description && endsInLiteral(item) {
+			gap.Stage = max(gap.Stage, tree.KeepCount)
+		}
 		if p.done() {
 			p.rewind(m)
 			break
@@ -44,6 +49,26 @@ func (p *parser) list(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
 	list.Lines = tree.Span{Start: start, End: p.pos()}
 	list.Extensible = p.extensible(false, from) || p.directiveBelow()
 	return list
+}
+
+// endsInLiteral reports whether the last block of an item is a literal, looked
+// up through the lists nested in it. A literal under a blank line or a + runs
+// to the next blank line, an item line included, so without one it would
+// swallow the marker of the item below. Without a blank line in the source,
+// something else ended the literal, and adding one could end an item around
+// the list instead.
+func endsInLiteral(item *tree.ListItem) bool {
+	if len(item.Children) == 0 {
+		return false
+	}
+	switch last := item.Children[len(item.Children)-1].(type) {
+	case *tree.Literal:
+		return true
+	case *tree.List:
+		return endsInLiteral(last.Items[len(last.Items)-1])
+	default:
+		return false
+	}
 }
 
 // directiveBelow reports whether a directive stands right under the list. It
@@ -195,12 +220,15 @@ func foldsOntoTerm(kind shapeKind) bool {
 // the item, so whatever stands there belongs to the item, even a line that
 // reads as an item of an open list: that one opens a nested list. The first
 // block is read with the options first, the others with opts.
+//
+// Every gap there keeps its count: adjacency is what binds a block to the item,
+// and a blank line can push a later block out of it.
 func (p *parser) attached(first, opts readOpts) []tree.Node {
 	var children []tree.Node
 	next := first
 	for {
 		m := p.mark()
-		gap := p.gap()
+		gap := p.itemGap()
 		if p.done() {
 			p.rewind(m)
 			return children
@@ -232,7 +260,7 @@ func (p *parser) carried(first, opts readOpts) []tree.Node {
 	var nodes []tree.Node
 	for {
 		m := p.mark()
-		gap := p.gap()
+		gap := p.itemGap()
 		if p.done() {
 			p.rewind(m)
 			return nodes
@@ -244,6 +272,13 @@ func (p *parser) carried(first, opts readOpts) []tree.Node {
 		}
 		next = p.under(node, next, opts)
 	}
+}
+
+// itemGap reads a gap between the blocks of an item, see attached.
+func (p *parser) itemGap() tree.Gap {
+	gap := p.gap()
+	gap.Stage = max(gap.Stage, tree.KeepCount)
+	return gap
 }
 
 // under returns the options of the block under node, which was read with

@@ -10,18 +10,17 @@ const (
 	betweenSiblings where = iota
 	betweenItems
 	betweenTerms
-	insideItem
 )
 
-// gap emits the blank lines in front of a node.
+// gap emits the blank lines in front of a node, as far as its stage leaves
+// them to the rule: a gap that keeps its count collapses to one blank line, as
+// does every gap inside a list item, see block.attached.
 //
 // Asciidoctor renders every block type the same with and without a blank line
 // in front of it, so one between siblings costs nothing. Neither does one
 // between two description list terms, where it makes a term easy to find,
-// since its marker trails it instead of leading the line. Inside a list item a
-// blank line would cost: adjacency is what binds a block to the item, and a
-// blank line can push a later block out of it, so the rule only collapses a run
-// there.
+// since its marker trails it instead of leading the line. The items of the
+// other lists the rule writes without one.
 func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 	if p.raw || g.Stage == tree.Exact || isContinuation(prev) {
 		p.span(g.Span)
@@ -31,26 +30,24 @@ func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 		// A document and a container open on their first node.
 		return
 	}
-	switch w {
-	case insideItem:
+	if g.Stage == tree.KeepCount {
 		p.collapse(g)
-	case betweenItems:
-		if endsInLiteral(prev) {
-			p.collapse(g)
-		}
+		return
+	}
+	switch w {
+	case betweenSiblings:
+		p.blank()
 	case betweenTerms:
 		if !bareTerm(prev) {
 			p.blank()
 		}
-	default:
-		p.blank()
 	}
 }
 
 // tail emits the blank lines at the end of a document or a container, where no
 // node follows that could own them. Nothing there can merge with or split from
-// what precedes it, so even an exact gap has nothing left to protect and the
-// file keeps ending on a single line ending.
+// what precedes it, so the parser leaves the gap free, and the file keeps
+// ending on a single line ending.
 func (p *printer) tail(g tree.Gap) {
 	if p.raw {
 		p.span(g.Span)
@@ -58,17 +55,17 @@ func (p *printer) tail(g tree.Gap) {
 }
 
 // bound emits the gap between a metadata line and the line or block it binds
-// to. The binding survives blank lines, so dropping them changes nothing, with
-// two exceptions. A comment binds to nothing at all, because Asciidoctor drops
-// it before it renders, and pulling a freestanding comment down onto the block
-// below is a change the reader sees while the rendering does not. An attribute
-// entry marked open needs the blank line to end its value, see tree.Meta.Open.
+// to. The binding survives blank lines, so dropping them changes nothing,
+// unless the gap keeps its count, or a comment stands above it. A comment
+// binds to nothing at all, because Asciidoctor drops it before it renders, and
+// pulling a freestanding comment down onto the block below is a change the
+// reader sees while the rendering does not.
 func (p *printer) bound(g tree.Gap, above tree.Meta) {
 	if p.raw || g.Stage == tree.Exact {
 		p.span(g.Span)
 		return
 	}
-	if above.Open || above.Kind == tree.MetaComment || above.Kind == tree.MetaCommentBlock {
+	if g.Stage == tree.KeepCount || above.Kind == tree.MetaComment || above.Kind == tree.MetaCommentBlock {
 		p.collapse(g)
 	}
 }
@@ -97,27 +94,6 @@ func (p *printer) blank() { p.out.WriteString(p.eol) }
 func isContinuation(prev tree.Node) bool {
 	_, ok := prev.(*tree.Continuation)
 	return ok
-}
-
-// endsInLiteral reports whether the last block of an item is a literal, looked
-// up through the lists nested in it. A literal under a blank line or a + runs
-// to the next blank line, an item line included, so without one it would
-// swallow the marker of the item below. Without a blank line in the source,
-// something else ended the literal, and adding one could end an item around
-// the list instead.
-func endsInLiteral(prev tree.Node) bool {
-	item, ok := prev.(*tree.ListItem)
-	if !ok || len(item.Children) == 0 {
-		return false
-	}
-	switch last := item.Children[len(item.Children)-1].(type) {
-	case *tree.Literal:
-		return true
-	case *tree.List:
-		return len(last.Items) > 0 && endsInLiteral(last.Items[len(last.Items)-1])
-	default:
-		return false
-	}
 }
 
 // bareTerm reports whether the item is a term with no text and no blocks of its

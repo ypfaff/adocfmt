@@ -288,11 +288,15 @@ func (p *parser) nodes(opts readOpts) ([]tree.Node, tree.Gap) {
 	for {
 		gap := p.gap()
 		if p.done() {
-			return nodes, gap
+			return nodes, tail(gap)
 		}
 		nodes = append(nodes, p.node(gap, opts))
 	}
 }
+
+// tail is the gap at the end of a document or a container. It is free: no
+// block follows that its blank lines could join or split.
+func tail(gap tree.Gap) tree.Gap { return tree.Gap{Span: gap.Span, Stage: tree.Free} }
 
 // node reads the metadata lines at the current position and the block they
 // bind to. In a list item, the block ends at an item line, and the item's
@@ -304,8 +308,12 @@ func (p *parser) node(gap tree.Gap, opts readOpts) tree.Node {
 	opts.textOnly = opts.textOnly && !skipped
 
 	b := newBase(gap)
-	for p.metaLine(&b, opts) {
-		b.Gap = p.metaGap()
+	for {
+		open, ok := p.metaLine(&b, opts)
+		if !ok {
+			break
+		}
+		b.Gap = p.metaGap(open)
 	}
 	return p.block(b, opts)
 }
@@ -335,8 +343,15 @@ func (p *parser) skips(gap tree.Gap, opts readOpts) bool {
 // are not all blank. Where no block follows, the blank lines under the + go
 // back, as they do under a continuation, see carried; block then finds a
 // blank line and binds the metadata to nothing.
-func (p *parser) metaGap() tree.Gap {
+//
+// Under an open attribute entry, one whose value ends only at the blank line
+// below it, see entry, that blank line is syntax: without it the value reads
+// on and swallows the block beneath, so the gap keeps its count.
+func (p *parser) metaGap(open bool) tree.Gap {
 	gap := p.gap()
+	if open {
+		gap.Stage = max(gap.Stage, tree.KeepCount)
+	}
 	for !p.done() && p.reader.placeholder(p.at) {
 		p.at++
 		m := p.mark()
@@ -350,18 +365,18 @@ func (p *parser) metaGap() tree.Gap {
 }
 
 // metaLine reads the metadata line at the current position into b and reports
-// whether there was one.
-func (p *parser) metaLine(b *tree.NodeBase, opts readOpts) bool {
+// whether there was one, and whether it is an open attribute entry, see
+// metaGap.
+func (p *parser) metaLine(b *tree.NodeBase, opts readOpts) (open, ok bool) {
 	if p.done() {
-		return false
+		return false, false
 	}
 	sh := p.shape()
 	kind, ok := metaKind(sh)
 	if !ok || (len(b.Meta) == 0 && !opensMeta(kind)) || (opts.textOnly && !textOnlyMeta(kind)) {
-		return false
+		return false, false
 	}
 	start := p.pos()
-	var open bool
 	switch kind {
 	case tree.MetaDirective:
 		p.reach(b, sh)
@@ -373,8 +388,8 @@ func (p *parser) metaLine(b *tree.NodeBase, opts readOpts) bool {
 	default:
 		p.at++
 	}
-	b.Meta = append(b.Meta, tree.Meta{Kind: kind, Gap: b.Gap, Lines: tree.Span{Start: start, End: p.pos()}, Open: open})
-	return true
+	b.Meta = append(b.Meta, tree.Meta{Kind: kind, Gap: b.Gap, Lines: tree.Span{Start: start, End: p.pos()}})
+	return open, true
 }
 
 // opensMeta reports whether a line of this kind starts the metadata of a
@@ -678,7 +693,7 @@ func (p *parser) attribute(b tree.NodeBase) tree.Node {
 // block Asciidoctor reads only the lines up to the closing delimiter, so the
 // value ends there too.
 //
-// It reports whether a blank line is what ended the value, see tree.Meta.Open.
+// It reports whether a blank line is what ended the value, see metaGap.
 func (p *parser) entry(b *tree.NodeBase) bool {
 	e, _ := parseAttrEntry(p.text(p.lines[p.at]))
 	p.bind(e)

@@ -241,7 +241,9 @@ func (p *printer) item(node *tree.ListItem) {
 	p.principal(node)
 	var prev tree.Node = node
 	for _, child := range node.Children {
-		p.node(child, prev, insideItem)
+		// Every gap in an item keeps its count, see block.attached, so the
+		// policy decides nothing here.
+		p.node(child, prev, betweenItems)
 		prev = child
 	}
 }

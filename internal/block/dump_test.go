@@ -39,8 +39,8 @@ func (d *dumper) node(node tree.Node, depth int) {
 	if node.Base().Frozen {
 		d.writef("!")
 	}
-	if node.Base().Gap.Stage == tree.Exact {
-		d.writef(" gap!")
+	if mark := stageMark(node.Base().Gap); mark != "" {
+		d.writef(" gap%s", mark)
 	}
 	// A bang on the fence marks a body a directive may extend, the way it marks
 	// a frozen node and an exact gap. A list has no fence to carry it.
@@ -51,13 +51,8 @@ func (d *dumper) node(node tree.Node, depth int) {
 		d.writef(" extensible!")
 	}
 	for _, meta := range node.Base().Meta {
-		// A bang marks a metadata line whose gap below carries meaning, the way
-		// it marks a frozen node and an exact gap.
-		if meta.Open {
-			d.writef(" meta!(%s)", d.quote(meta.Lines))
-			continue
-		}
-		d.writef(" meta(%s)", d.quote(meta.Lines))
+		// The mark is the stage of the gap above the metadata line.
+		d.writef(" meta%s(%s)", stageMark(meta.Gap), d.quote(meta.Lines))
 	}
 
 	switch node := node.(type) {
@@ -80,6 +75,19 @@ func (d *dumper) node(node tree.Node, depth int) {
 		d.writef(" %s title %s\n", d.quote(node.Lines), d.quote(node.Title))
 	default:
 		d.writef(" %s\n", d.quote(node.Base().Lines))
+	}
+}
+
+// stageMark marks a gap that is not free: ~ one that keeps its count, ! an
+// exact one.
+func stageMark(gap tree.Gap) string {
+	switch gap.Stage {
+	case tree.KeepCount:
+		return "~"
+	case tree.Exact:
+		return "!"
+	default:
+		return ""
 	}
 }
 
