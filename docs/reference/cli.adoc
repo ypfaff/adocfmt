@@ -12,25 +12,13 @@ This page describes the `adocfmt` command: its flags, which files it reads, its 
 
 [source,console]
 ----
-$ adocfmt --help
-adocfmt formats AsciiDoc files.
-
-Usage:
-  adocfmt [flags] [path ...]
-
-Flags:
-  -w, --write      Write the result back to the file.
-  -c, --check      Name the files that are not formatted; exit 1 if any.
-      --version    Print the version.
-  -h, --help       Print this help.
-
-With no path adocfmt reads stdin and writes the result to stdout.
+$ adocfmt README.adoc     # prints the formatted file
+$ adocfmt --write docs    # formats the AsciiDoc files under docs/ in place
+$ adocfmt --check docs    # lists the files that are not formatted
 ----
 
-Flags come before the paths.
-A flag after a path is an error.
-A flag works with one dash as well as with two, so `-check` is the same as `--check`.
-To name a file that begins with a dash, put `--` before the paths, as in `adocfmt --check -- -draft.adoc`.
+`adocfmt --help` prints the flags.
+The command takes the form `adocfmt [flags] [path ...]`.
 
 == Flags
 
@@ -58,7 +46,7 @@ docs/setup.adoc
 Prints the version.
 
 `-h`, `--help`::
-Prints the help shown above.
+Prints the help.
 
 == Formatting to stdout
 
