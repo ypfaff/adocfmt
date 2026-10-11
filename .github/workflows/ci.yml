@@ -13,9 +13,11 @@ on:
 permissions:
   contents: read
 
+# Only a pull request's runs share a group. Runs on main change nothing
+# outside themselves, so none of them waits for another.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   lint:
