@@ -1,6 +1,10 @@
 package block
 
-import "bytes"
+import (
+	"bytes"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
+)
 
 // itemLines is what reading a list item needs to know about the buffer
 // Asciidoctor collects for it, see itemEnd.
@@ -31,7 +35,7 @@ type itemLines struct {
 // It ports read_lines_for_list_item from Asciidoctor's parser.rb. A comment
 // starting with "Ruby:" quotes the code a part stands for, "Not in parser.rb:"
 // marks what the port adds, and "Not ported:" what it leaves out and why.
-func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []Span) {
+func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []tree.Span) {
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
 		p: p, closer: closer, marker: sh.marker, dlist: dlist,
@@ -88,7 +92,7 @@ type itemReader struct {
 	// skipped and placeholders are what itemLines says they are.
 	skipped      map[int]bool
 	placeholders map[int]bool
-	literals     []Span
+	literals     []tree.Span
 }
 
 // continuation is the state of the + lines, with Asciidoctor's names.
@@ -387,7 +391,7 @@ func (r *itemReader) takeLiteral() {
 		r.take()
 	}
 	// Not in parser.rb: noted for the printer.
-	r.literals = append(r.literals, Span{r.p.lines[from].full.Start, r.p.lines[r.at-1].full.End})
+	r.literals = append(r.literals, tree.Span{Start: r.p.lines[from].full.Start, End: r.p.lines[r.at-1].full.End})
 }
 
 // nestable is which nested lists Asciidoctor looks for.

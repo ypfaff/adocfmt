@@ -88,7 +88,10 @@ xref:../reference/cli.adoc[The CLI reference] describes its behavior.
 | `Format`, which parses a document and then refuses or prints it, or returns it unread if it says `// adocfmt: ignore-file`.
 
 | link:../../internal/block[`internal/block`]
-| The parser and the block tree.
+| The parser, and the questions a rule asks about how a line reads.
+
+| link:../../internal/tree[`internal/tree`]
+| The block tree, which the parser builds and the printer emits.
 
 | link:../../internal/printer[`internal/printer`]
 | The printer and the rules.

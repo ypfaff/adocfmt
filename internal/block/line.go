@@ -5,6 +5,8 @@ import (
 	"strings"
 	"unicode"
 	"unicode/utf8"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // line is one source line. full holds every byte, text stops before the
@@ -12,8 +14,8 @@ import (
 // a line before reading it: a delimiter or directive followed by a space is
 // still one.
 type line struct {
-	text Span
-	full Span
+	text tree.Span
+	full tree.Span
 }
 
 func splitLines(src []byte, from int) []line {
@@ -23,8 +25,8 @@ func splitLines(src []byte, from int) []line {
 		if next := bytes.IndexByte(src[at:], '\n'); next >= 0 {
 			full = at + next + 1
 		}
-		span := Span{at, full}
-		lines = append(lines, line{Span{at, textEnd(src, at, terminator(src, span))}, span})
+		span := tree.Span{Start: at, End: full}
+		lines = append(lines, line{tree.Span{Start: at, End: textEnd(src, at, terminator(src, span))}, span})
 		at = full
 	}
 	return lines
@@ -45,7 +47,7 @@ func textEnd(src []byte, start, end int) int {
 
 // terminator reports where the line's terminator begins: at the LF, or at the
 // CR of a CRLF. A last line that ends without one has none.
-func terminator(src []byte, full Span) int {
+func terminator(src []byte, full tree.Span) int {
 	end := full.End
 	if end > full.Start && src[end-1] == '\n' {
 		end--
@@ -98,7 +100,7 @@ func HeadingTitle(line []byte) ([]byte, bool) {
 // ListMarker returns the marker a line opens a list item with, read the way the
 // parser reads it, and whether it opens one at all. The marker is the key the
 // items of a list are compared on rather than the text they carry, see
-// List.Marker.
+// tree.List.Marker.
 func ListMarker(line []byte) (string, bool) {
 	body := bytes.TrimLeft(line, " \t")
 	if len(body) == 0 {
@@ -121,7 +123,7 @@ func LineBelow(src []byte, at int) []byte {
 	if last := bytes.IndexByte(src[start:], '\n'); last >= 0 {
 		end = start + last + 1
 	}
-	return src[start:textEnd(src, start, terminator(src, Span{start, end}))]
+	return src[start:textEnd(src, start, terminator(src, tree.Span{Start: start, End: end}))]
 }
 
 // UnderlinesTitle reports whether the two lines form a two-line section title,
@@ -133,10 +135,21 @@ func UnderlinesTitle(title, underline []byte) bool {
 	return ok
 }
 
+// Fences reports the width at which delim's block would close on line, and
+// whether any width would. It asks about the shape of the line rather than
+// about a fence that is legal at that width: a line shaped like the opener is
+// one the opener may not be shortened to.
+func Fences(delim tree.Delimiter, line []byte) (int, bool) {
+	if len(line) == 0 || line[0] != delim.Char || !uniform(line[1:], delim.Fill) {
+		return 0, false
+	}
+	return len(line), true
+}
+
 // Terminator returns the line ending src ends with: LF, CRLF, or nothing where
 // src ends without one.
 func Terminator(src []byte) []byte {
-	return src[terminator(src, Span{0, len(src)}):]
+	return src[terminator(src, tree.Span{Start: 0, End: len(src)}):]
 }
 
 type shapeKind int
@@ -179,10 +192,10 @@ type shape struct {
 	width   int
 	content content
 	level   int
-	span    Span   // heading title, or list marker
-	marker  string // list marker key; items sharing it share a list
-	cond    int    // +1 opens a conditional region, -1 closes one
-	bad     bool   // a directive Asciidoctor rejects as malformed
+	span    tree.Span // heading title, or list marker
+	marker  string    // list marker key; items sharing it share a list
+	cond    int       // +1 opens a conditional region, -1 closes one
+	bad     bool      // a directive Asciidoctor rejects as malformed
 }
 
 // delimiters maps the four-char tip of a delimited block to what it holds,
@@ -314,7 +327,7 @@ func headingShape(s []byte, start int) (shape, bool) {
 		return shape{}, false
 	}
 	end := trimTrailingMarker(s[at:], s[:level]) + at
-	return shape{kind: shapeHeading, char: s[0], level: level - 1, span: Span{start + at, start + end}}, true
+	return shape{kind: shapeHeading, char: s[0], level: level - 1, span: tree.Span{Start: start + at, End: start + end}}, true
 }
 
 // trimTrailingMarker returns the length of the title without the closing
@@ -652,7 +665,7 @@ func markerShape(s []byte, start int) (shape, bool) {
 	if !ok {
 		return shape{}, false
 	}
-	return shape{kind: shapeMarker, span: Span{start, start + width}, marker: key}, true
+	return shape{kind: shapeMarker, span: tree.Span{Start: start, End: start + width}, marker: key}, true
 }
 
 func markerOf(s []byte) (int, string, bool) {
@@ -753,7 +766,7 @@ func termShape(src []byte, l line) (shape, bool) {
 		return shape{}, false
 	}
 	start := l.text.Start + len(s) - len(body)
-	return shape{kind: shapeMarker, span: Span{start, start + width}, marker: key}, true
+	return shape{kind: shapeMarker, span: tree.Span{Start: start, End: start + width}, marker: key}, true
 }
 
 // opensAnyList reports whether the line opens an item of any list, which is

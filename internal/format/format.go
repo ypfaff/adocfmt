@@ -6,10 +6,11 @@ import (
 
 	"github.com/ypfaff/adocfmt/internal/block"
 	"github.com/ypfaff/adocfmt/internal/printer"
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // Finding is one thing the parser could not decide, and the line it stands on.
-type Finding = block.Finding
+type Finding = tree.Finding
 
 // Refusal is what Format returns for a document the parser reported findings
 // on, in line order.

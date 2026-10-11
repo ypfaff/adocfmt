@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/ypfaff/adocfmt/internal/block"
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // canonical is the marker a list is written with, where the rule writes one at
@@ -26,27 +27,27 @@ func canonical(marker string) (string, bool) {
 // rests on the lists around the one being written. An entry stands for an item
 // the rule writes, and for no other, so an item left out of the map prints as
 // it stands.
-func listMarkers(doc *block.Document) map[block.Node]string {
-	k := picker{src: doc.Src, markers: map[block.Node]string{}}
+func listMarkers(doc *tree.Document) map[tree.Node]string {
+	k := picker{src: doc.Src, markers: map[tree.Node]string{}}
 	k.nodes(doc.Nodes)
 	return k.markers
 }
 
 type picker struct {
 	src     []byte
-	markers map[block.Node]string
+	markers map[tree.Node]string
 }
 
 // nodes walks a run of siblings. What a list among them stands in, it carries
 // itself, so the walk only has to hand it the node underneath, which a
 // directive there reaches it from.
-func (k *picker) nodes(nodes []block.Node) {
+func (k *picker) nodes(nodes []tree.Node) {
 	for at, node := range nodes {
 		switch node := node.(type) {
-		case *block.Container:
+		case *tree.Container:
 			k.nodes(node.Children)
-		case *block.List:
-			var next block.Node
+		case *tree.List:
+			var next tree.Node
 			if at+1 < len(nodes) {
 				next = nodes[at+1]
 			}
@@ -55,8 +56,8 @@ func (k *picker) nodes(nodes []block.Node) {
 	}
 }
 
-func (k *picker) list(list *block.List, next block.Node) {
-	if list.Frozen() {
+func (k *picker) list(list *tree.List, next tree.Node) {
+	if list.Frozen {
 		return
 	}
 	for _, item := range list.Items {
@@ -89,7 +90,7 @@ func (k *picker) list(list *block.List, next block.Node) {
 // written is the marker an item is written with: the one the rule picked, or
 // the one the item stands on. That is not List.Marker, which holds the key the
 // items are compared on, "1." for an item that says "7.".
-func written(src []byte, item *block.ListItem, picked string) string {
+func written(src []byte, item *tree.ListItem, picked string) string {
 	if picked != "" {
 		return picked
 	}
@@ -102,7 +103,7 @@ func written(src []byte, item *block.ListItem, picked string) string {
 // directive. The parser reports the directives it read within the list as
 // List.Extensible, and a directive beside the list freezes the gap between
 // them.
-func (k *picker) reached(list *block.List, next block.Node) bool {
+func (k *picker) reached(list *tree.List, next tree.Node) bool {
 	return list.Extensible || above(list).Frozen || (next != nil && above(next).Frozen)
 }
 
@@ -112,9 +113,9 @@ func (k *picker) reached(list *block.List, next block.Node) bool {
 // a marker already open belongs to, so a marker in use around this list would
 // move its items. A frozen item keeps the marker it has, which would leave it
 // nested under the item above once the rest of the list carries another one.
-func (k *picker) rewritable(list *block.List, marker string) bool {
+func (k *picker) rewritable(list *tree.List, marker string) bool {
 	for _, item := range list.Items {
-		if item.Frozen() {
+		if item.Frozen {
 			return false
 		}
 	}
@@ -125,7 +126,7 @@ func (k *picker) rewritable(list *block.List, marker string) bool {
 // list carried the marker. A line the parser read as prose counts too:
 // Asciidoctor ends a paragraph on an item of a list open around it, so the
 // rewrite would turn that line into one.
-func (k *picker) holds(list *block.List, marker string) bool {
+func (k *picker) holds(list *tree.List, marker string) bool {
 	for _, item := range list.Items {
 		if k.carries(item.Principal, marker) || k.heldBy(item.Children, marker) {
 			return true
@@ -134,18 +135,18 @@ func (k *picker) holds(list *block.List, marker string) bool {
 	return false
 }
 
-func (k *picker) heldBy(nodes []block.Node, marker string) bool {
+func (k *picker) heldBy(nodes []tree.Node, marker string) bool {
 	for _, node := range nodes {
 		switch node := node.(type) {
-		case *block.Container, *block.Verbatim, *block.Table:
+		case *tree.Container, *tree.Verbatim, *tree.Table:
 			// A delimiter confines what it holds: no list open outside it is
 			// open within, so no line in there becomes an item of this one.
-		case *block.List:
+		case *tree.List:
 			if k.holds(node, marker) {
 				return true
 			}
 		default:
-			if k.carries(node.Lines(), marker) {
+			if k.carries(node.Base().Lines, marker) {
 				return true
 			}
 		}
@@ -154,7 +155,7 @@ func (k *picker) heldBy(nodes []block.Node, marker string) bool {
 }
 
 // carries reports whether a line of the span opens a list item with the marker.
-func (k *picker) carries(span block.Span, marker string) bool {
+func (k *picker) carries(span tree.Span, marker string) bool {
 	for _, line := range block.Lines(k.src[span.Start:span.End]) {
 		if on, ok := block.ListMarker(line); ok && on == marker {
 			return true
@@ -164,7 +165,7 @@ func (k *picker) carries(span block.Span, marker string) bool {
 }
 
 // firstLine is the item's first line as the rule writes it with the marker.
-func firstLine(src []byte, item *block.ListItem, marker string) []byte {
+func firstLine(src []byte, item *tree.ListItem, marker string) []byte {
 	head, at := itemHead(src, item, marker)
 	if lines := block.Lines(src[at:item.Principal.End]); len(lines) > 0 {
 		head = append(head, lines[0]...)
@@ -174,7 +175,7 @@ func firstLine(src []byte, item *block.ListItem, marker string) []byte {
 
 // readsAsOther reports whether the list's first line, as written, would no
 // longer start the list.
-func (k *picker) readsAsOther(list *block.List, first []byte) bool {
+func (k *picker) readsAsOther(list *tree.List, first []byte) bool {
 	if !block.ReadsAs(list, first) {
 		return true
 	}
@@ -189,8 +190,8 @@ func (k *picker) readsAsOther(list *block.List, first []byte) bool {
 // two items is a blank one, and what follows it is a marker, which no underline
 // is. It has to stand in the list as well, since under the list the printer
 // writes a blank line, and nothing underlines a blank line.
-func (k *picker) underlines(list *block.List, item *block.ListItem, line []byte) bool {
-	if len(block.Lines(k.src[list.Lines().Start:list.Lines().End])) < 2 {
+func (k *picker) underlines(list *tree.List, item *tree.ListItem, line []byte) bool {
+	if len(block.Lines(k.src[list.Lines.Start:list.Lines.End])) < 2 {
 		return false
 	}
 	return block.UnderlinesTitle(line, block.LineBelow(k.src, item.Principal.Start))
@@ -202,7 +203,7 @@ func (k *picker) underlines(list *block.List, item *block.ListItem, line []byte)
 //
 // The space is left out where the item carries no text of its own, which only
 // a description term does, since it would be trailing whitespace there.
-func itemHead(src []byte, item *block.ListItem, marker string) (head []byte, textAt int) {
+func itemHead(src []byte, item *tree.ListItem, marker string) (head []byte, textAt int) {
 	at := item.Marker.End
 	for at < len(src) && (src[at] == ' ' || src[at] == '\t') {
 		at++
@@ -214,27 +215,27 @@ func itemHead(src []byte, item *block.ListItem, marker string) (head []byte, tex
 	return head, at
 }
 
-func (p *printer) list(node *block.List) {
+func (p *printer) list(node *tree.List) {
 	if p.frozen(node) {
 		return
 	}
 	w := betweenItems
-	if node.Description() {
+	if node.Description {
 		w = betweenTerms
 	}
-	var prev block.Node
+	var prev tree.Node
 	for _, item := range node.Items {
 		p.node(item, prev, w)
 		prev = item
 	}
 }
 
-func (p *printer) item(node *block.ListItem) {
+func (p *printer) item(node *tree.ListItem) {
 	if p.frozen(node) {
 		return
 	}
 	p.principal(node)
-	var prev block.Node = node
+	var prev tree.Node = node
 	for _, child := range node.Children {
 		p.node(child, prev, insideItem)
 		prev = child
@@ -244,7 +245,7 @@ func (p *printer) item(node *block.ListItem) {
 // principal emits the text the item carries itself: the marker the rule
 // picked, one space, and what stands behind it. An item the rule left out
 // prints as it stands.
-func (p *printer) principal(node *block.ListItem) {
+func (p *printer) principal(node *tree.ListItem) {
 	marker, ok := p.markers[node]
 	if !ok {
 		p.span(node.Principal)
@@ -252,5 +253,5 @@ func (p *printer) principal(node *block.ListItem) {
 	}
 	head, text := itemHead(p.src, node, marker)
 	p.out.Write(head)
-	p.span(block.Span{Start: text, End: node.Principal.End})
+	p.span(tree.Span{Start: text, End: node.Principal.End})
 }

@@ -3,6 +3,8 @@ package block
 import (
 	"slices"
 	"testing"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // TestTrimTrailing pins what the trailing whitespace rule removes and what it
@@ -140,6 +142,44 @@ func TestUnderlinesTitle(t *testing.T) {
 	for _, test := range tests {
 		if got := UnderlinesTitle([]byte(test.title), []byte(test.underline)); got != test.want {
 			t.Errorf("UnderlinesTitle(%q, %q) = %t, want %t", test.title, test.underline, got, test.want)
+		}
+	}
+}
+
+// TestFences pins which lines a fence may not be shortened onto, which
+// is what limits how far the delimiter rule may go.
+func TestFences(t *testing.T) {
+	listing := tree.Delimiter{Char: '-', Fill: '-', Width: 6}
+	table := tree.Delimiter{Char: '|', Fill: '=', Width: 8}
+	fenced := tree.Delimiter{Char: '`', Fill: '`', Width: 3}
+
+	tests := []struct {
+		delim tree.Delimiter
+		line  string
+		width int
+		ok    bool
+	}{
+		{listing, "----", 4, true},
+		{listing, "------", 6, true},
+		{listing, "", 0, false},
+		{listing, "-", 0, false},
+		{listing, "code", 0, false},
+		{listing, "----x", 0, false},
+		{listing, "====", 0, false},
+		{table, "|===", 4, true},
+		{table, "|=======", 8, true},
+		{table, "| a | b", 0, false},
+		{table, ",===", 0, false},
+		{table, "====", 0, false},
+		{fenced, "```", 3, true},
+		{fenced, "```go", 0, false},
+	}
+
+	for _, test := range tests {
+		width, ok := Fences(test.delim, []byte(test.line))
+		if width != test.width || ok != test.ok {
+			t.Errorf("Fences(Delimiter{%q, %q}, %q) = %d, %t, want %d, %t",
+				test.delim.Char, test.delim.Fill, test.line, width, ok, test.width, test.ok)
 		}
 	}
 }

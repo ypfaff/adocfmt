@@ -1,3 +1,10 @@
+// Package block reads AsciiDoc source into the block tree of package tree.
+//
+// The parser never resolves an include or a conditional, and never guesses.
+// Content it cannot know it freezes; structure it cannot trust it reports.
+//
+// Beside Parse, the package answers how a line reads, for a rule that has to
+// ask whether its output still reads the way the parser read the source.
 package block
 
 import (
@@ -8,6 +15,8 @@ import (
 	"reflect"
 	"slices"
 	"unicode/utf8"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 var byteOrderMark = []byte{0xEF, 0xBB, 0xBF}
@@ -18,9 +27,9 @@ var frontMatterFence = []byte("---")
 //
 // It fails on input it must not silently repair: anything but UTF-8, and mixed
 // line endings.
-func Parse(src []byte) (*Document, error) {
+func Parse(src []byte) (*tree.Document, error) {
 	start := bodyStart(src)
-	doc := &Document{Src: src, BOM: Span{0, start}}
+	doc := &tree.Document{Src: src, BOM: tree.Span{Start: 0, End: start}}
 	if !utf8.Valid(src[start:]) {
 		return nil, errors.New("source is not valid UTF-8")
 	}
@@ -44,7 +53,7 @@ func Parse(src []byte) (*Document, error) {
 
 	// An open region is found once the source runs out, so it is reported after
 	// findings that stand below it.
-	slices.SortStableFunc(p.findings, func(a, b Finding) int { return cmp.Compare(a.Line, b.Line) })
+	slices.SortStableFunc(p.findings, func(a, b tree.Finding) int { return cmp.Compare(a.Line, b.Line) })
 
 	doc.Findings = p.findings
 	return doc, nil
@@ -65,13 +74,13 @@ func bodyStart(src []byte) int {
 // line itself. The lines are read on their own, without the lists open around
 // the node, so a later line that starts like an item of any list is refused as
 // well.
-func ReadsAs(node Node, lines []byte) bool {
+func ReadsAs(node tree.Node, lines []byte) bool {
 	doc, err := Parse(lines)
 	if err != nil || len(doc.Nodes) != 1 {
 		return false
 	}
 	got := doc.Nodes[0]
-	if got.Frozen() || reflect.TypeOf(got) != reflect.TypeOf(node) || got.Lines() != (Span{0, len(lines)}) {
+	if got.Base().Frozen || reflect.TypeOf(got) != reflect.TypeOf(node) || got.Base().Lines != (tree.Span{Start: 0, End: len(lines)}) {
 		return false
 	}
 	for _, line := range Lines(lines)[1:] {
@@ -85,7 +94,7 @@ func ReadsAs(node Node, lines []byte) bool {
 // lineEnding reports what ends a line in src, and fails on the endings the
 // parser must not repair silently. A source without any answers LF, because a
 // rule writing the first line ending has to pick one.
-func lineEnding(src []byte) (LineEnding, error) {
+func lineEnding(src []byte) (tree.LineEnding, error) {
 	crlf, lf := 0, 0
 	for at := 0; at < len(src); at++ {
 		switch src[at] {
@@ -105,9 +114,9 @@ func lineEnding(src []byte) (LineEnding, error) {
 		return "", fmt.Errorf("source has mixed line endings: %d CRLF, %d LF", crlf, lf)
 	}
 	if crlf > 0 {
-		return CRLF, nil
+		return tree.CRLF, nil
 	}
-	return LF, nil
+	return tree.LF, nil
 }
 
 type parser struct {
@@ -144,7 +153,7 @@ type parser struct {
 	// paragraphs the items found, see freezeItemGaps.
 	notes printerNotes
 
-	findings []Finding
+	findings []tree.Finding
 }
 
 func (p *parser) done() bool { return p.at >= p.limit() }
@@ -208,7 +217,7 @@ func (p *parser) shape() shape { return classify(p.src, p.lines[p.at]) }
 
 func (p *parser) text(l line) []byte { return p.src[l.text.Start:l.text.End] }
 
-func (p *parser) take() Span {
+func (p *parser) take() tree.Span {
 	span := p.lines[p.at].full
 	p.at++
 	return span
@@ -220,12 +229,12 @@ func (p *parser) closes(closer []byte) bool {
 	return closer != nil && !p.done() && bytes.Equal(p.text(p.lines[p.at]), closer)
 }
 
-func (p *parser) gap() Gap {
+func (p *parser) gap() tree.Gap {
 	start := p.pos()
 	for !p.done() && p.shape().kind == shapeBlank {
 		p.at++
 	}
-	gap := Gap{Span: Span{start, p.pos()}, Frozen: p.freeze}
+	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}, Frozen: p.freeze}
 	// A freeze reaches to the next blank line of the source rather than to the
 	// next node: what a directive brings in, and what the front matter fence
 	// opens, may run on into the lines below it. Which of them ends it depends
@@ -236,7 +245,7 @@ func (p *parser) gap() Gap {
 }
 
 func (p *parser) report(at int, message string) {
-	p.findings = append(p.findings, Finding{Line: at + 1, Message: message})
+	p.findings = append(p.findings, tree.Finding{Line: at + 1, Message: message})
 }
 
 // track follows the directive on the current line into or out of a
@@ -259,9 +268,9 @@ func (p *parser) track(sh shape) {
 // reach follows the directive on the current line and freezes the block it
 // stands in, with the gaps on both sides: what the directive brings in decides
 // where that block really starts and ends.
-func (p *parser) reach(b *base, sh shape) {
+func (p *parser) reach(b *tree.NodeBase, sh shape) {
 	p.track(sh)
-	b.frozen, b.gap.Frozen, p.freeze = true, true, true
+	b.Frozen, b.Gap.Frozen, p.freeze = true, true, true
 }
 
 // directiveSince reports whether the parser has read a directive line at
@@ -272,8 +281,8 @@ func (p *parser) directiveSince(offset int) bool { return p.directiveEnd > offse
 // newBase starts the node below gap. A frozen gap with no blank line in it
 // means the reach of a directive or the front matter goes on into this node,
 // see gap. What that brings in may continue the node, so it starts frozen.
-func newBase(gap Gap) base {
-	return base{gap: gap, frozen: gap.Frozen && gap.Span.Empty()}
+func newBase(gap tree.Gap) tree.NodeBase {
+	return tree.NodeBase{Gap: gap, Frozen: gap.Frozen && gap.Span.Empty()}
 }
 
 // region identifies the innermost open conditional region, or -1 outside any.
@@ -284,8 +293,8 @@ func (p *parser) region() int {
 	return p.regions[len(p.regions)-1]
 }
 
-func (p *parser) nodes(closer []byte) ([]Node, Gap) {
-	var nodes []Node
+func (p *parser) nodes(closer []byte) ([]tree.Node, tree.Gap) {
+	var nodes []tree.Node
 	for {
 		gap := p.gap()
 		if p.done() || p.closes(closer) {
@@ -297,11 +306,11 @@ func (p *parser) nodes(closer []byte) ([]Node, Gap) {
 
 // node reads the metadata lines at the current position and the block they
 // bind to.
-func (p *parser) node(gap Gap, closer []byte) Node {
+func (p *parser) node(gap tree.Gap, closer []byte) tree.Node {
 	b := newBase(gap)
 	textOnly := p.readsTextOnly(p.at)
 	for p.metaLine(&b, closer, textOnly) {
-		b.gap = p.metaGap()
+		b.Gap = p.metaGap()
 	}
 	return p.block(b, closer, textOnly)
 }
@@ -312,7 +321,7 @@ func (p *parser) node(gap Gap, closer []byte) Node {
 // are not all blank. Where no block follows, the blank lines under the + go
 // back, as they do under a continuation, see carried; block then finds a
 // blank line and binds the metadata to nothing.
-func (p *parser) metaGap() Gap {
+func (p *parser) metaGap() tree.Gap {
 	gap := p.gap()
 	for !p.done() && p.placeholder(p.at) {
 		p.at++
@@ -321,44 +330,44 @@ func (p *parser) metaGap() Gap {
 		if p.done() {
 			p.rewind(m)
 		}
-		gap = Gap{Span: Span{gap.Span.Start, p.pos()}, Frozen: true}
+		gap = tree.Gap{Span: tree.Span{Start: gap.Span.Start, End: p.pos()}, Frozen: true}
 	}
 	return gap
 }
 
 // metaLine reads the metadata line at the current position into b and reports
 // whether there was one.
-func (p *parser) metaLine(b *base, closer []byte, textOnly bool) bool {
+func (p *parser) metaLine(b *tree.NodeBase, closer []byte, textOnly bool) bool {
 	if p.done() || p.closes(closer) {
 		return false
 	}
 	sh := p.shape()
 	kind, ok := metaKind(sh)
-	if !ok || (len(b.meta) == 0 && !opensMeta(kind)) || (textOnly && !textOnlyMeta(kind)) {
+	if !ok || (len(b.Meta) == 0 && !opensMeta(kind)) || (textOnly && !textOnlyMeta(kind)) {
 		return false
 	}
 	start := p.pos()
 	var open bool
 	switch kind {
-	case MetaDirective:
+	case tree.MetaDirective:
 		p.reach(b, sh)
 		p.at++
-	case MetaAttrEntry:
+	case tree.MetaAttrEntry:
 		open = p.entry(b, closer)
-	case MetaCommentBlock:
+	case tree.MetaCommentBlock:
 		p.commentBlock()
 	default:
 		p.at++
 	}
-	b.meta = append(b.meta, Meta{Kind: kind, Gap: b.gap, Lines: Span{start, p.pos()}, Open: open})
+	b.Meta = append(b.Meta, tree.Meta{Kind: kind, Gap: b.Gap, Lines: tree.Span{Start: start, End: p.pos()}, Open: open})
 	return true
 }
 
 // opensMeta reports whether a line of this kind starts the metadata of a
-// block. The other kinds only continue it, see MetaCommentBlock.
-func opensMeta(kind MetaKind) bool {
+// block. The other kinds only continue it, see tree.MetaCommentBlock.
+func opensMeta(kind tree.MetaKind) bool {
 	switch kind {
-	case MetaAttributes, MetaTitle, MetaAnchor, MetaComment:
+	case tree.MetaAttributes, tree.MetaTitle, tree.MetaAnchor, tree.MetaComment:
 		return true
 	default:
 		return false
@@ -368,9 +377,9 @@ func opensMeta(kind MetaKind) bool {
 // textOnlyMeta reports whether a line of this kind is metadata where
 // Asciidoctor reads a block as text only. A directive counts: Asciidoctor
 // resolves it before it reads the line.
-func textOnlyMeta(kind MetaKind) bool {
+func textOnlyMeta(kind tree.MetaKind) bool {
 	switch kind {
-	case MetaAttributes, MetaAnchor, MetaComment, MetaDirective:
+	case tree.MetaAttributes, tree.MetaAnchor, tree.MetaComment, tree.MetaDirective:
 		return true
 	default:
 		return false
@@ -391,7 +400,7 @@ func (p *parser) commentBlock() {
 // block is the node the metadata lines in b bind to. None follows at the end
 // of the source, the enclosing block or the list item, nor where a blank line
 // follows: only metaGap leaves one, where the item ends below it.
-func (p *parser) block(b base, closer []byte, textOnly bool) Node {
+func (p *parser) block(b tree.NodeBase, closer []byte, textOnly bool) tree.Node {
 	if p.done() || p.closes(closer) || p.shape().kind == shapeBlank {
 		return p.orphan(b)
 	}
@@ -402,36 +411,36 @@ func (p *parser) block(b base, closer []byte, textOnly bool) Node {
 }
 
 // orphan holds metadata lines that found no block.
-func (p *parser) orphan(b base) Node {
-	b.lines = Span{p.pos(), p.pos()}
+func (p *parser) orphan(b tree.NodeBase) tree.Node {
+	b.Lines = tree.Span{Start: p.pos(), End: p.pos()}
 	p.freeze = p.freeze || p.directiveInMeta(b)
-	return &Opaque{base: b}
+	return &tree.Opaque{NodeBase: b}
 }
 
 // directiveInMeta reports whether a directive stands among the metadata lines.
 // What it brings in may reach past the block, so the gap after the block
 // freezes too. Ask it before the block is read, or the block's own directives
 // count as well.
-func (p *parser) directiveInMeta(b base) bool {
+func (p *parser) directiveInMeta(b tree.NodeBase) bool {
 	return p.directiveSince(b.Extent().Start)
 }
 
-func metaKind(sh shape) (MetaKind, bool) {
+func metaKind(sh shape) (tree.MetaKind, bool) {
 	switch sh.kind {
 	case shapeAttributes:
-		return MetaAttributes, true
+		return tree.MetaAttributes, true
 	case shapeTitle:
-		return MetaTitle, true
+		return tree.MetaTitle, true
 	case shapeAnchor:
-		return MetaAnchor, true
+		return tree.MetaAnchor, true
 	case shapeComment:
-		return MetaComment, true
+		return tree.MetaComment, true
 	case shapeAttrEntry:
-		return MetaAttrEntry, true
+		return tree.MetaAttrEntry, true
 	case shapeDirective:
-		return MetaDirective, true
+		return tree.MetaDirective, true
 	case shapeDelimiter:
-		return MetaCommentBlock, sh.char == '/'
+		return tree.MetaCommentBlock, sh.char == '/'
 	default:
 		return 0, false
 	}
@@ -450,7 +459,7 @@ func metaKind(sh shape) (MetaKind, bool) {
 // it look for a Markdown quote, a quoted paragraph, an admonition label or a
 // literal paragraph, which the parser still reads as Opaque, Admonition or
 // Literal; that only costs formatting.
-func (p *parser) body(b base, closer []byte, textOnly bool) Node {
+func (p *parser) body(b tree.NodeBase, closer []byte, textOnly bool) tree.Node {
 	sh := p.shape()
 	if textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
 		sh.kind = shapeText
@@ -474,9 +483,9 @@ func (p *parser) body(b base, closer []byte, textOnly bool) Node {
 		if atStart && sh.level == 0 {
 			return p.header(b, sh.span, false)
 		}
-		if sectionLevel || styledDiscrete(p.src, b.meta) {
-			b.lines = p.take()
-			return &Heading{base: b, Marker: sh.char, Level: sh.level, Title: sh.span}
+		if sectionLevel || styledDiscrete(p.src, b.Meta) {
+			b.Lines = p.take()
+			return &tree.Heading{NodeBase: b, Marker: sh.char, Level: sh.level, Title: sh.span}
 		}
 		return p.contentBlock(b, sh, closer)
 	case shapeAttrEntry:
@@ -493,12 +502,12 @@ func (p *parser) body(b base, closer []byte, textOnly bool) Node {
 		if !p.inList() {
 			return p.contentBlock(b, sh, closer)
 		}
-		if (p.carrying && b.gap.Span.Empty()) || len(b.meta) > 0 {
+		if (p.carrying && b.Gap.Span.Empty()) || len(b.Meta) > 0 {
 			return p.plusText(b, closer, endsCarriedPlus)
 		}
-		b.gap.Frozen = true
-		b.lines = p.take()
-		return &Continuation{base: b}
+		b.Gap.Frozen = true
+		b.Lines = p.take()
+		return &tree.Continuation{NodeBase: b}
 	default:
 		return p.contentBlock(b, sh, closer)
 	}
@@ -507,10 +516,10 @@ func (p *parser) body(b base, closer []byte, textOnly bool) Node {
 // contentBlock reads a block whose kind a verbatim style above it overrides:
 // Asciidoctor checks the style before it looks at the line, and then reads to
 // the next blank line whatever the lines look like.
-func (p *parser) contentBlock(b base, sh shape, closer []byte) Node {
-	if strictVerbatimStyles[styleOf(p.src, b.meta)] {
+func (p *parser) contentBlock(b tree.NodeBase, sh shape, closer []byte) tree.Node {
+	if strictVerbatimStyles[styleOf(p.src, b.Meta)] {
 		p.textRun(&b, closer, p.endsVerbatimAfter(p.at))
-		return &Literal{base: b}
+		return &tree.Literal{NodeBase: b}
 	}
 	switch sh.kind {
 	case shapeContinuation:
@@ -520,11 +529,11 @@ func (p *parser) contentBlock(b base, sh shape, closer []byte) Node {
 	case shapeIndented:
 		return p.literal(b, closer)
 	case shapeBreak, shapeMacro:
-		b.lines = p.take()
-		return &Opaque{base: b}
+		b.Lines = p.take()
+		return &tree.Opaque{NodeBase: b}
 	case shapeQuote:
 		p.textRun(&b, closer, p.endsProse(b))
-		return &Opaque{base: b}
+		return &tree.Opaque{NodeBase: b}
 	default:
 		return p.paragraph(b, closer)
 	}
@@ -565,20 +574,20 @@ func precedesTitle(sh shape) bool {
 // so which lines are the author and the revision is unknown then: the header
 // freezes and runs to the blank line. twoLine says the title is written as a
 // title and an underline.
-func (p *parser) header(b base, title Span, twoLine bool) Node {
+func (p *parser) header(b tree.NodeBase, title tree.Span, twoLine bool) tree.Node {
 	start := p.pos()
 	p.at++
 	if twoLine {
 		p.at++
 	}
-	titleLines := Span{start, p.pos()}
+	titleLines := tree.Span{Start: start, End: p.pos()}
 	p.headerBody(&b)
-	b.lines = Span{start, p.pos()}
-	return &Header{base: b, Title: title, TitleLines: titleLines, TwoLine: twoLine}
+	b.Lines = tree.Span{Start: start, End: p.pos()}
+	return &tree.Header{NodeBase: b, Title: title, TitleLines: titleLines, TwoLine: twoLine}
 }
 
 // headerBody moves past the lines under the title that belong to the header.
-func (p *parser) headerBody(b *base) {
+func (p *parser) headerBody(b *tree.NodeBase) {
 	for taken := 0; !p.done() && p.shape().kind != shapeBlank; {
 		sh := p.shape()
 		switch {
@@ -627,11 +636,11 @@ func isRevisionLine(text []byte) bool {
 	return false
 }
 
-func (p *parser) attribute(b base, closer []byte) Node {
+func (p *parser) attribute(b tree.NodeBase, closer []byte) tree.Node {
 	start := p.pos()
 	p.entry(&b, closer)
-	b.lines = Span{start, p.pos()}
-	return &Attribute{base: b}
+	b.Lines = tree.Span{Start: start, End: p.pos()}
+	return &tree.Attribute{NodeBase: b}
 }
 
 // entry reads the attribute entry on the current line with the lines that
@@ -642,8 +651,8 @@ func (p *parser) attribute(b base, closer []byte) Node {
 // block Asciidoctor reads only the lines up to the closing delimiter, so the
 // value ends there too.
 //
-// It reports whether a blank line is what ended the value, see Meta.Open.
-func (p *parser) entry(b *base, closer []byte) bool {
+// It reports whether a blank line is what ended the value, see tree.Meta.Open.
+func (p *parser) entry(b *tree.NodeBase, closer []byte) bool {
 	e, _ := parseAttrEntry(p.text(p.lines[p.at]))
 	p.bind(e)
 	p.at++
@@ -694,13 +703,13 @@ func (p *parser) setextLevel() (int, bool) {
 // setext reads a two-line title. One whose title line reads as a list item
 // stays as it stands: a description list above keeps the block attribute
 // lines over such a line, so the one-line form would hand them to the title.
-func (p *parser) setext(b base, level int) Node {
+func (p *parser) setext(b tree.NodeBase, level int) tree.Node {
 	title := p.lines[p.at].text
-	b.frozen = b.frozen || p.shape().kind == shapeMarker
+	b.Frozen = b.Frozen || p.shape().kind == shapeMarker
 	start := p.pos()
 	p.at += 2
-	b.lines = Span{start, p.pos()}
-	return &Setext{base: b, Level: level, Title: title}
+	b.Lines = tree.Span{Start: start, End: p.pos()}
+	return &tree.Setext{NodeBase: b, Level: level, Title: title}
 }
 
 // paragraph reads prose, unless its line breaks carry meaning: a verbatim
@@ -710,21 +719,21 @@ func (p *parser) setext(b base, level int) Node {
 // as the attribution. So is one with a style or a block macro on its first
 // line that only an extension knows, see extensionStyle and
 // isCustomBlockMacro. A label opening its first line makes it an Admonition.
-func (p *parser) paragraph(b base, closer []byte) Node {
+func (p *parser) paragraph(b tree.NodeBase, closer []byte) tree.Node {
 	first := p.at
 	p.textRun(&b, closer, p.endsProse(b))
-	style := styleOf(p.src, b.meta)
+	style := styleOf(p.src, b.Meta)
 	switch {
 	case !paragraphStyles[style] && quotedParagraph(p.src, p.lines[first:p.at]),
 		extensionStyle(style) || isCustomBlockMacro(p.text(p.lines[first])):
-		return &Opaque{base: b}
-	case styledVerbatim(p.src, b.meta) || hasOption(p.src, b.meta, hardbreaksOption) ||
-		hasAttr(p.src, b.meta, substitutionsAttr) || len(p.lineBound) > 0:
-		return &Literal{base: b}
+		return &tree.Opaque{NodeBase: b}
+	case styledVerbatim(p.src, b.Meta) || hasOption(p.src, b.Meta, hardbreaksOption) ||
+		hasAttr(p.src, b.Meta, substitutionsAttr) || len(p.lineBound) > 0:
+		return &tree.Literal{NodeBase: b}
 	case admonition(p.text(p.lines[first])):
-		return &Admonition{base: b}
+		return &tree.Admonition{NodeBase: b}
 	default:
-		return &Paragraph{base: b}
+		return &tree.Paragraph{NodeBase: b}
 	}
 }
 
@@ -744,16 +753,16 @@ func admonition(line []byte) bool {
 }
 
 // literal is an indented paragraph, which AsciiDoc reads as verbatim content.
-func (p *parser) literal(b base, closer []byte) Node {
+func (p *parser) literal(b tree.NodeBase, closer []byte) tree.Node {
 	p.textRun(&b, closer, endsText)
-	return &Literal{base: b}
+	return &tree.Literal{NodeBase: b}
 }
 
 // textRun consumes the lines of an undelimited block up to the first line ends
 // says is no longer part of it. A directive line inside the block does not end
 // it but freezes it, see reach. A line that has to stay a line of its own
 // freezes the block too, see pinsLine.
-func (p *parser) textRun(b *base, closer []byte, ends func(shape) bool) {
+func (p *parser) textRun(b *tree.NodeBase, closer []byte, ends func(shape) bool) {
 	start := p.pos()
 	for !p.done() && !p.closes(closer) {
 		sh := p.shape()
@@ -763,10 +772,10 @@ func (p *parser) textRun(b *base, closer []byte, ends func(shape) bool) {
 		if sh.kind == shapeDirective {
 			p.reach(b, sh)
 		}
-		b.frozen = b.frozen || pinsLine(sh, p.text(p.lines[p.at]), p.inList())
+		b.Frozen = b.Frozen || pinsLine(sh, p.text(p.lines[p.at]), p.inList())
 		p.at++
 	}
-	b.lines = Span{start, p.pos()}
+	b.Lines = tree.Span{Start: start, End: p.pos()}
 }
 
 // endsText reports whether a line of this shape ends the text of a paragraph
@@ -816,8 +825,8 @@ func (p *parser) endsVerbatimAfter(first int) func(shape) bool {
 // the block that style names.
 // A literal paragraph does not use it: Asciidoctor reads that up to a blank
 // line, an item line included.
-func (p *parser) endsProse(b base) func(shape) bool {
-	if p.inList() && !p.carrying && !paragraphStyles[styleOf(p.src, b.meta)] {
+func (p *parser) endsProse(b tree.NodeBase) func(shape) bool {
+	if p.inList() && !p.carrying && !paragraphStyles[styleOf(p.src, b.Meta)] {
 		return endsItemText
 	}
 	return endsText
@@ -827,22 +836,22 @@ func (p *parser) endsProse(b base) func(shape) bool {
 // Asciidoctor reads as one paragraph with it. The + renders as the text it is,
 // and a further one among those lines Asciidoctor drops, so what the paragraph
 // shows is not the lines that stand here and none of them may move.
-func (p *parser) plusText(b base, closer []byte, ends func(shape) bool) Node {
+func (p *parser) plusText(b tree.NodeBase, closer []byte, ends func(shape) bool) tree.Node {
 	start := p.pos()
 	p.at++
 	p.textRun(&b, closer, ends)
-	b.frozen, b.gap.Frozen = true, true
-	b.lines = Span{start, p.pos()}
-	return &Paragraph{base: b}
+	b.Frozen, b.Gap.Frozen = true, true
+	b.Lines = tree.Span{Start: start, End: p.pos()}
+	return &tree.Paragraph{NodeBase: b}
 }
 
-func (p *parser) directive(b base, sh shape) Node {
+func (p *parser) directive(b tree.NodeBase, sh shape) tree.Node {
 	p.reach(&b, sh)
-	b.lines = p.take()
-	return &Directive{base: b}
+	b.Lines = p.take()
+	return &tree.Directive{NodeBase: b}
 }
 
-func (p *parser) delimited(b base, sh shape) Node {
+func (p *parser) delimited(b tree.NodeBase, sh shape) tree.Node {
 	openAt := p.at
 	open := p.lines[p.at]
 	// A fence may carry a language after the backticks; only the bare fence
@@ -850,15 +859,15 @@ func (p *parser) delimited(b base, sh shape) Node {
 	closer := p.text(open)[:sh.width]
 	region := p.region()
 	start := p.pos()
-	delim := Delimiter{Char: sh.char, Fill: sh.fill, Width: sh.width, Open: open.full}
-	style := styleOf(p.src, b.meta)
+	delim := tree.Delimiter{Char: sh.char, Fill: sh.fill, Width: sh.width, Open: open.full}
+	style := styleOf(p.src, b.Meta)
 	raw := readsRaw(sh, style)
 	if sh.content == contentCompound && (verbatimStyles[style] || style == commentStyle || extensionStyle(style)) {
 		sh.content = contentVerbatim
 	}
 	p.at++
 
-	var node Node
+	var node tree.Node
 	if sh.content == contentCompound {
 		// The block confines the reader: no list open outside it is open inside.
 		markers := p.markers
@@ -870,17 +879,17 @@ func (p *parser) delimited(b base, sh shape) Node {
 			p.report(at, "closes the block opened above it")
 		}
 		delim.Close = p.closingLine()
-		b.lines = Span{start, p.pos()}
-		node = &Container{base: b, Delim: delim, Children: children, Tail: tail}
+		b.Lines = tree.Span{Start: start, End: p.pos()}
+		node = &tree.Container{NodeBase: b, Delim: delim, Children: children, Tail: tail}
 	} else {
 		p.skipVerbatim(closer, raw)
 		delim.Extensible = p.extensible(raw, openAt+1)
 		delim.Close = p.closingLine()
-		b.lines = Span{start, p.pos()}
+		b.Lines = tree.Span{Start: start, End: p.pos()}
 		if sh.content == contentTable {
-			node = &Table{base: b, Delim: delim}
+			node = &tree.Table{NodeBase: b, Delim: delim}
 		} else {
-			node = &Verbatim{base: b, Delim: delim}
+			node = &tree.Verbatim{NodeBase: b, Delim: delim}
 		}
 	}
 
@@ -945,9 +954,9 @@ func (p *parser) closesInside(closer []byte, from int) (int, bool) {
 	return 0, false
 }
 
-func (p *parser) closingLine() Span {
+func (p *parser) closingLine() tree.Span {
 	if p.done() {
-		return Span{}
+		return tree.Span{}
 	}
 	return p.take()
 }
@@ -959,7 +968,7 @@ func (p *parser) closingLine() Span {
 // Asciidoctor itself does not skip it without skip-front-matter: it reads the
 // opening fence as a thematic break and everything under it up to the first
 // blank line as one paragraph. That is why the block freezes what follows.
-func (p *parser) frontMatter() Node {
+func (p *parser) frontMatter() tree.Node {
 	start := p.pos()
 	for !p.done() && p.shape().kind == shapeBlank {
 		p.at++
@@ -986,8 +995,8 @@ func (p *parser) frontMatter() Node {
 	}
 	p.at++
 	p.freeze = true
-	b := base{gap: Gap{Span: Span{start, start}}, lines: Span{start, p.pos()}}
-	return &FrontMatter{base: b}
+	b := tree.NodeBase{Gap: tree.Gap{Span: tree.Span{Start: start, End: start}}, Lines: tree.Span{Start: start, End: p.pos()}}
+	return &tree.FrontMatter{NodeBase: b}
 }
 
 func (p *parser) onFence() bool {

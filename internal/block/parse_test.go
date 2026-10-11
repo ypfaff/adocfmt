@@ -4,6 +4,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 func TestParse(t *testing.T) {
@@ -1744,27 +1746,27 @@ func TestParseReports(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
-		want []Finding
+		want []tree.Finding
 	}{
 		{
 			name: "a block that never closes",
 			src:  "----\ncode\n",
-			want: []Finding{{Line: 1, Message: "block has no closing delimiter"}},
+			want: []tree.Finding{{Line: 1, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a comment block among the metadata lines that never closes",
 			src:  "[source]\n////\nc\n",
-			want: []Finding{{Line: 2, Message: "block has no closing delimiter"}},
+			want: []tree.Finding{{Line: 2, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a comment block in the header that never closes",
 			src:  "= Title\n:a: b\n////\nc\n\n* d\n",
-			want: []Finding{{Line: 3, Message: "block has no closing delimiter"}},
+			want: []tree.Finding{{Line: 3, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a block under a literal paragraph in an item that does not close before the item ends",
 			src:  "* a\n\n  code\n----\nx\n\ny\n----\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 4, Message: "block has no closing delimiter"},
 				{Line: 8, Message: "block has no closing delimiter"},
 			},
@@ -1772,7 +1774,7 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "a fence under a line of text there opens a block rather than underlining the text",
 			src:  "* a\n\n  code\n....\ny\n....\ntext\n----\n",
-			want: []Finding{{Line: 8, Message: "block has no closing delimiter"}},
+			want: []tree.Finding{{Line: 8, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a fence inside a verbatim paragraph under such a literal paragraph opens no block",
@@ -1782,12 +1784,12 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "a block under an item a directive reaches is read as if the directive brought in nothing",
 			src:  "include::part.adoc[]\n* b\n[source]\nc\n----\nx\n",
-			want: []Finding{{Line: 5, Message: "block has no closing delimiter"}},
+			want: []tree.Finding{{Line: 5, Message: "block has no closing delimiter"}},
 		},
 		{
 			name: "a fence two blank lines under a term without text, which opens a block in the item",
 			src:  "t::\n\n\n----\nx\n----\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 4, Message: "block has no closing delimiter"},
 				{Line: 6, Message: "block has no closing delimiter"},
 			},
@@ -1795,7 +1797,7 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "a fence two blank lines under a term a directive reaches is refused, since the directive reads as bringing in nothing",
 			src:  "t::\ninclude::part.adoc[]\n\n\n----\nx\n----\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 5, Message: "block has no closing delimiter"},
 				{Line: 7, Message: "block has no closing delimiter"},
 			},
@@ -1803,22 +1805,22 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "a delimiter that closes outside the region it opened in",
 			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n----\n",
-			want: []Finding{{Line: 2, Message: "delimiter opens and closes in different conditional regions"}},
+			want: []tree.Finding{{Line: 2, Message: "delimiter opens and closes in different conditional regions"}},
 		},
 		{
 			name: "a line of the body that closes the block Asciidoctor ended there",
 			src:  "====\n----\n====\n----\n====\n",
-			want: []Finding{{Line: 3, Message: "closes the block opened above it"}},
+			want: []tree.Finding{{Line: 3, Message: "closes the block opened above it"}},
 		},
 		{
 			name: "also where the line opens a block of its own further in",
 			src:  "======\n====\n======\ntext\n======\n====\n======\n",
-			want: []Finding{{Line: 3, Message: "closes the block opened above it"}},
+			want: []tree.Finding{{Line: 3, Message: "closes the block opened above it"}},
 		},
 		{
 			name: "a conditional inside a [comment] on a wider fence opens a region all the same",
 			src:  "[comment]\n----\nifdef::extra[]\n----\nText.\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 2, Message: "delimiter opens and closes in different conditional regions"},
 				{Line: 3, Message: "conditional region has no endif"},
 			},
@@ -1826,12 +1828,12 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "also when the conditional sits among the metadata lines",
 			src:  "[source]\nifdef::extra[]\n----\nendif::[]\ncode\n----\n",
-			want: []Finding{{Line: 3, Message: "delimiter opens and closes in different conditional regions"}},
+			want: []tree.Finding{{Line: 3, Message: "delimiter opens and closes in different conditional regions"}},
 		},
 		{
 			name: "a block that never closes reports both when it also left its region",
 			src:  "ifdef::extra[]\n----\nendif::[]\ncode\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 2, Message: "block has no closing delimiter"},
 				{Line: 2, Message: "delimiter opens and closes in different conditional regions"},
 			},
@@ -1839,7 +1841,7 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "a conditional that never closes, and an endif that closes nothing",
 			src:  "endif::[]\n\nifdef::extra[]\nText.\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 1, Message: "endif closes no conditional region"},
 				{Line: 3, Message: "conditional region has no endif"},
 			},
@@ -1847,7 +1849,7 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "an open region is decided last and reported first all the same",
 			src:  "ifdef::extra[]\n\n----\ncode\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 1, Message: "conditional region has no endif"},
 				{Line: 3, Message: "block has no closing delimiter"},
 			},
@@ -1865,7 +1867,7 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "a malformed directive is a finding, as it is an error in Asciidoctor",
 			src:  "ifdef::[]\nifeval::target[1 == 1]\nifeval::[]\nifeval::[1 | 2]\nendif::a[x]\nendif::[]\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 1, Message: "malformed preprocessor directive"},
 				{Line: 2, Message: "malformed preprocessor directive"},
 				{Line: 3, Message: "malformed preprocessor directive"},
@@ -1877,7 +1879,7 @@ func TestParseReports(t *testing.T) {
 		{
 			name: "an ifeval expression is stripped the way Ruby strips it",
 			src:  "ifeval::[a <\u00a0]\nendif::[]\nifeval::[a <\x00]\nendif::[]\n",
-			want: []Finding{
+			want: []tree.Finding{
 				{Line: 3, Message: "malformed preprocessor directive"},
 				{Line: 4, Message: "endif closes no conditional region"},
 			},
@@ -1926,11 +1928,11 @@ func TestParseLineEnding(t *testing.T) {
 	tests := []struct {
 		name string
 		src  string
-		want LineEnding
+		want tree.LineEnding
 	}{
-		{name: "line feeds", src: "a\nb\n", want: LF},
-		{name: "carriage return line feeds", src: "a\r\nb\r\n", want: CRLF},
-		{name: "no line ending at all", src: "a", want: LF},
+		{name: "line feeds", src: "a\nb\n", want: tree.LF},
+		{name: "carriage return line feeds", src: "a\r\nb\r\n", want: tree.CRLF},
+		{name: "no line ending at all", src: "a", want: tree.LF},
 	}
 
 	for _, test := range tests {
@@ -1952,16 +1954,16 @@ func TestParseLineEnding(t *testing.T) {
 func TestReadsAs(t *testing.T) {
 	tests := []struct {
 		name  string
-		node  Node
+		node  tree.Node
 		lines string
 		want  bool
 	}{
-		{"prose stays prose", &Paragraph{}, "One.\nTwo.\n", true},
-		{"a label stays an admonition", &Admonition{}, "NOTE: One.\nTwo.\n", true},
-		{"a join makes a label", &Paragraph{}, "NOTE: One.\n", false},
-		{"a split starts a list", &Paragraph{}, "* One.\n", false},
-		{"a later line starts an item", &Paragraph{}, "One.\n. Two.\n", false},
-		{"a split makes an attribute line", &Paragraph{}, "[Optional.]\nSet it.\n", false},
+		{"prose stays prose", &tree.Paragraph{}, "One.\nTwo.\n", true},
+		{"a label stays an admonition", &tree.Admonition{}, "NOTE: One.\nTwo.\n", true},
+		{"a join makes a label", &tree.Paragraph{}, "NOTE: One.\n", false},
+		{"a split starts a list", &tree.Paragraph{}, "* One.\n", false},
+		{"a later line starts an item", &tree.Paragraph{}, "One.\n. Two.\n", false},
+		{"a split makes an attribute line", &tree.Paragraph{}, "[Optional.]\nSet it.\n", false},
 	}
 
 	for _, test := range tests {

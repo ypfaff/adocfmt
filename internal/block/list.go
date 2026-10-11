@@ -1,24 +1,29 @@
 package block
 
-import "slices"
+import (
+	"slices"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
+)
 
 // list reads a run of items sharing one marker. AsciiDoc nests on any change of
 // marker, not on indentation, so a different marker opens a nested list and a
 // marker of an enclosing list ends this one.
-func (p *parser) list(b base, sh shape, closer []byte) Node {
+func (p *parser) list(b tree.NodeBase, sh shape, closer []byte) tree.Node {
 	start, from := p.pos(), p.at
-	list := &List{
-		base:    b,
-		Marker:  sh.marker,
-		Open:    slices.Clone(p.markers),
-		Section: closer == nil && len(p.markers) == 0,
+	list := &tree.List{
+		NodeBase:    b,
+		Marker:      sh.marker,
+		Open:        slices.Clone(p.markers),
+		Section:     closer == nil && len(p.markers) == 0,
+		Description: isTermMarker(sh.marker),
 	}
 	p.markers = append(p.markers, sh.marker)
 	carrying := p.carrying
 	p.carrying = false
 	defer func() { p.markers, p.carrying = p.markers[:len(p.markers)-1], carrying }()
 
-	gap := Gap{Span: Span{start, start}}
+	gap := tree.Gap{Span: tree.Span{Start: start, End: start}}
 	for {
 		list.Items = append(list.Items, p.listItem(gap, sh, closer))
 
@@ -35,7 +40,7 @@ func (p *parser) list(b base, sh shape, closer []byte) Node {
 		}
 		sh = next
 	}
-	list.lines = Span{start, p.pos()}
+	list.Lines = tree.Span{Start: start, End: p.pos()}
 	list.Extensible = p.extensible(false, from) || p.directiveBelow()
 	return list
 }
@@ -55,9 +60,9 @@ func (p *parser) directiveBelow() bool {
 // listItem reads the item on the current line in two steps, as Asciidoctor
 // does: itemEnd finds the lines the item takes, and the parser reads the
 // item's text and blocks from those lines only.
-func (p *parser) listItem(gap Gap, sh shape, closer []byte) *ListItem {
+func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte) *tree.ListItem {
 	start := p.pos()
-	item := &ListItem{base: newBase(gap), Marker: sh.span}
+	item := &tree.ListItem{NodeBase: newBase(gap), Marker: sh.span}
 	marker := p.at
 	bare := sh.span.End == p.lines[marker].text.End
 
@@ -74,18 +79,18 @@ func (p *parser) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 		}
 		if inner.kind == shapeDirective {
 			p.track(inner)
-			item.frozen = true
+			item.Frozen = true
 			p.freeze = true
 		}
 		p.at++
 	}
-	item.Principal = Span{start, p.pos()}
+	item.Principal = tree.Span{Start: start, End: p.pos()}
 	if bare && (p.at == marker+1 || p.directiveSince(start)) {
 		p.fold(item, start, closer)
 	}
 
 	item.Children = p.attached(closer)
-	item.lines = Span{start, p.pos()}
+	item.Lines = tree.Span{Start: start, End: p.pos()}
 	return item
 }
 
@@ -95,7 +100,7 @@ func (p *parser) listItem(gap Gap, sh shape, closer []byte) *ListItem {
 // them is text, not a block of its own. A directive under the term leaves open
 // whether the term has text, so the lines fold into the frozen item then and
 // stay as they stand.
-func (p *parser) fold(item *ListItem, start int, closer []byte) {
+func (p *parser) fold(item *tree.ListItem, start int, closer []byte) {
 	m := p.mark()
 	p.gap()
 	if p.done() || !foldsOntoTerm(p.shape().kind) {
@@ -103,10 +108,10 @@ func (p *parser) fold(item *ListItem, start int, closer []byte) {
 		return
 	}
 
-	var folded base
+	var folded tree.NodeBase
 	p.textRun(&folded, closer, endsItemText)
-	item.frozen = item.frozen || folded.frozen
-	item.Principal = Span{start, p.pos()}
+	item.Frozen = item.Frozen || folded.Frozen
+	item.Principal = tree.Span{Start: start, End: p.pos()}
 	// Folding keeps the gap in Principal instead of giving it back, so the
 	// freeze that reading it consumed has to carry past the folded lines.
 	p.freeze = p.freeze || m.freeze
@@ -125,8 +130,8 @@ func foldsOntoTerm(kind shapeKind) bool {
 // itemEnd found for it. Asciidoctor reads them from the lines it collected for
 // the item, so whatever stands there belongs to the item, even a line that
 // reads as an item of an open list: that one opens a nested list.
-func (p *parser) attached(closer []byte) []Node {
-	var children []Node
+func (p *parser) attached(closer []byte) []tree.Node {
+	var children []tree.Node
 	for {
 		m := p.mark()
 		gap := p.gap()
@@ -136,7 +141,7 @@ func (p *parser) attached(closer []byte) []Node {
 		}
 		node := p.node(gap, closer)
 		children = append(children, node)
-		if _, ok := node.(*Continuation); ok {
+		if _, ok := node.(*tree.Continuation); ok {
 			children = append(children, p.carried(closer)...)
 		}
 	}
@@ -150,10 +155,10 @@ func (p *parser) attached(closer []byte) []Node {
 // A continuation with nothing left to carry gives the blank lines back, so they
 // end up in the gap of the next item or the tail of the enclosing block rather
 // than in no node at all.
-func (p *parser) carried(closer []byte) []Node {
+func (p *parser) carried(closer []byte) []tree.Node {
 	p.carrying = true
 	defer func() { p.carrying = false }()
-	var nodes []Node
+	var nodes []tree.Node
 	for {
 		m := p.mark()
 		gap := p.gap()
@@ -163,7 +168,7 @@ func (p *parser) carried(closer []byte) []Node {
 		}
 		node := p.node(gap, closer)
 		nodes = append(nodes, node)
-		if _, ok := node.(*Attribute); !ok {
+		if _, ok := node.(*tree.Attribute); !ok {
 			return nodes
 		}
 	}

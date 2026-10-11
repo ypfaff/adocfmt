@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"slices"
 	"strings"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 const commentStyle = "comment"
@@ -14,7 +16,7 @@ const commentStyle = "comment"
 // is otherwise prose.
 var discreteStyles = map[string]bool{"discrete": true, "float": true}
 
-func styledDiscrete(src []byte, meta []Meta) bool {
+func styledDiscrete(src []byte, meta []tree.Meta) bool {
 	return discreteStyles[styleOf(src, meta)]
 }
 
@@ -25,7 +27,7 @@ var verbatimStyles = map[string]bool{
 	"pass": true, "stem": true, "latexmath": true, "asciimath": true,
 }
 
-func styledVerbatim(src []byte, meta []Meta) bool {
+func styledVerbatim(src []byte, meta []tree.Meta) bool {
 	style := styleOf(src, meta)
 	return verbatimStyles[style] || style == commentStyle
 }
@@ -38,10 +40,10 @@ var strictVerbatimStyles = map[string]bool{"literal": true, "listing": true, "so
 // styleOf is the block style an attribute line assigns. It overrides what the
 // delimiter says: [source] on an open block makes it code, [comment] makes it a
 // comment block.
-func styleOf(src []byte, meta []Meta) string {
+func styleOf(src []byte, meta []tree.Meta) string {
 	style := ""
 	for _, m := range meta {
-		if m.Kind == MetaAttributes {
+		if m.Kind == tree.MetaAttributes {
 			if named := blockStyle(src[m.Lines.Start:m.Lines.End]); named != "" {
 				style = named
 			}
@@ -96,9 +98,9 @@ const hardbreaksOption = "hardbreaks"
 
 // hasOption reports whether an attribute line above the block sets the option.
 // Unlike a style, options accumulate across attribute lines.
-func hasOption(src []byte, meta []Meta, option string) bool {
+func hasOption(src []byte, meta []tree.Meta, option string) bool {
 	for _, m := range meta {
-		if m.Kind == MetaAttributes && slices.Contains(blockOptions(src[m.Lines.Start:m.Lines.End]), option) {
+		if m.Kind == tree.MetaAttributes && slices.Contains(blockOptions(src[m.Lines.Start:m.Lines.End]), option) {
 			return true
 		}
 	}
@@ -132,9 +134,9 @@ const substitutionsAttr = "subs"
 
 // hasAttr reports whether an attribute line above the block sets the named
 // attribute.
-func hasAttr(src []byte, meta []Meta, attr string) bool {
+func hasAttr(src []byte, meta []tree.Meta, attr string) bool {
 	for _, m := range meta {
-		if m.Kind != MetaAttributes {
+		if m.Kind != tree.MetaAttributes {
 			continue
 		}
 		for _, a := range attrList(src[m.Lines.Start:m.Lines.End]) {

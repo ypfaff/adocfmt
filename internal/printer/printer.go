@@ -11,18 +11,19 @@ import (
 	"bytes"
 
 	"github.com/ypfaff/adocfmt/internal/block"
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // Print emits doc formatted.
-func Print(doc *block.Document) []byte { return emit(doc, false) }
+func Print(doc *tree.Document) []byte { return emit(doc, false) }
 
 // PrintRaw emits doc with every rule off, which reproduces the source byte for
 // byte. It walks the tree like Print, so the identity check it serves measures
 // the tree rather than the source it was cut from. Format never offers it:
 // turning the rules off is a test instrument, not a mode of the formatter.
-func PrintRaw(doc *block.Document) []byte { return emit(doc, true) }
+func PrintRaw(doc *tree.Document) []byte { return emit(doc, true) }
 
-func emit(doc *block.Document, raw bool) []byte {
+func emit(doc *tree.Document, raw bool) []byte {
 	p := printer{src: doc.Src, raw: raw, eol: string(doc.LineEnding)}
 	if !raw {
 		p.widths = fenceWidths(doc)
@@ -44,16 +45,16 @@ type printer struct {
 	// open.
 	start int
 	// widths holds the width every fence is written at, see fenceWidths.
-	widths map[block.Node]int
+	widths map[tree.Node]int
 	// markers holds the marker every list item is written with, see
 	// listMarkers.
-	markers map[block.Node]string
+	markers map[tree.Node]string
 	out     bytes.Buffer
 }
 
 // span emits the source it covers, minus the trailing whitespace of each of
 // its lines.
-func (p *printer) span(s block.Span) {
+func (p *printer) span(s tree.Span) {
 	if p.raw {
 		p.write(s)
 		return
@@ -63,10 +64,10 @@ func (p *printer) span(s block.Span) {
 
 // write emits the source it covers as it stands, for the nodes no line-local
 // rule may touch either.
-func (p *printer) write(s block.Span) { p.out.Write(p.src[s.Start:s.End]) }
+func (p *printer) write(s tree.Span) { p.out.Write(p.src[s.Start:s.End]) }
 
-func (p *printer) nodes(nodes []block.Node, tail block.Gap, w where) {
-	var prev block.Node
+func (p *printer) nodes(nodes []tree.Node, tail tree.Gap, w where) {
+	var prev tree.Node
 	for _, node := range nodes {
 		p.node(node, prev, w)
 		prev = node
@@ -77,10 +78,10 @@ func (p *printer) nodes(nodes []block.Node, tail block.Gap, w where) {
 // node emits one node. Its own gap is the one between its last metadata line
 // and the block, so where it has metadata the gap in front of it is the first
 // metadata line's.
-func (p *printer) node(node block.Node, prev block.Node, w where) {
-	meta := node.Meta()
+func (p *printer) node(node tree.Node, prev tree.Node, w where) {
+	meta := node.Base().Meta
 	if len(meta) == 0 {
-		p.gap(node.Gap(), prev, w)
+		p.gap(node.Base().Gap, prev, w)
 		p.body(node)
 		return
 	}
@@ -93,39 +94,39 @@ func (p *printer) node(node block.Node, prev block.Node, w where) {
 		p.span(m.Lines)
 		above = m
 	}
-	p.bound(node.Gap(), above)
+	p.bound(node.Base().Gap, above)
 	p.body(node)
 }
 
 // body dispatches to the function owning the type. The default emits the
 // node's lines unchanged, which is what a node keeps doing until a rule claims
 // it.
-func (p *printer) body(node block.Node) {
+func (p *printer) body(node tree.Node) {
 	switch node := node.(type) {
-	case *block.Container:
+	case *tree.Container:
 		p.container(node)
-	case *block.Verbatim:
+	case *tree.Verbatim:
 		p.delimited(node, node.Delim)
-	case *block.Table:
+	case *tree.Table:
 		p.delimited(node, node.Delim)
-	case *block.Paragraph, *block.Admonition:
+	case *tree.Paragraph, *tree.Admonition:
 		p.prose(node)
-	case *block.List:
+	case *tree.List:
 		p.list(node)
-	case *block.ListItem:
+	case *tree.ListItem:
 		p.item(node)
-	case *block.Header:
+	case *tree.Header:
 		p.header(node)
-	case *block.Heading:
+	case *tree.Heading:
 		p.title(node, node.Level, node.Title)
-	case *block.Setext:
+	case *tree.Setext:
 		p.title(node, node.Level, node.Title)
-	case *block.FrontMatter:
+	case *tree.FrontMatter:
 		// YAML, not AsciiDoc: trailing whitespace inside a block scalar is
 		// content there.
-		p.write(node.Lines())
+		p.write(node.Lines)
 	default:
-		p.span(node.Lines())
+		p.span(node.Base().Lines)
 	}
 }
 
@@ -133,17 +134,17 @@ func (p *printer) body(node block.Node) {
 // did. The nodes holding other nodes ask, because a rule reaches the gaps
 // between their children through the traversal. Raw printing descends instead,
 // so the identity check keeps measuring every child.
-func (p *printer) frozen(node block.Node) bool {
-	if p.raw || !node.Frozen() {
+func (p *printer) frozen(node tree.Node) bool {
+	if p.raw || !node.Base().Frozen {
 		return false
 	}
-	p.span(node.Lines())
+	p.span(node.Base().Lines)
 	return true
 }
 
 // container starts over: its delimiters confine what is inside, so a list item
 // holding it does not reach past them.
-func (p *printer) container(node *block.Container) {
+func (p *printer) container(node *tree.Container) {
 	if p.frozen(node) {
 		return
 	}

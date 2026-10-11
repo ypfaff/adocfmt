@@ -1,13 +1,10 @@
-// Package block cuts AsciiDoc source into the block tree the printer emits.
+// Package tree is the block tree the parser builds and the printer emits.
 //
 // The tree partitions the source: every byte belongs to exactly one node, and
 // emitting the tree in order reproduces the input byte for byte. That is what
 // makes a formatter with no rule enabled the identity function, and it holds
 // without asking Asciidoctor anything.
-//
-// The parser never resolves an include or a conditional, and never guesses.
-// Content it cannot know it freezes; structure it cannot trust it reports.
-package block
+package tree
 
 import (
 	"bytes"
@@ -28,8 +25,8 @@ func (s Span) Empty() bool { return s.Start == s.End }
 // select the level the following block attaches to, under front matter or a
 // directive they decide whether two blocks merge when rendered, and in and
 // under a list item they decide which lines the item takes, see
-// freezeItemGaps. A frozen gap with no blank line in it is one where none may
-// be added.
+// block.freezeItemGaps. A frozen gap with no blank line in it is one where none
+// may be added.
 type Gap struct {
 	Span   Span
 	Frozen bool
@@ -61,17 +58,6 @@ func (d Delimiter) Line(width int) []byte {
 	line := bytes.Repeat([]byte{d.Fill}, width)
 	line[0] = d.Char
 	return line
-}
-
-// Fences reports the width at which this block would close on line, and whether
-// any width would. It asks about the shape of the line rather than about a
-// fence that is legal at that width: a line shaped like the opener is one the
-// opener may not be shortened to.
-func (d Delimiter) Fences(line []byte) (int, bool) {
-	if len(line) == 0 || line[0] != d.Char || !uniform(line[1:], d.Fill) {
-		return 0, false
-	}
-	return len(line), true
 }
 
 // MetaKind tells apart the metadata lines rules address individually.
@@ -111,93 +97,34 @@ type Meta struct {
 // Node is one piece of the document. The parser produces the types below and
 // no others.
 type Node interface {
-	// Extent reports every byte the node owns, its gap and metadata included.
-	Extent() Span
-	Gap() Gap
-	Meta() []Meta
-	Lines() Span
-	Frozen() bool
+	Base() *NodeBase
 	node()
-	gaps() []*Gap
-	gapAbove() *Gap
-	blockGap() *Gap
 }
 
-// base is what every node has.
+// NodeBase is what every node has.
 //
 // Frozen marks a node whose lines have to stay as they are: the parser could
 // not determine their structure, or one of them changes meaning when moved. No
 // rule may add, remove, join or split lines there; line-local rewrites such as
 // trailing whitespace removal stay safe.
-type base struct {
-	gap    Gap
-	meta   []Meta
-	lines  Span
-	frozen bool
+type NodeBase struct {
+	Gap    Gap
+	Meta   []Meta
+	Lines  Span
+	Frozen bool
 }
 
-func (b *base) node() {}
+func (b *NodeBase) node() {}
 
-// Extent implements Node.
-func (b *base) Extent() Span {
-	if len(b.meta) > 0 {
-		return Span{b.meta[0].Gap.Span.Start, b.lines.End}
+// Base implements Node.
+func (b *NodeBase) Base() *NodeBase { return b }
+
+// Extent reports every byte the node owns, its gap and metadata included.
+func (b *NodeBase) Extent() Span {
+	if len(b.Meta) > 0 {
+		return Span{b.Meta[0].Gap.Span.Start, b.Lines.End}
 	}
-	return Span{b.gap.Span.Start, b.lines.End}
-}
-
-func (b *base) Gap() Gap     { return b.gap }
-func (b *base) Meta() []Meta { return b.meta }
-func (b *base) Lines() Span  { return b.lines }
-func (b *base) Frozen() bool { return b.frozen }
-
-// gaps returns the gaps a node holds, top down: one in front of each
-// metadata line, then the one between the metadata and the block.
-func (b *base) gaps() []*Gap {
-	gaps := make([]*Gap, 0, len(b.meta)+1)
-	for i := range b.meta {
-		gaps = append(gaps, &b.meta[i].Gap)
-	}
-	return append(gaps, &b.gap)
-}
-
-// gapAbove is the gap in front of the whole node: in front of its first
-// metadata line, or in front of the block if it has none.
-func (b *base) gapAbove() *Gap {
-	if len(b.meta) > 0 {
-		return &b.meta[0].Gap
-	}
-	return &b.gap
-}
-
-// blockGap is the gap right in front of the block, below its metadata.
-func (b *base) blockGap() *Gap { return &b.gap }
-
-// eachNode calls visit for every node in nodes and in the nodes they hold, top
-// down.
-func eachNode(nodes []Node, visit func(Node)) {
-	for _, node := range nodes {
-		visit(node)
-		eachNode(below(node), visit)
-	}
-}
-
-// below returns the nodes the node holds: the blocks of a delimited block or a
-// list item, the items of a list.
-func below(node Node) []Node {
-	switch node := node.(type) {
-	case *Container:
-		return node.Children
-	case *ListItem:
-		return node.Children
-	case *List:
-		items := make([]Node, len(node.Items))
-		for i, item := range node.Items {
-			items[i] = item
-		}
-		return items
-	}
-	return nil
+	return Span{b.Gap.Span.Start, b.Lines.End}
 }
 
 // Header is the document header: the level 0 title, in one-line or two-line
@@ -208,7 +135,7 @@ func below(node Node) []Node {
 // follows as it is. TwoLine is the title written over two lines, which turns on
 // compat-mode and therefore may not be collapsed.
 type Header struct {
-	base
+	NodeBase
 	Title      Span
 	TitleLines Span
 	TwoLine    bool
@@ -217,7 +144,7 @@ type Header struct {
 // Heading is a one-line section title. Marker is = or #, since Asciidoctor
 // reads a Markdown heading as a section title too.
 type Heading struct {
-	base
+	NodeBase
 	Marker byte
 	Level  int
 	Title  Span
@@ -226,36 +153,36 @@ type Heading struct {
 // Setext is a two-line section title. Asciidoctor reads the pair before it
 // reads the underline as a delimiter, and so does the parser.
 type Setext struct {
-	base
+	NodeBase
 	Level int
 	Title Span
 }
 
 // Paragraph holds prose.
-type Paragraph struct{ base }
+type Paragraph struct{ NodeBase }
 
 // Admonition is a paragraph whose first line opens with a label such as NOTE:,
 // which Asciidoctor renders as an admonition block rather than as prose.
-type Admonition struct{ base }
+type Admonition struct{ NodeBase }
 
 // Literal holds verbatim lines without a delimiter: an indented paragraph, one
 // an attribute line turned into code, or prose whose line breaks carry meaning,
 // because hardbreaks are on, a missing attribute drops its line, or it sets
 // substitutions of its own.
-type Literal struct{ base }
+type Literal struct{ NodeBase }
 
 // Verbatim is a delimited block whose content must stay byte-identical:
 // listing, literal, passthrough and comment blocks, fenced code, and a block
 // with a style only an extension knows.
 type Verbatim struct {
-	base
+	NodeBase
 	Delim Delimiter
 }
 
 // Container is a delimited block holding further nodes: example, sidebar,
 // quote and open blocks.
 type Container struct {
-	base
+	NodeBase
 	Delim    Delimiter
 	Children []Node
 	Tail     Gap
@@ -263,7 +190,7 @@ type Container struct {
 
 // Table stays opaque until a rule needs its cells.
 type Table struct {
-	base
+	NodeBase
 	Delim Delimiter
 }
 
@@ -276,23 +203,23 @@ type Table struct {
 // Extensible is Delimiter.Extensible for a list, which has no fence to carry
 // it: a directive inside an item or right under it may still bring items in,
 // because nothing closes a list.
-type List struct {
-	base
-	Marker     string
-	Open       []string
-	Section    bool
-	Extensible bool
-	Items      []*ListItem
-}
-
+//
 // Description reports whether the list is a description list, whose items are
 // terms.
-func (l *List) Description() bool { return isTermMarker(l.Marker) }
+type List struct {
+	NodeBase
+	Marker      string
+	Open        []string
+	Section     bool
+	Extensible  bool
+	Description bool
+	Items       []*ListItem
+}
 
 // ListItem is one entry. Principal is its own text, Children are the blocks
 // attached to it.
 type ListItem struct {
-	base
+	NodeBase
 	Marker    Span
 	Principal Span
 	Children  []Node
@@ -300,20 +227,20 @@ type ListItem struct {
 
 // Continuation is a lone + line. The blank lines before it select the list
 // level the following block attaches to, so its gap is frozen.
-type Continuation struct{ base }
+type Continuation struct{ NodeBase }
 
 // Attribute is an attribute entry (:name: value) with the lines that continue
 // its value.
-type Attribute struct{ base }
+type Attribute struct{ NodeBase }
 
 // Directive is an include, ifdef, ifndef, ifeval or endif line. What it brings
 // in decides the structure around it, so the parser freezes rather than
 // resolves.
-type Directive struct{ base }
+type Directive struct{ NodeBase }
 
 // FrontMatter is the YAML block some static site generators put first. It is
 // not AsciiDoc and passes through untouched.
-type FrontMatter struct{ base }
+type FrontMatter struct{ NodeBase }
 
 // Opaque is a block the parser delimits but does not model: a block macro, a
 // thematic or page break, a Markdown quote, a quoted paragraph with its
@@ -322,7 +249,7 @@ type FrontMatter struct{ base }
 // reflows it, and it passes through unchanged.
 //
 // A construct leaves this type when a rule needs it told apart from the rest.
-type Opaque struct{ base }
+type Opaque struct{ NodeBase }
 
 // Finding is what the parser could not decide, and where.
 type Finding struct {
@@ -332,9 +259,9 @@ type Finding struct {
 
 func (f Finding) Error() string { return fmt.Sprintf("line %d: %s", f.Line, f.Message) }
 
-// LineEnding is what ends a line. Terminator answers the same question for one
-// line, and may answer that it ends without one; a document always has an
-// answer, because a rule writing a line of its own needs one to write.
+// LineEnding is what ends a line. block.Terminator answers the same question
+// for one line, and may answer that it ends without one; a document always has
+// an answer, because a rule writing a line of its own needs one to write.
 type LineEnding string
 
 // The two forms a source may end a line with.

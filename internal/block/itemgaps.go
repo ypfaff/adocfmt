@@ -3,6 +3,8 @@ package block
 import (
 	"cmp"
 	"slices"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // printerNotes are what reading the list items found for the printer: the
@@ -18,11 +20,11 @@ type printerNotes struct {
 
 // itemLiteral is a literal paragraph with the item that collected it.
 type itemLiteral struct {
-	item  *ListItem
-	lines Span
+	item  *tree.ListItem
+	lines tree.Span
 }
 
-func (n *printerNotes) addLiterals(item *ListItem, literals []Span) {
+func (n *printerNotes) addLiterals(item *tree.ListItem, literals []tree.Span) {
 	for _, literal := range literals {
 		n.literals = append(n.literals, itemLiteral{item, literal})
 	}
@@ -32,7 +34,7 @@ func (n *printerNotes) addLiterals(item *ListItem, literals []Span) {
 // takes. It runs once the tree stands, because such a gap may stand below the
 // item that found it: in front of the next item, or of the block under the
 // list.
-func (p *parser) freezeItemGaps(nodes []Node) {
+func (p *parser) freezeItemGaps(nodes []tree.Node) {
 	p.notes.freezeKeptGaps(nodes)
 	p.notes.freezeUnderLiterals(nodes)
 	p.notes.freezeInsideLiterals()
@@ -40,13 +42,13 @@ func (p *parser) freezeItemGaps(nodes []Node) {
 }
 
 // freezeKeptGaps freezes the gaps noted for the printer.
-func (n *printerNotes) freezeKeptGaps(nodes []Node) {
+func (n *printerNotes) freezeKeptGaps(nodes []tree.Node) {
 	ends := map[int]bool{}
 	for _, end := range n.keptGaps {
 		ends[end] = true
 	}
-	eachNode(nodes, func(node Node) {
-		for _, gap := range node.gaps() {
+	eachNode(nodes, func(node tree.Node) {
+		for _, gap := range gaps(node) {
 			gap.Frozen = gap.Frozen || (!gap.Span.Empty() && ends[gap.Span.End])
 		}
 	})
@@ -55,18 +57,18 @@ func (n *printerNotes) freezeKeptGaps(nodes []Node) {
 // freezeUnderLiterals freezes the blank lines between two items under a
 // literal paragraph. They end the paragraph; the printer may drop them between
 // items, and the next item would join it.
-func (n *printerNotes) freezeUnderLiterals(nodes []Node) {
+func (n *printerNotes) freezeUnderLiterals(nodes []tree.Node) {
 	ends := map[int]bool{}
 	for _, literal := range n.literals {
 		ends[literal.lines.End] = true
 	}
-	eachNode(nodes, func(node Node) {
-		list, ok := node.(*List)
+	eachNode(nodes, func(node tree.Node) {
+		list, ok := node.(*tree.List)
 		if !ok {
 			return
 		}
 		for _, item := range list.Items[1:] {
-			gap := &item.gap
+			gap := &item.Gap
 			gap.Frozen = gap.Frozen || (!gap.Span.Empty() && ends[gap.Span.Start])
 		}
 	})
@@ -79,8 +81,8 @@ func (n *printerNotes) freezeUnderLiterals(nodes []Node) {
 func (n *printerNotes) freezeInsideLiterals() {
 	for _, literal := range n.literals {
 		for _, child := range literal.item.Children {
-			eachNode(below(child), func(node Node) {
-				above := node.gapAbove()
+			eachNode(below(child), func(node tree.Node) {
+				above := gapAbove(node)
 				inside := literal.lines.Start < above.Span.End && above.Span.End < literal.lines.End
 				above.Frozen = above.Frozen || inside
 			})
@@ -92,19 +94,19 @@ func (n *printerNotes) freezeInsideLiterals() {
 // indented line in a list item, unless the line opens an item of a nested
 // list. Below them, the item takes the lines down to the next blank line
 // whole, see takeLiteral; without them, one by one.
-func (p *parser) freezeAboveIndented(nodes []Node, inItem bool) {
+func (p *parser) freezeAboveIndented(nodes []tree.Node, inItem bool) {
 	for _, node := range nodes {
-		blockGap, lines := node.blockGap(), node.Lines()
-		if inItem && len(node.Meta()) > 0 && !blockGap.Span.Empty() && !lines.Empty() {
+		gap, lines := blockGap(node), node.Base().Lines
+		if inItem && len(node.Base().Meta) > 0 && !gap.Span.Empty() && !lines.Empty() {
 			first := p.lineAt(lines.Start)
 			indented := isIndented(p.text(first)) && !opensAnyList(p.src, first)
-			blockGap.Frozen = blockGap.Frozen || indented
+			gap.Frozen = gap.Frozen || indented
 		}
 		belowInItem := inItem
 		switch node.(type) {
-		case *ListItem:
+		case *tree.ListItem:
 			belowInItem = true
-		case *Container:
+		case *tree.Container:
 			// The block confines the reader, see delimited.
 			belowInItem = false
 		}
@@ -119,4 +121,55 @@ func (p *parser) lineAt(offset int) line {
 		return cmp.Compare(l.full.Start, target)
 	})
 	return p.lines[at]
+}
+
+// gaps returns the gaps a node holds, top down: one in front of each
+// metadata line, then the one between the metadata and the block.
+func gaps(node tree.Node) []*tree.Gap {
+	b := node.Base()
+	gaps := make([]*tree.Gap, 0, len(b.Meta)+1)
+	for i := range b.Meta {
+		gaps = append(gaps, &b.Meta[i].Gap)
+	}
+	return append(gaps, &b.Gap)
+}
+
+// gapAbove is the gap in front of the whole node: in front of its first
+// metadata line, or in front of the block if it has none.
+func gapAbove(node tree.Node) *tree.Gap {
+	b := node.Base()
+	if len(b.Meta) > 0 {
+		return &b.Meta[0].Gap
+	}
+	return &b.Gap
+}
+
+// blockGap is the gap right in front of the block, below its metadata.
+func blockGap(node tree.Node) *tree.Gap { return &node.Base().Gap }
+
+// eachNode calls visit for every node in nodes and in the nodes they hold, top
+// down.
+func eachNode(nodes []tree.Node, visit func(tree.Node)) {
+	for _, node := range nodes {
+		visit(node)
+		eachNode(below(node), visit)
+	}
+}
+
+// below returns the nodes the node holds: the blocks of a delimited block or a
+// list item, the items of a list.
+func below(node tree.Node) []tree.Node {
+	switch node := node.(type) {
+	case *tree.Container:
+		return node.Children
+	case *tree.ListItem:
+		return node.Children
+	case *tree.List:
+		items := make([]tree.Node, len(node.Items))
+		for i, item := range node.Items {
+			items[i] = item
+		}
+		return items
+	}
+	return nil
 }

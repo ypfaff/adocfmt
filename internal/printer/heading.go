@@ -4,6 +4,7 @@ import (
 	"bytes"
 
 	"github.com/ypfaff/adocfmt/internal/block"
+	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
 // headingLine builds the canonical form of a section title: one = per level,
@@ -28,34 +29,35 @@ func headingLine(level int, title []byte) ([]byte, bool) {
 // title emits a section title in its canonical one-line form, whether the
 // source wrote it on one line or two, and leaves the node as it stands where
 // that form would say something else.
-func (p *printer) title(node block.Node, level int, title block.Span) {
-	if p.raw || node.Frozen() {
-		p.span(node.Lines())
+func (p *printer) title(node tree.Node, level int, title tree.Span) {
+	if p.raw || node.Base().Frozen {
+		p.span(node.Base().Lines)
 		return
 	}
 	line, ok := headingLine(level, p.src[title.Start:title.End])
 	if !ok {
-		p.span(node.Lines())
+		p.span(node.Base().Lines)
 		return
 	}
 	p.out.Write(line)
-	p.out.Write(block.Terminator(p.src[node.Lines().Start:node.Lines().End]))
+	lines := node.Base().Lines
+	p.out.Write(block.Terminator(p.src[lines.Start:lines.End]))
 }
 
 // header rewrites the document title and keeps the author, revision and
 // attribute lines below it as they are. A two-line title stays whole, because
 // it turns on compat-mode, which changes how inline markup renders.
-func (p *printer) header(node *block.Header) {
-	if p.raw || node.Frozen() || node.TwoLine {
-		p.span(node.Lines())
+func (p *printer) header(node *tree.Header) {
+	if p.raw || node.Frozen || node.TwoLine {
+		p.span(node.Lines)
 		return
 	}
 	line, ok := headingLine(0, p.src[node.Title.Start:node.Title.End])
 	if !ok {
-		p.span(node.Lines())
+		p.span(node.Lines)
 		return
 	}
 	p.out.Write(line)
 	p.out.Write(block.Terminator(p.src[node.TitleLines.Start:node.TitleLines.End]))
-	p.span(block.Span{Start: node.TitleLines.End, End: node.Lines().End})
+	p.span(tree.Span{Start: node.TitleLines.End, End: node.Lines.End})
 }

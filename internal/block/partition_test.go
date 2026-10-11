@@ -1,13 +1,17 @@
 package block
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/ypfaff/adocfmt/internal/tree"
+)
 
 // checkPartition guards what the package documentation promises: the tree
 // partitions its source. A byte no span owns disappears when printed, and a
 // byte two spans own is printed twice. It walks the tree in the order the
 // printer emits it and fails at the first span that does not start where the
 // previous one ended.
-func checkPartition(t *testing.T, doc *Document) {
+func checkPartition(t *testing.T, doc *tree.Document) {
 	t.Helper()
 
 	w := &walker{t: t}
@@ -22,7 +26,7 @@ type walker struct {
 	at int
 }
 
-func (w *walker) span(what string, s Span) {
+func (w *walker) span(what string, s tree.Span) {
 	w.t.Helper()
 	if s.Start != w.at {
 		w.t.Fatalf("%s starts at byte %d, want %d", what, s.Start, w.at)
@@ -40,7 +44,7 @@ func (w *walker) reached(what string, end int) {
 	}
 }
 
-func (w *walker) nodes(nodes []Node, tail Gap, end int) {
+func (w *walker) nodes(nodes []tree.Node, tail tree.Gap, end int) {
 	w.t.Helper()
 	for _, node := range nodes {
 		w.node(node)
@@ -49,28 +53,28 @@ func (w *walker) nodes(nodes []Node, tail Gap, end int) {
 	w.reached("node sequence", end)
 }
 
-func (w *walker) node(node Node) {
+func (w *walker) node(node tree.Node) {
 	w.t.Helper()
-	for _, meta := range node.Meta() {
+	for _, meta := range node.Base().Meta {
 		w.span("metadata gap", meta.Gap.Span)
 		w.span("metadata", meta.Lines)
 	}
-	w.span("gap", node.Gap().Span)
+	w.span("gap", node.Base().Gap.Span)
 
 	switch node := node.(type) {
-	case *Container:
+	case *tree.Container:
 		w.span("opening delimiter", node.Delim.Open)
 		if node.Delim.Closed() {
 			w.nodes(node.Children, node.Tail, node.Delim.Close.Start)
 			w.span("closing delimiter", node.Delim.Close)
 		} else {
-			w.nodes(node.Children, node.Tail, node.Lines().End)
+			w.nodes(node.Children, node.Tail, node.Lines.End)
 		}
-	case *List:
+	case *tree.List:
 		for _, item := range node.Items {
 			w.node(item)
 		}
-	case *ListItem:
+	case *tree.ListItem:
 		if node.Marker.Start < node.Principal.Start || node.Marker.End > node.Principal.End {
 			w.t.Fatalf("marker %v lies outside its principal %v", node.Marker, node.Principal)
 		}
@@ -79,8 +83,8 @@ func (w *walker) node(node Node) {
 			w.node(child)
 		}
 	default:
-		w.span("lines", node.Lines())
+		w.span("lines", node.Base().Lines)
 	}
-	w.reached("lines", node.Lines().End)
-	w.reached("extent", node.Extent().End)
+	w.reached("lines", node.Base().Lines.End)
+	w.reached("extent", node.Base().Extent().End)
 }
