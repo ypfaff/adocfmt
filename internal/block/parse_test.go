@@ -634,6 +634,29 @@ List "*"
   ListItem gap! "* b\n"`,
 		},
 		{
+			name: "right under another block in an item it ends at an item line, which opens a nested list",
+			src:  ". a\n+\n----\ncode\n----\n literal\n- b\n\n- c\n",
+			want: `
+List "."
+  ListItem ". a\n"
+    Continuation gap! "+\n"
+    Verbatim "----\ncode\n----\n"
+    Literal " literal\n"
+    List "-"
+      ListItem "- b\n"
+      ListItem "- c\n"`,
+		},
+		{
+			name: "under a paragraph style it reads on past the item line",
+			src:  "* a\n+\n----\nx\n----\n[quote]\n  text\n- b\n",
+			want: `
+List "*"
+  ListItem "* a\n"
+    Continuation gap! "+\n"
+    Verbatim "----\nx\n----\n"
+    Literal! meta("[quote]\n") "  text\n- b\n"`,
+		},
+		{
 			name: "that block may close below a blank line, as the item reads on past one",
 			src:  "* a\n\n  code\n----\nx\n\n  more\n----\n",
 			want: `
@@ -698,12 +721,14 @@ List "*"
 Verbatim "----\nx\n----\n"`,
 		},
 		{
-			name: "the blank line between metadata and a literal paragraph in an item stays, the item takes the paragraph whole",
+			name: "the blank line between metadata and a literal paragraph in an item stays, and the paragraph ends at an item line, as no blank line comes above the metadata",
 			src:  "* a\n[x]\n\n  code\n* b\n",
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal! gap! meta("[x]\n") "  code\n* b\n"`,
+    Literal gap! meta("[x]\n") "  code\n"
+    List "*"
+      ListItem gap! "* b\n"`,
 		},
 		{
 			name: "the blank line between metadata and an indented line in a delimited block in an item may go",

@@ -378,7 +378,8 @@ func (r *itemReader) noteBareTerm(at int) {
 // line or a +, whatever they look like, since Asciidoctor collects a literal
 // paragraph whole. In a description list the next term ends it too. Reading
 // the paragraph later, Asciidoctor ends it at a delimiter or an attribute line
-// like any other, so the lines may hold further blocks, see
+// like any other, and at an item line where it reads the paragraph as prose
+// ends, see parser.literal, so the lines may hold further blocks, see
 // freezeInsideLiterals.
 func (r *itemReader) takeLiteral() {
 	from := r.at
