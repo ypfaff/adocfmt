@@ -196,8 +196,9 @@ var abbreviations = map[string]bool{
 	"sec": true, "sr": true, "st": true, "vol": true, "vs": true,
 	// German
 	"abb": true, "abs": true, "bzgl": true, "bzw": true, "bspw": true,
-	"ca": true, "evtl": true, "ggf": true, "inkl": true, "kap": true,
-	"nr": true, "sog": true, "usw": true, "vgl": true, "zzgl": true,
+	"ca": true, "evtl": true, "exkl": true, "fr": true, "ggf": true,
+	"hr": true, "inkl": true, "kap": true, "nr": true, "sog": true,
+	"usw": true, "vgl": true, "zzgl": true,
 }
 
 // A pair is an opaque span that opens and closes on fixed text.
