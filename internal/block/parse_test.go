@@ -936,7 +936,7 @@ Verbatim "----\n"`,
 			want: `
 List "::"
   ListItem "a::\n"
-    List gap! meta~("[]\n") ":::"
+    List gap~ meta~("[]\n") ":::"
       ListItem "b:::\n"
 Paragraph "c\n"`,
 		},
