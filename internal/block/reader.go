@@ -109,8 +109,8 @@ func (r *reader) placeholder(at int) bool {
 
 // inLiteral reports whether offset falls inside a literal paragraph the buffer
 // of an item being read collected whole, past its first line, see
-// takeLiteral. Where its lines hold further blocks, a blank line between two
-// of them would end the item there.
+// takeLiteral. Its lines hold no blank line, and where they hold further
+// blocks, one between two of them would end the item there.
 func (r *reader) inLiteral(offset int) bool {
 	return r.anyItem(func(l *itemLines) bool {
 		return slices.ContainsFunc(l.literals, func(s tree.Span) bool { return s.Start < offset && offset < s.End })

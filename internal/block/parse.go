@@ -225,10 +225,12 @@ func (p *parser) gap() tree.Gap {
 		p.at++
 	}
 	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}, Stage: p.significant[p.at]}
-	if p.freeze || p.reader.inLiteral(gap.Span.End) {
-		gap.Stage = tree.Exact
+	if p.reader.inLiteral(gap.Span.End) {
+		gap.Stage = max(gap.Stage, tree.KeepCount)
 	}
-	gap.BesideDirective = p.freeze
+	if p.freeze {
+		gap.Stage, gap.BesideDirective = tree.Exact, true
+	}
 	// A freeze reaches to the next blank line of the source rather than to the
 	// next node: what a directive brings in, and what the front matter fence
 	// opens, may run on into the lines below it. Which of them ends it depends
