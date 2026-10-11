@@ -222,7 +222,7 @@ func (p *parser) gap() tree.Gap {
 	}
 	gap := tree.Gap{Span: tree.Span{Start: start, End: p.pos()}}
 	if p.freeze {
-		gap.Stage = tree.Exact
+		gap.Stage, gap.BesideDirective = tree.Exact, true
 	}
 	// A freeze reaches to the next blank line of the source rather than to the
 	// next node: what a directive brings in, and what the front matter fence
@@ -259,7 +259,7 @@ func (p *parser) track(sh shape) {
 // where that block really starts and ends.
 func (p *parser) reach(b *tree.NodeBase, sh shape) {
 	p.track(sh)
-	b.Frozen, b.Gap.Stage, p.freeze = true, tree.Exact, true
+	b.Frozen, b.Gap.Stage, b.Gap.BesideDirective, p.freeze = true, tree.Exact, true, true
 }
 
 // directiveSince reports whether the parser has read a directive line at
@@ -267,11 +267,12 @@ func (p *parser) reach(b *tree.NodeBase, sh shape) {
 // directive stands in its lines, which makes its end uncertain.
 func (p *parser) directiveSince(offset int) bool { return p.directiveEnd > offset }
 
-// newBase starts the node below gap. An exact gap with no blank line in it
-// means the reach of a directive or the front matter goes on into this node,
-// see gap. What that brings in may continue the node, so it starts frozen.
+// newBase starts the node below gap. Where the gap is beside a directive and
+// holds no blank line, the reach of a directive or the front matter goes on
+// into this node, see gap. What that brings in may continue the node, so it
+// starts frozen.
 func newBase(gap tree.Gap) tree.NodeBase {
-	return tree.NodeBase{Gap: gap, Frozen: gap.Stage == tree.Exact && gap.Span.Empty()}
+	return tree.NodeBase{Gap: gap, Frozen: gap.BesideDirective && gap.Span.Empty()}
 }
 
 // region identifies the innermost open conditional region, or -1 outside any.
@@ -343,7 +344,7 @@ func (p *parser) metaGap() tree.Gap {
 		if p.done() {
 			p.rewind(m)
 		}
-		gap = tree.Gap{Span: tree.Span{Start: gap.Span.Start, End: p.pos()}, Stage: tree.Exact}
+		gap.Span.End, gap.Stage = p.pos(), tree.Exact
 	}
 	return gap
 }
