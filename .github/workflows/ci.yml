@@ -94,6 +94,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      # The tests run the adocfmt binary that the build makes with go build.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+
       # No Gradle cache: the IDEs it would hold take most of the repository's
       # 10 GB of cache and would push out the Go caches.
       - name: Build

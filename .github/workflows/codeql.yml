@@ -34,6 +34,10 @@ jobs:
             build-mode: autobuild
           - language: actions
             build-mode: none
+          # The IntelliJ plugin. A build would download an IDE of about 1 GB, and
+          # without one CodeQL still reads every Java file.
+          - language: java-kotlin
+            build-mode: none
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

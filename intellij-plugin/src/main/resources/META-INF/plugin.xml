@@ -5,4 +5,12 @@
     <description>Formats AsciiDoc files with adocfmt, an opinionated AsciiDoc formatter.</description>
 
     <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <formattingService implementation="io.github.ypfaff.adocfmt.intellij.AdocfmtFormattingService"/>
+        <projectConfigurable parentId="tools" id="io.github.ypfaff.adocfmt" displayName="adocfmt"
+                             instance="io.github.ypfaff.adocfmt.intellij.AdocfmtConfigurable"
+                             nonDefaultProject="true"/>
+        <notificationGroup id="adocfmt refused" displayType="BALLOON"/>
+    </extensions>
 </idea-plugin>

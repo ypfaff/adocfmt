@@ -1,5 +1,7 @@
 import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.intellij.platform.gradle.models.ProductRelease
+import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 
 plugins {
     java
@@ -26,7 +28,9 @@ repositories {
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity("2024.3")
+        testFramework(TestFrameworkType.Platform)
     }
+    testImplementation("junit:junit:4.13.2")
 }
 
 intellijPlatform {
@@ -48,6 +52,39 @@ intellijPlatform {
                 channels = listOf(ProductRelease.Channel.RELEASE)
             }
         }
+    }
+}
+
+val repository = layout.projectDirectory.dir("..")
+
+// adocfmt for this machine alone, in bin/<GOOS>-<GOARCH>/. The release puts
+// the binaries of all six platforms there instead.
+val buildAdocfmt = tasks.register<Exec>("buildAdocfmt") {
+    val binaries = layout.buildDirectory.dir("adocfmt")
+    val platform = providers.exec { commandLine("go", "env", "GOOS", "GOARCH") }
+        .standardOutput.asText.get().trim().lines().joinToString("-")
+    workingDir = repository.asFile
+    environment("CGO_ENABLED", "0")
+    // The trailing slash makes go build name the file, adocfmt.exe on Windows.
+    commandLine("go", "build", "-trimpath", "-o", "${binaries.get().dir(platform).asFile}/", "./cmd/adocfmt")
+    outputs.dir(binaries)
+    doNotTrackState("go build keeps its own cache")
+}
+
+tasks.withType<PrepareSandboxTask>().configureEach {
+    from(buildAdocfmt) {
+        into(pluginName.map { "$it/bin" })
+    }
+    // The Apache License section 4 requires both with the binaries.
+    from(repository.files("LICENSE", "NOTICE")) {
+        into(pluginName)
+    }
+}
+
+tasks.buildPlugin {
+    // An archive gets every file as 644, without the executable bit.
+    filesMatching("bin/**") {
+        permissions { unix("755") }
     }
 }
 
