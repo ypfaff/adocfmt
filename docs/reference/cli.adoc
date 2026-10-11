@@ -143,12 +143,9 @@ Placement::
 Only blank lines, other comment lines and comment blocks may stand above the comment, after the YAML front matter if the file has any.
 The comment must be a comment line of its own, not a line inside a `////` comment block.
 +
-[cols="1,1"]
-|===
-| Honored | Not honored
-
-a|
-....
+.Stays unformatted
+[source,asciidoc]
+----
 ---
 title: API reference
 ---
@@ -156,14 +153,15 @@ title: API reference
 // Tables aligned by hand.
 // adocfmt: ignore-file
 = API reference
-....
-a|
-....
+----
++
+.Gets formatted
+[source,asciidoc]
+----
 = API reference
 // adocfmt: ignore-file
 :toc:
-....
-|===
+----
 
 [#exit-codes]
 == Exit codes
