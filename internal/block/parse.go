@@ -39,7 +39,7 @@ func Parse(src []byte) (*tree.Document, error) {
 	}
 	doc.LineEnding = ending
 
-	p := &parser{src: src, lines: splitLines(src, start), atStart: true, lineBound: map[string]bool{}}
+	p := newParser(src)
 	if matter := p.frontMatter(); matter != nil {
 		doc.Nodes = append(doc.Nodes, matter)
 	}
@@ -119,10 +119,18 @@ func lineEnding(src []byte) (tree.LineEnding, error) {
 	return tree.LF, nil
 }
 
+// newParser starts reading src at the top, behind its byte order mark.
+func newParser(src []byte) *parser {
+	lines := splitLines(src, bodyStart(src))
+	return &parser{src: src, lines: lines, reader: &reader{end: len(lines)}, atStart: true, lineBound: map[string]bool{}}
+}
+
 type parser struct {
 	src   []byte
 	lines []line
 	at    int
+	// reader holds the lines of the innermost block being read, see reader.
+	reader *reader
 
 	// atStart is true until the first block that cannot precede the document
 	// header, so a level 0 title further down stays an ordinary section.
@@ -145,9 +153,6 @@ type parser struct {
 	// lineBound. Asciidoctor then drops a line that only missing references
 	// stand on, so such a line stays a line of its own, see onlyReferences.
 	dropsMissing bool
-	// items are the lines collected for the list items being read, innermost
-	// last, see itemEnd.
-	items []itemLines
 	// notes collects, for the printer, the blank lines and literal
 	// paragraphs the items found, see freezeItemGaps.
 	notes printerNotes
@@ -183,36 +188,6 @@ type readOpts struct {
 }
 
 func (o readOpts) inList() bool { return len(o.lists) > 0 }
-
-func (p *parser) done() bool { return p.at >= p.limit() }
-
-// limit is the line the parser stops at: the end of the innermost list item
-// it reads, which ends inside the items around it, or the end of the source.
-func (p *parser) limit() int {
-	if len(p.items) == 0 {
-		return len(p.lines)
-	}
-	return p.items[len(p.items)-1].end
-}
-
-// skipped and blanked report whether the buffer of an item being read leaves
-// the line out, or holds the + on it as a blank line. Every one of them counts:
-// Asciidoctor reads a nested item from the buffer of its parent, which it read
-// from the grandparent's.
-func (p *parser) skipped(at int) bool {
-	return slices.ContainsFunc(p.items, func(l itemLines) bool { return l.skipped[at] })
-}
-
-func (p *parser) blanked(at int) bool {
-	return slices.ContainsFunc(p.items, func(l itemLines) bool { return l.blanked == at })
-}
-
-// placeholder reports whether the buffer of an item being read holds the + on
-// the line as a blank line for the blocks read from it. A nested item reads
-// one that stands under a line as a + still, so blanked leaves it out.
-func (p *parser) placeholder(at int) bool {
-	return slices.ContainsFunc(p.items, func(l itemLines) bool { return l.placeholders[at] })
-}
 
 func (p *parser) pos() int {
 	if p.at >= len(p.lines) {
@@ -353,7 +328,7 @@ func (p *parser) skips(gap tree.Gap, opts readOpts) bool {
 		return true
 	}
 	for at := p.at - 1; at >= 0 && p.lines[at].full.Start >= gap.Span.Start; at-- {
-		if !p.skipped(at) {
+		if !p.reader.skipped(at) {
 			return true
 		}
 	}
@@ -368,7 +343,7 @@ func (p *parser) skips(gap tree.Gap, opts readOpts) bool {
 // blank line and binds the metadata to nothing.
 func (p *parser) metaGap() tree.Gap {
 	gap := p.gap()
-	for !p.done() && p.placeholder(p.at) {
+	for !p.done() && p.reader.placeholder(p.at) {
 		p.at++
 		m := p.mark()
 		p.gap()
@@ -756,10 +731,10 @@ func (p *parser) bind(e attrEntry) {
 // under it.
 func (p *parser) setextUnderline() (underline, level int, ok bool) {
 	underline = p.at + 1
-	for underline < p.limit() && opensRegion(classify(p.src, p.lines[underline])) {
+	for underline < p.reader.end && opensRegion(classify(p.src, p.lines[underline])) {
 		underline++
 	}
-	if underline >= p.limit() {
+	if underline >= p.reader.end {
 		return 0, 0, false
 	}
 	level, ok = setextLevel(p.src, p.lines[p.at], p.lines[underline])

@@ -6,15 +6,13 @@ import (
 	"github.com/ypfaff/adocfmt/internal/tree"
 )
 
-// itemLines is what reading a list item needs to know about the buffer
-// Asciidoctor collects for it, see itemEnd.
+// itemLines is how the buffer Asciidoctor collects for a list item holds its
+// lines, see itemEnd.
 type itemLines struct {
-	// end is the line the item's span ends before.
-	end int
-	// skipped are the blank lines the buffer leaves out, see parser.skipped.
+	// skipped are the blank lines the buffer leaves out, see reader.skipped.
 	skipped map[int]bool
 	// blanked is the + under a blank line, or -1. A nested item reads it as
-	// a blank line too, see parser.blanked.
+	// a blank line too, see reader.blanked.
 	blanked int
 	// placeholders are the + lines the item's own blocks read as blank lines:
 	// blanked, and each + under a line that carries the line below it. A
@@ -23,16 +21,16 @@ type itemLines struct {
 	placeholders map[int]bool
 }
 
-// itemEnd finds where the item on the current line ends. Asciidoctor collects
-// the lines of an item into a buffer before it reads any block in them, so a
-// block does not decide where the item ends; the item decides where the block
-// may end. It also returns the literal paragraphs collected whole, for the
-// printer, see takeLiteral.
+// itemEnd finds where the item on the current line ends, and returns the
+// reader of its lines. Asciidoctor collects the lines of an item into a buffer
+// before it reads any block in them, so a block does not decide where the item
+// ends; the item decides where the block may end. It also returns the literal
+// paragraphs collected whole, for the printer, see takeLiteral.
 //
 // It ports read_lines_for_list_item from Asciidoctor's parser.rb. A comment
 // starting with "Ruby:" quotes the code a part stands for, "Not in parser.rb:"
 // marks what the port adds, and "Not ported:" what it leaves out and why.
-func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []tree.Span) {
+func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (*reader, []tree.Span) {
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
 		p: p, closer: closer, marker: sh.marker, dlist: dlist,
@@ -49,8 +47,8 @@ func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []tree.
 	if r.detached >= 0 {
 		r.placeholders[r.detached] = true
 	}
-	lines := itemLines{end: r.end, skipped: r.skipped, blanked: r.detached, placeholders: r.placeholders}
-	return lines, r.literals
+	lines := &itemLines{skipped: r.skipped, blanked: r.detached, placeholders: r.placeholders}
+	return &reader{end: r.end, item: lines}, r.literals
 }
 
 // itemReader holds the state of read_lines_for_list_item.
@@ -128,7 +126,7 @@ func (r *itemReader) drop() {
 func (r *itemReader) step() bool {
 	// Not in parser.rb: a line an enclosing item skipped is not in the buffer
 	// this one reads from.
-	if r.p.skipped(r.at) {
+	if r.p.reader.skipped(r.at) {
 		r.at++
 		return true
 	}
@@ -276,7 +274,7 @@ func (r *itemReader) afterBlank(sh shape) bool {
 		// Ruby: reader.skip_blank_lines
 		blankedPlus := false
 		for r.hasMoreLines() && r.shape(r.at).kind == shapeBlank {
-			blankedPlus = blankedPlus || r.p.blanked(r.at)
+			blankedPlus = blankedPlus || r.p.reader.blanked(r.at)
 			r.skipped[r.at] = true
 			r.at++
 		}
@@ -437,13 +435,13 @@ func (r *itemReader) hasMoreLines() bool { return r.within(r.at) }
 // within reports whether the item may still take the line at: the buffer ends
 // at the enclosing block's closing line as it does at the limit.
 func (r *itemReader) within(at int) bool {
-	return at < r.p.limit() && (r.closer == nil || !bytes.Equal(r.text(at), r.closer))
+	return at < r.p.reader.end && (r.closer == nil || !bytes.Equal(r.text(at), r.closer))
 }
 
 // shape reads the line the way the buffer holds it: a + an enclosing item
 // blanked out is a blank line there.
 func (r *itemReader) shape(at int) shape {
-	if r.p.blanked(at) {
+	if r.p.reader.blanked(at) {
 		return shape{kind: shapeBlank}
 	}
 	return classify(r.p.src, r.p.lines[at])

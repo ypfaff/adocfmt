@@ -8,7 +8,7 @@ var ignoreFile = []byte("adocfmt: ignore-file")
 // adocfmt: ignore-file, which leaves the file as it stands. It reads only the
 // lines up to there, so it also answers for a source Parse rejects.
 func IgnoresFile(src []byte) bool {
-	p := &parser{src: src, lines: splitLines(src, bodyStart(src))}
+	p := newParser(src)
 	p.frontMatter()
 	for !p.done() {
 		sh := p.shape()

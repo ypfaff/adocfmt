@@ -51,11 +51,11 @@ func (p *parser) list(b tree.NodeBase, sh shape, closer []byte, opts readOpts) t
 // because nothing closes one: the items the directive brings in may still be
 // items of it.
 func (p *parser) directiveBelow() bool {
-	m, items := p.mark(), p.items
-	defer func() { p.rewind(m); p.items = items }()
-	p.items = nil
-	p.gap()
-	return !p.done() && p.shape().kind == shapeDirective
+	at := p.at
+	for at < len(p.lines) && classify(p.src, p.lines[at]).kind == shapeBlank {
+		at++
+	}
+	return at < len(p.lines) && classify(p.src, p.lines[at]).kind == shapeDirective
 }
 
 // listItem reads the item on the current line in two steps, as Asciidoctor
@@ -70,8 +70,8 @@ func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte, opts readOpts) 
 
 	lines, literals := p.itemEnd(sh, bare, closer)
 	p.notes.addLiterals(item, literals)
-	p.items = append(p.items, lines)
-	defer func() { p.items = p.items[:len(p.items)-1] }()
+	p.enter(lines)
+	defer p.leave()
 
 	p.at++
 	for !p.done() {
@@ -113,10 +113,10 @@ func (p *parser) startsTextOnly(marker int, sh shape, bare bool) bool {
 		return bare
 	}
 	at := marker + 1
-	for at < p.limit() && classify(p.src, p.lines[at]).kind == shapeComment {
+	for at < p.reader.end && classify(p.src, p.lines[at]).kind == shapeComment {
 		at++
 	}
-	if at == p.limit() {
+	if at == p.reader.end {
 		return false
 	}
 	kind := classify(p.src, p.lines[at]).kind
