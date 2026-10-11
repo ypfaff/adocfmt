@@ -90,9 +90,46 @@ func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte) *tree.ListItem 
 	}
 	item.Text = p.itemText(marker, sh.span.End)
 
+	// The text under the item's line is its first block. Comment lines alone
+	// are not: Asciidoctor reads them as the metadata of the block below.
+	if p.onlyComments(marker + 1) {
+		p.first = firstBlock{textOnly: p.startsTextOnly(marker, sh, bare), opened: p.at > marker+1}
+	}
 	item.Children = p.attached(closer)
+	p.first = firstBlock{}
 	item.Lines = tree.Span{Start: start, End: p.pos()}
 	return item
+}
+
+// startsTextOnly reports whether Asciidoctor reads the first block of the item
+// on the line marker as text only: a term without text does, and an item of
+// another list where the line under it, past comment lines, is neither blank
+// nor a +, which the item's buffer holds as a blank line.
+// Ruby: text_only: has_text ? nil : true, in parse_list_item.
+func (p *parser) startsTextOnly(marker int, sh shape, bare bool) bool {
+	if isTermMarker(sh.marker) {
+		return bare
+	}
+	at := marker + 1
+	for at < p.limit() && classify(p.src, p.lines[at]).kind == shapeComment {
+		at++
+	}
+	if at == p.limit() {
+		return false
+	}
+	kind := classify(p.src, p.lines[at]).kind
+	return kind != shapeBlank && kind != shapeContinuation
+}
+
+// onlyComments reports whether the lines from the line at up to the current
+// one are all comment lines.
+func (p *parser) onlyComments(at int) bool {
+	for ; at < p.at; at++ {
+		if classify(p.src, p.lines[at]).kind != shapeComment {
+			return false
+		}
+	}
+	return true
 }
 
 // itemText finds the text of the item whose marker line is marker and which

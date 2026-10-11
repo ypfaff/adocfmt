@@ -21,9 +21,6 @@ type itemLines struct {
 	// nested item never reads one of the latter as a blank line: it stands
 	// above the nested list, or a callout list reads it as a + still.
 	placeholders map[int]bool
-	// textOnly is the line of the block Asciidoctor reads as text only, or -1,
-	// see parser.readsTextOnly.
-	textOnly int
 }
 
 // itemEnd finds where the item on the current line ends. Asciidoctor collects
@@ -39,7 +36,7 @@ func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []tree.
 	dlist := isTermMarker(sh.marker)
 	r := itemReader{
 		p: p, closer: closer, marker: sh.marker, dlist: dlist,
-		hasText: !dlist || !bare, at: p.at + 1, detached: -1, first: -1,
+		hasText: !dlist || !bare, at: p.at + 1, detached: -1,
 		skipped: map[int]bool{}, placeholders: map[int]bool{},
 	}
 	r.end = r.at
@@ -52,19 +49,7 @@ func (p *parser) itemEnd(sh shape, bare bool, closer []byte) (itemLines, []tree.
 	if r.detached >= 0 {
 		r.placeholders[r.detached] = true
 	}
-	lines := itemLines{
-		end: r.end, skipped: r.skipped, blanked: r.detached,
-		placeholders: r.placeholders, textOnly: -1,
-	}
-	// Ruby, in parse_list_item: has_text = nil unless dlist
-	// That holds where the first line under any comment lines is not empty; a
-	// term without text has none either. The first block is then read with
-	// text_only: has_text ? nil : true.
-	if r.first >= 0 && (!dlist || bare) {
-		if kind := r.shape(r.first).kind; kind != shapeBlank && kind != shapeContinuation {
-			lines.textOnly = r.first
-		}
-	}
+	lines := itemLines{end: r.end, skipped: r.skipped, blanked: r.detached, placeholders: r.placeholders}
 	return lines, r.literals
 }
 
@@ -80,10 +65,10 @@ type itemReader struct {
 	continuation continuation
 	withinNested bool
 	prev         prevLine
-	// plus is the line of the last + added to the buffer, and first the first
-	// line that is no comment line, or -1.
+	// plus and blank are the lines of the last + and the last blank line added
+	// to the buffer.
 	plus  int
-	first int
+	blank int
 	// detached is the line of the last + under a blank line, or -1.
 	detached int
 
@@ -119,13 +104,9 @@ const (
 // from the buffer. A + at the end stays in the span although Asciidoctor pops
 // it, since the item consumes it.
 func (r *itemReader) take() {
-	kind := r.shape(r.at).kind
-	if r.first < 0 && kind != shapeComment {
-		r.first = r.at
-	}
-	switch kind {
+	switch r.shape(r.at).kind {
 	case shapeBlank:
-		r.prev = prevEmpty
+		r.prev, r.blank = prevEmpty, r.at
 	case shapeContinuation:
 		r.prev, r.end, r.plus = prevPlus, r.at+1, r.at
 	default:
@@ -328,8 +309,9 @@ func (r *itemReader) afterBlank(sh shape) bool {
 	// already ran in step or after the run.
 	case !r.hasText:
 		// Ruby: buffer.pop unless within_nested_list
-		// Not ported: only a nested item would read that blank line, and none
-		// started above it.
+		if !r.withinNested {
+			r.skipped[r.blank] = true
+		}
 		r.hasText = true
 		r.take()
 	// Ruby: elsif (nested_list_type = NESTABLE_LIST_CONTEXTS.find ...)

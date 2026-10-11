@@ -828,6 +828,26 @@ List "-"
     Opaque "* * *\n"`,
 		},
 		{
+			name: "under a term without text and a blank line it is an item, as Asciidoctor drops the blank line and reads the line as text only",
+			src:  "a::\n\n- - -\n- b\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    List "-"
+      ListItem "- - -\n"
+      ListItem "- b\n"`,
+		},
+		{
+			name: "a block title there is text, which ends at an item line",
+			src:  "a::\n\n.T\n- b\n",
+			want: `
+List "::"
+  ListItem "a::\n"
+    Paragraph ".T\n"
+    List "-"
+      ListItem "- b\n"`,
+		},
+		{
 			name: "a carried paragraph reads on past it and keeps it on its line",
 			src:  "- one\n+\ntwo\n* * *\nthree\n",
 			want: `
@@ -1601,6 +1621,27 @@ List "*"
     Continuation gap! "+\n"
     Continuation gap! "+\n"
     Paragraph "text\n"`,
+		},
+		{
+			name: "a + under comment lines right under the item's line counts as no blank line, since they are the metadata of the block below",
+			src:  "* a\n// c\n+\ntext\n- b\n",
+			want: `
+List "*"
+  ListItem "* a\n// c\n"
+    Continuation gap! "+\n"
+    Paragraph "text\n"
+    List "-"
+      ListItem "- b\n"`,
+		},
+		{
+			name: "under a term without text that block is read as text only, so a block title there is text",
+			src:  "a::\n// k\n+\n.T\n\nc\n",
+			want: `
+List "::"
+  ListItem "a::\n// k\n"
+    Continuation gap! "+\n"
+    Paragraph ".T\n"
+    Paragraph "c\n"`,
 		},
 		{
 			name: "metadata above a + binds to the block below it, which a verbatim style makes code",

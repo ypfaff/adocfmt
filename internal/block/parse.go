@@ -138,6 +138,9 @@ type parser struct {
 	// carrying is true while the parser reads the block a continuation
 	// attaches to an item, see skips.
 	carrying bool
+	// first is how Asciidoctor reads the first block of the list item being
+	// read, from where listItem sets it up to where node reads that block.
+	first firstBlock
 	// regions are the open conditional regions, innermost last, each by the
 	// line that opened it. A delimiter that opens in one and closes in another
 	// means two documents in one.
@@ -188,13 +191,6 @@ func (p *parser) blanked(at int) bool {
 // one that stands under a line as a + still, so blanked leaves it out.
 func (p *parser) placeholder(at int) bool {
 	return slices.ContainsFunc(p.items, func(l itemLines) bool { return l.placeholders[at] })
-}
-
-// readsTextOnly reports whether Asciidoctor reads the block starting on the
-// line as text only: fewer lines are metadata there, see textOnlyMeta, and
-// fewer are blocks, see body.
-func (p *parser) readsTextOnly(at int) bool {
-	return len(p.items) > 0 && p.items[len(p.items)-1].textOnly == at
 }
 
 func (p *parser) pos() int {
@@ -309,22 +305,47 @@ func (p *parser) nodes(closer []byte) ([]tree.Node, tree.Gap) {
 }
 
 // node reads the metadata lines at the current position and the block they
-// bind to. In a list item, the block ends at an item line, unless Asciidoctor
-// skips a blank line in front of it, see skips.
+// bind to. In a list item, the block ends at an item line, and the item's
+// first block is read as text only, see firstBlock, unless Asciidoctor skips a
+// blank line in front of it, see skips.
 func (p *parser) node(gap tree.Gap, closer []byte) tree.Node {
+	first := p.first
+	p.first = firstBlock{}
+	skipped := p.skips(gap, first.opened)
+	breakAtList := p.inList() && !skipped
+	textOnly := first.textOnly && !skipped
+
 	b := newBase(gap)
-	textOnly := p.readsTextOnly(p.at)
-	breakAtList := p.inList() && !p.skips(gap)
 	for p.metaLine(&b, closer, textOnly) {
 		b.Gap = p.metaGap()
 	}
-	return p.block(b, closer, textOnly, breakAtList)
+	node := p.block(b, closer, textOnly, breakAtList)
+	// Below comment lines that opened the first block, a + is one more line
+	// Asciidoctor skips among its metadata, so the block under it is the first.
+	if _, ok := node.(*tree.Continuation); ok && first.opened {
+		p.first = first
+	}
+	return node
+}
+
+// firstBlock is how Asciidoctor reads the first block of a list item.
+type firstBlock struct {
+	// textOnly is the text_only option of next_block, see body.
+	textOnly bool
+	// opened holds where comment lines under the item's line opened the block,
+	// which Asciidoctor reads as its metadata. Blank lines and + lines between
+	// metadata lines it skips without counting them, see skips.
+	opened bool
 }
 
 // skips reports whether Asciidoctor skips a blank line in front of the block
 // under gap and counts it: one the buffer of the item being read holds, or a +
-// it holds as one, see carrying.
-func (p *parser) skips(gap tree.Gap) bool {
+// it holds as one, see carrying. In front of a block that comment lines
+// opened, it counts none, see firstBlock.
+func (p *parser) skips(gap tree.Gap, opened bool) bool {
+	if opened {
+		return false
+	}
 	if p.carrying {
 		return true
 	}
@@ -476,7 +497,7 @@ func metaKind(sh shape) (tree.MetaKind, bool) {
 // blocks precedesTitle names came before it, and no block title stands above
 // it, see titled.
 //
-// In a block read as text only, see readsTextOnly, Asciidoctor looks for no
+// In a block read as text only, see firstBlock, Asciidoctor looks for no
 // break, no block macro and no attribute entry: such a line is text, unless it
 // reads as an item, since Asciidoctor still looks for a list. Nor does it look
 // for a Markdown quote, a quoted paragraph, an admonition label or a literal
