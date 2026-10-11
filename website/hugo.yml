@@ -48,6 +48,8 @@ markup:
       # The ids GitHub uses, so an anchor works on both.
       idprefix: ''
       idseparator: '-'
+      # A link after each section title, which site.js also copies on a click.
+      sectanchors: after
       # Always emit the TOC, so Hugo takes it into .TableOfContents for the
       # right column; Hugo removes it from the page itself.
       toc: auto

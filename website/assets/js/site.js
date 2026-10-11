@@ -60,6 +60,19 @@ document.querySelectorAll(".adoc .listingblock pre:not(.mermaid)").forEach((pre)
   pre.parentElement.append(button);
 });
 
+// A click on the link after a section title also copies it. Hidden from
+// screen readers like on GitHub, since a label would join the heading's name.
+document.querySelectorAll(".adoc .anchor").forEach((link) => {
+  link.setAttribute("aria-hidden", "true");
+  link.tabIndex = -1;
+  link.addEventListener("click", async () => {
+    // Without the query, a shared ?q=term link would open the search again.
+    await navigator.clipboard.writeText(location.origin + location.pathname + link.hash);
+    link.classList.add("copied");
+    setTimeout(() => link.classList.remove("copied"), 1500);
+  });
+});
+
 // Highlight the table of contents entry of the section being read.
 const tocLinks = [...document.querySelectorAll(".toc a")];
 if (tocLinks.length) {

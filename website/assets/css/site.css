@@ -125,6 +125,14 @@ h1 { margin: 0 0 24px; font-size: 2.1rem; letter-spacing: -.02em; }
 .adoc h2 { margin: 48px 0 16px; padding-top: 8px; font-size: 1.5rem; letter-spacing: -.01em; }
 .adoc h3 { margin: 32px 0 12px; font-size: 1.2rem; }
 .adoc h4 { margin: 24px 0 8px; font-size: 1rem; }
+.adoc .anchor { position: relative; margin-left: .4em; color: var(--text-muted); opacity: 0; transition: opacity .15s; }
+.adoc .anchor::before { content: "#"; }
+.adoc .anchor:hover { color: var(--accent); text-decoration: none; }
+/* Outside the flow, so the heading does not wrap while it shows. */
+.adoc .anchor.copied::after { content: "Copied"; position: absolute; left: 100%; bottom: .2em; margin-left: .5em; font: 12px var(--font); white-space: nowrap; }
+.adoc :hover > .anchor, .adoc .anchor.copied { opacity: 1; }
+/* Without hover, the link would never show. */
+@media (hover: none) { .adoc .anchor { opacity: 1; } }
 .adoc p { margin: 0 0 16px; }
 .adoc .paragraph + .ulist, .adoc .paragraph + .olist { margin-top: -4px; }
 .adoc ul, .adoc ol { margin: 0 0 16px; padding-left: 24px; }
