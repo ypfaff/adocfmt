@@ -146,6 +146,10 @@ type parser struct {
 	// a paragraph significant. An entry counts from where it stands, inside a
 	// conditional too, because the parser resolves none.
 	lineBound map[string]bool
+	// dropsMissing holds while attribute-missing is drop, counted like
+	// lineBound. Asciidoctor then drops a line that only missing references
+	// stand on, so such a line stays a line of its own, see onlyReferences.
+	dropsMissing bool
 	// items are the lines collected for the list items being read, innermost
 	// last, see itemEnd.
 	items []itemLines
@@ -673,13 +677,14 @@ func (p *parser) entry(b *tree.NodeBase, closer []byte) bool {
 // bind follows an attribute entry into or out of lineBound. hardbreaks-option
 // renders every line break, under its old name hardbreaks too; attribute-missing
 // drops a whole line with an unresolved reference, but only when set to
-// drop-line.
+// drop-line. Set to drop, it binds only some lines, see dropsMissing.
 func (p *parser) bind(e attrEntry) {
 	on := e.set
 	switch e.name {
 	case "hardbreaks", "hardbreaks-option":
 		e.name = "hardbreaks-option"
 	case "attribute-missing":
+		p.dropsMissing = on && e.value == "drop"
 		on = on && e.value == "drop-line"
 	default:
 		return
@@ -772,7 +777,8 @@ func (p *parser) textRun(b *tree.NodeBase, closer []byte, ends func(shape) bool)
 		if sh.kind == shapeDirective {
 			p.reach(b, sh)
 		}
-		b.Frozen = b.Frozen || pinsLine(sh, p.text(p.lines[p.at]), p.inList())
+		b.Frozen = b.Frozen || pinsLine(sh, p.text(p.lines[p.at]), p.inList()) ||
+			p.dropsMissing && onlyReferences(p.text(p.lines[p.at]))
 		p.at++
 	}
 	b.Lines = tree.Span{Start: start, End: p.pos()}

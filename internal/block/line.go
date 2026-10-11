@@ -551,8 +551,8 @@ func isEvalExpression(s []byte) bool {
 // joined onto the line above makes a list of both; inside a list, a line that
 // starts like an item changes how Asciidoctor reads the lines below it, even
 // where it renders the line as text; an escaped directive loses its backslash
-// only at the start of a line; and an inline {set:} makes Asciidoctor drop the
-// whole line it stands on.
+// only at the start of a line; and an inline {set:} or {counter2:} makes
+// Asciidoctor drop the whole line it stands on.
 func pinsLine(sh shape, s []byte, inList bool) bool {
 	if sh.kind == shapeComment || (sh.kind == shapeMarker && (inList || isTermMarker(sh.marker))) {
 		return true
@@ -562,7 +562,37 @@ func pinsLine(sh shape, s []byte, inList bool) bool {
 			return true
 		}
 	}
-	return bytes.Contains(s, []byte("{set:"))
+	return bytes.Contains(s, []byte("{set:")) || bytes.Contains(s, []byte("{counter2:"))
+}
+
+// onlyReferences reports whether a line holds nothing but attribute references
+// by name, such as {name} or {a}{b}, and whitespace.
+func onlyReferences(s []byte) bool {
+	s = bytes.TrimLeft(s, " \t")
+	for len(s) > 0 {
+		n := referenceLen(s)
+		if n == 0 {
+			return false
+		}
+		s = bytes.TrimLeft(s[n:], " \t")
+	}
+	return true
+}
+
+// referenceLen returns the length of the reference {name} that s starts with,
+// or 0 where it starts with none. A name starts with a word character and goes
+// on with word characters and hyphens, as in Asciidoctor's AttributeReferenceRx.
+func referenceLen(s []byte) int {
+	end := bytes.IndexByte(s, '}')
+	if s[0] != '{' || end < 2 {
+		return 0
+	}
+	for i, r := range string(s[1:end]) {
+		if !isWordRune(r) && (i == 0 || r != '-') {
+			return 0
+		}
+	}
+	return end + 1
 }
 
 // attrEntryShape recognizes :name: and :name: value, including the :!name:

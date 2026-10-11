@@ -1,0 +1,11 @@
+One
+{counter2:x}
+-- two.
+
+:attribute-missing: drop
+
+One
+{missing}
+-- two.
+
+One {missing} -- two.

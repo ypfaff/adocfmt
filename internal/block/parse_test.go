@@ -381,6 +381,19 @@ Attribute ":attribute-missing!:\n"
 Paragraph "e\nf\n"`,
 		},
 		{
+			name: "attribute-missing drop freezes a paragraph with a line of only references, while it holds",
+			src: ":attribute-missing: drop\n\na\n{x}\n-- b\n\na\n {x}{y-z} {_}\nb\n\na {x}\nb\n\nc\n\\{x}\n{x.y}\n\n" +
+				":attribute-missing!:\n\na\n{x}\nb\n",
+			want: `
+Attribute ":attribute-missing: drop\n"
+Paragraph! "a\n{x}\n-- b\n"
+Paragraph! "a\n {x}{y-z} {_}\nb\n"
+Paragraph "a {x}\nb\n"
+Paragraph "c\n\\{x}\n{x.y}\n"
+Attribute ":attribute-missing!:\n"
+Paragraph "a\n{x}\nb\n"`,
+		},
+		{
 			name: "metadata binds across a blank line",
 			src:  "[#id]\n\nText.\n",
 			want: `
@@ -1248,6 +1261,12 @@ Paragraph "More.\n"`,
 			want: `
 Paragraph! "Text.\n\\include::x.adoc[]\nMore.\n"
 Paragraph! "One.\nTwo {set:a!} gone.\nThree.\n"`,
+		},
+		{
+			name: "a counter2 reference drops its line like set does",
+			src:  "a\n{counter2:x}\n-- b\n",
+			want: `
+Paragraph! "a\n{counter2:x}\n-- b\n"`,
 		},
 		{
 			name: "a third slash makes a line no comment",
