@@ -1,6 +1,7 @@
 package printer
 
 import (
+	"bytes"
 	"slices"
 
 	"github.com/ypfaff/adocfmt/internal/block"
@@ -199,20 +200,23 @@ func (k *picker) underlines(list *tree.List, item *tree.ListItem, line []byte) b
 
 // itemHead builds the head of an item's first line: the indentation the marker
 // stands at, the marker, and the single space separating it from the text.
-// textAt is where that text begins, the whitespace behind the marker skipped.
+// textAt is where the rest of the item continues behind that head.
 //
-// The space is left out where the item carries no text of its own, which only
-// a description term does, since it would be trailing whitespace there.
+// The space is left out where the item carries no text on the marker's line,
+// which only a description term does, since it would be trailing whitespace
+// there.
 func itemHead(src []byte, item *tree.ListItem, marker string) (head []byte, textAt int) {
-	at := item.Marker.End
-	for at < len(src) && (src[at] == ' ' || src[at] == '\t') {
-		at++
-	}
 	head = append(append([]byte{}, src[item.Principal.Start:item.Marker.Start]...), marker...)
-	if at < item.Principal.End && src[at] != '\n' && src[at] != '\r' {
-		head = append(head, ' ')
+	if !textBehindMarker(src, item) {
+		return head, item.Marker.End
 	}
-	return head, at
+	return append(head, ' '), item.Text.Start
+}
+
+// textBehindMarker reports whether the item's text starts on the marker's
+// line, rather than under a term that has none there.
+func textBehindMarker(src []byte, item *tree.ListItem) bool {
+	return !item.Text.Empty() && bytes.IndexByte(src[item.Marker.End:item.Text.Start], '\n') < 0
 }
 
 func (p *printer) list(node *tree.List) {

@@ -88,10 +88,34 @@ func (p *parser) listItem(gap tree.Gap, sh shape, closer []byte) *tree.ListItem 
 	if bare && (p.at == marker+1 || p.directiveSince(start)) {
 		p.fold(item, start, closer)
 	}
+	item.Text = p.itemText(marker, sh.span.End)
 
 	item.Children = p.attached(closer)
 	item.Lines = tree.Span{Start: start, End: p.pos()}
 	return item
+}
+
+// itemText finds the text of the item whose marker line is marker and which
+// has read its text up to the current line. The text starts behind the spaces
+// after the marker, or, where nothing stands there, on the first line under it
+// that holds any.
+func (p *parser) itemText(marker, behind int) tree.Span {
+	text := p.lines[marker].text
+	for behind < text.End && (p.src[behind] == ' ' || p.src[behind] == '\t') {
+		behind++
+	}
+	span := tree.Span{Start: behind, End: text.End}
+	for at := marker + 1; at < p.at; at++ {
+		line := p.lines[at].text
+		if line.Empty() {
+			continue
+		}
+		if span.Empty() {
+			span.Start = line.Start
+		}
+		span.End = line.End
+	}
+	return span
 }
 
 // fold takes the lines under a blank line onto a term that has nothing on its

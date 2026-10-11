@@ -1,10 +1,6 @@
 package printer
 
-import (
-	"bytes"
-
-	"github.com/ypfaff/adocfmt/internal/tree"
-)
+import "github.com/ypfaff/adocfmt/internal/tree"
 
 // where names which gap policy holds, since the two sides of a gap decide it
 // together with what encloses them.
@@ -43,7 +39,7 @@ func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 			p.collapse(g)
 		}
 	case betweenTerms:
-		if !bareTerm(p.src, prev) {
+		if !bareTerm(prev) {
 			p.blank()
 		}
 	default:
@@ -125,10 +121,7 @@ func endsInLiteral(prev tree.Node) bool {
 
 // bareTerm reports whether the item is a term with no text and no blocks of its
 // own. Asciidoctor gives such a term the description of the term below.
-func bareTerm(src []byte, prev tree.Node) bool {
+func bareTerm(prev tree.Node) bool {
 	item, ok := prev.(*tree.ListItem)
-	if !ok || len(item.Children) > 0 {
-		return false
-	}
-	return len(bytes.TrimSpace(src[item.Marker.End:item.Principal.End])) == 0
+	return ok && item.Text.Empty() && len(item.Children) == 0
 }

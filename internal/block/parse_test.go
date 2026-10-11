@@ -1950,6 +1950,44 @@ func TestParseLineEnding(t *testing.T) {
 	}
 }
 
+// TestItemText pins the text the parser reads for the first item, which tells
+// the printer whether a term stands without text. Behind the marker it ends
+// where Asciidoctor's rstrip ends a line, so a form feed or NUL there is none.
+func TestItemText(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{name: "item", src: "* a\n", want: "a"},
+		{name: "spaces and tab behind the marker", src: "*  \ta\n", want: "a"},
+		{name: "text over two lines", src: "* a\nb\n", want: "a\nb"},
+		{name: "term", src: "a:: b\n", want: "b"},
+		{name: "bare term", src: "a::\n", want: ""},
+		{name: "spaces behind a bare term", src: "a::  \n", want: ""},
+		{name: "form feed behind a term", src: "0::\f", want: ""},
+		{name: "vertical tab behind a term", src: "0;;\v\n", want: ""},
+		{name: "NUL behind a term", src: "a::\x00\nb:: x\n", want: ""},
+		{name: "text under a bare term", src: "a::\nb\n", want: "b"},
+		{name: "text folded onto a bare term", src: "a::\n\nb\n", want: "b"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			doc, err := Parse([]byte(test.src))
+			if err != nil {
+				t.Fatal(err)
+			}
+			item := doc.Nodes[0].(*tree.List).Items[0]
+			if got := string(doc.Src[item.Text.Start:item.Text.End]); got != test.want {
+				t.Errorf("got %q, want %q", got, test.want)
+			}
+		})
+	}
+}
+
 // TestReadsAs pins what a rewrite of a node's lines must not turn them into.
 func TestReadsAs(t *testing.T) {
 	tests := []struct {

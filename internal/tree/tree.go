@@ -216,12 +216,18 @@ type List struct {
 	Items       []*ListItem
 }
 
-// ListItem is one entry. Principal is its own text, Children are the blocks
-// attached to it.
+// ListItem is one entry. Principal holds the lines the item owns before its
+// children, marker and comments included; Children are the blocks attached to
+// it.
+//
+// Text is the item's text as the parser reads it, its trailing whitespace off:
+// behind the marker, or, for a term with nothing there, on the lines under it.
+// Empty, it marks a term standing without text.
 type ListItem struct {
 	NodeBase
 	Marker    Span
 	Principal Span
+	Text      Span
 	Children  []Node
 }
 

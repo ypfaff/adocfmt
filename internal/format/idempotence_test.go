@@ -51,6 +51,10 @@ func TestSecondRunAfterRubyWhitespace(t *testing.T) {
 		src  string
 		want string
 	}{
+		{name: "form feed behind a term", src: "0::\f", want: "0::\n"},
+		{name: "vertical tab behind a term", src: "0;;\v", want: "0;;\n"},
+		{name: "NUL behind a term", src: "0::\x00", want: "0::\n"},
+		{name: "NUL behind a term above a term", src: "a::\x00\nb:: x\n", want: "a::\nb:: x\n"},
 		{name: "NUL as a document title", src: "= \x00 =\n", want: "= \x00 =\n"},
 		{name: "NUL as a section title", src: "== \x00 ==\n", want: "== \x00 ==\n"},
 	}
