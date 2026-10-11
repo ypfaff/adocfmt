@@ -470,11 +470,11 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly bool) tree.Node {
 
 	sectionLevel := closer == nil && len(p.markers) == 0
 	if sectionLevel && startsTitle(sh.kind) {
-		if level, ok := p.setextLevel(); ok {
+		if underline, level, ok := p.setextUnderline(); ok {
 			if atStart && level == 0 {
-				return p.header(b, p.lines[p.at].text, true)
+				return p.header(b, p.lines[p.at].text, underline)
 			}
-			return p.setext(b, level)
+			return p.setext(b, level, underline)
 		}
 	}
 	switch sh.kind {
@@ -482,7 +482,7 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly bool) tree.Node {
 		return p.delimited(b, sh)
 	case shapeHeading:
 		if atStart && sh.level == 0 {
-			return p.header(b, sh.span, false)
+			return p.header(b, sh.span, p.at)
 		}
 		if sectionLevel || styledDiscrete(p.src, b.Meta) {
 			b.Lines = p.take()
@@ -581,14 +581,13 @@ func titled(src []byte, meta []tree.Meta) bool {
 // the attribute entries, comment lines and comment blocks among them, which
 // Asciidoctor reads without counting. It resolves a directive before it counts,
 // so which lines are the author and the revision is unknown then: the header
-// freezes and runs to the blank line. twoLine says the title is written as a
-// title and an underline.
-func (p *parser) header(b tree.NodeBase, title tree.Span, twoLine bool) tree.Node {
+// freezes and runs to the blank line. underline is the line of the underline
+// where the title is written as a title and an underline, and the title line
+// itself otherwise.
+func (p *parser) header(b tree.NodeBase, title tree.Span, underline int) tree.Node {
 	start := p.pos()
-	p.at++
-	if twoLine {
-		p.at++
-	}
+	twoLine := underline > p.at
+	p.pastTitle(&b, underline)
 	titleLines := tree.Span{Start: start, End: p.pos()}
 	p.headerBody(&b)
 	b.Lines = tree.Span{Start: start, End: p.pos()}
@@ -700,23 +699,45 @@ func (p *parser) bind(e attrEntry) {
 	}
 }
 
-// setextLevel reports whether the current line and the next form a two-line
-// title, and its level.
-func (p *parser) setextLevel() (int, bool) {
-	if p.at+1 >= p.limit() {
-		return 0, false
+// setextUnderline finds the underline of a two-line title starting on the
+// current line, and its level. Asciidoctor resolves the conditionals between
+// the two lines before it pairs them. Only those that open a region are looked
+// past: the underline then shows only where the title line shows too, right
+// under it.
+func (p *parser) setextUnderline() (underline, level int, ok bool) {
+	underline = p.at + 1
+	for underline < p.limit() && opensRegion(classify(p.src, p.lines[underline])) {
+		underline++
 	}
-	return setextLevel(p.src, p.lines[p.at], p.lines[p.at+1])
+	if underline >= p.limit() {
+		return 0, 0, false
+	}
+	level, ok = setextLevel(p.src, p.lines[p.at], p.lines[underline])
+	return underline, level, ok
+}
+
+func opensRegion(sh shape) bool { return sh.kind == shapeDirective && sh.cond > 0 }
+
+// pastTitle moves past a title down to its underline. A conditional between
+// the two freezes the title and the blocks below it down to the next blank
+// line: where it drops the underline, the title line is prose that runs on
+// into them.
+func (p *parser) pastTitle(b *tree.NodeBase, underline int) {
+	for p.at++; p.at <= underline; p.at++ {
+		if sh := p.shape(); sh.kind == shapeDirective {
+			p.reach(b, sh)
+		}
+	}
 }
 
 // setext reads a two-line title. One whose title line reads as a list item
 // stays as it stands: a description list above keeps the block attribute
 // lines over such a line, so the one-line form would hand them to the title.
-func (p *parser) setext(b tree.NodeBase, level int) tree.Node {
+func (p *parser) setext(b tree.NodeBase, level, underline int) tree.Node {
 	title := p.lines[p.at].text
 	b.Frozen = b.Frozen || p.shape().kind == shapeMarker
 	start := p.pos()
-	p.at += 2
+	p.pastTitle(&b, underline)
 	b.Lines = tree.Span{Start: start, End: p.pos()}
 	return &tree.Setext{NodeBase: b, Level: level, Title: title}
 }

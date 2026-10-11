@@ -132,8 +132,9 @@ func (b *NodeBase) Extent() Span {
 // blank line.
 //
 // TitleLines covers the title alone, so a rule that rewrites it leaves what
-// follows as it is. TwoLine is the title written over two lines, which turns on
-// compat-mode and therefore may not be collapsed.
+// follows as it is. For a title split by a conditional, it holds the directive
+// lines and the underline as well. TwoLine is the title written over two lines,
+// which turns on compat-mode and therefore may not be collapsed.
 type Header struct {
 	NodeBase
 	Title      Span

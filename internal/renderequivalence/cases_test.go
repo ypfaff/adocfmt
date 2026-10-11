@@ -48,10 +48,6 @@ var refused = byCase(map[string][]string{
 		"reader/0098-should-not-warn-about-invalid-ifdef-preprocessor-directive-i",
 		"reader/0099-should-not-warn-about-invalid-ifeval-preprocessor-directive-",
 	},
-	"a delimiter pairs across a conditional": {
-		"sections/0026-should-preprocess-second-line-of-setext-section-title",
-		"sections/0043-should-preprocess-second-line-of-setext-discrete-heading",
-	},
 })
 
 func byCase(byCause map[string][]string) map[string]string {

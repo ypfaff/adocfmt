@@ -217,6 +217,37 @@ Paragraph "Titel\n"
 Verbatim "-------\n\nText.\n"`,
 		},
 		{
+			name: "a conditional between title and underline freezes the title and the blocks below it down to the blank line",
+			src:  "Title\nifdef::x[]\n-----\nendif::[]\nText.\n\nMore.\n",
+			want: `
+Setext! gap! "Title\nifdef::x[]\n-----\n" title "Title"
+Directive! gap! "endif::[]\n"
+Paragraph! gap! "Text.\n"
+Paragraph gap! "More.\n"`,
+		},
+		{
+			name: "a document title split by a conditional is the header, frozen",
+			src:  "Title\nifndef::x[]\nifdef::y[]\n=====\nendif::[]\nendif::[]\nJane Doe\n\nText.\n",
+			want: `
+Header! gap! "Title\nifndef::x[]\nifdef::y[]\n=====\nendif::[]\nendif::[]\nJane Doe\n" title "Title"
+Paragraph gap! "Text.\n"`,
+		},
+		{
+			name: "an endif between is not looked past, since the underline may show without the title",
+			src:  "ifdef::x[]\nTitle\nendif::[]\n-----\ncode\n-----\n",
+			want: `
+Directive! gap! "ifdef::x[]\n"
+Paragraph! gap! "Title\nendif::[]\n"
+Verbatim! gap! "-----\ncode\n-----\n"`,
+		},
+		{
+			name: "nor is an include, since it may bring in lines",
+			src:  "Title\ninclude::part.adoc[]\n-----\ncode\n-----\n",
+			want: `
+Paragraph! gap! "Title\ninclude::part.adoc[]\n"
+Verbatim! gap! "-----\ncode\n-----\n"`,
+		},
+		{
 			name: "delimiters pair by exact width",
 			src:  "-----\ncode\n----\nstill code\n-----\n",
 			want: `

@@ -1,0 +1,7 @@
+Intro.
+
+Section
+ifdef::draft[]
+-------
+endif::[]
+Text below.
