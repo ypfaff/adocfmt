@@ -6,6 +6,7 @@ linkTitle: Install
 = Install adocfmt
 
 Install adocfmt with Homebrew, or download a release archive and put the binary on your `PATH`.
+For IntelliJ IDEA, the xref:use-in-intellij.adoc[adocfmt plugin] brings its own binary.
 
 [#homebrew]
 == Install with Homebrew

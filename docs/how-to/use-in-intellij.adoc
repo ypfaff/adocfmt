@@ -1,0 +1,49 @@
+---
+title: Use adocfmt in IntelliJ IDEA
+weight: 40
+linkTitle: Use in IntelliJ IDEA
+---
+= Use adocfmt in IntelliJ IDEA
+
+The adocfmt plugin makes *Reformat Code* format AsciiDoc files with adocfmt, in IntelliJ IDEA and the other JetBrains IDEs from version 2024.3 on.
+It brings its own adocfmt binary, so there is nothing else to install.
+The AsciiDoc plugin can stay: it keeps the preview and the highlighting, and adocfmt takes over the formatting.
+
+[#install]
+== Install the plugin
+
+In *Settings > Plugins > Marketplace*, search for `adocfmt` and install it.
+
+Or download the plugin zip of a release from the link:https://github.com/ypfaff/adocfmt/releases[releases page].
+Then, in *Settings > Plugins*, click the gear icon, select *Install Plugin from Disk*, and choose the zip.
+
+[#enable]
+== Switch it on for a project
+
+adocfmt stays off in a project until you switch it on:
+
+. Open *Settings > Tools > adocfmt*.
+. Select *Format AsciiDoc files in this project with adocfmt*.
+
+The switch lives in `.idea/adocfmt.xml`.
+Commit that file, and adocfmt formats the project for everyone on the team.
+When you open an AsciiDoc file in a project where adocfmt is off, the plugin offers to switch it on.
+
+[#format]
+== Format a file
+
+Select *Code > Reformat Code* in a `.adoc` or `.asciidoc` file.
+adocfmt formats only whole documents, so formatting a selection formats the whole file.
+
+To format on every save, select *Reformat code* in *Settings > Tools > Actions on Save*.
+With the AsciiDoc plugin installed, you can pick AsciiDoc as the file type there; without it, only *All file types* covers AsciiDoc files.
+
+If adocfmt refuses a document, it leaves the document unchanged, and a notification lists the findings.
+For what each finding means and how to fix it, see xref:../reference/cli.adoc#refusal[Refusal findings].
+
+[#own-binary]
+== Run your own binary
+
+The bundled binary has the same version as the plugin.
+To run another one, such as the version your CI uses, enter its path in *adocfmt binary for all projects* under *Settings > Tools > adocfmt*.
+The path holds for every project in this IDE and stays on this machine.
