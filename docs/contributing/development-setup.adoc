@@ -89,6 +89,13 @@ Lint the Go code:
 golangci-lint run
 ----
 
+Check the formatting of the Java code; `spotlessApply` instead of `spotlessCheck` formats it:
+
+[source,shell]
+----
+intellij-plugin/gradlew --project-dir intellij-plugin spotlessCheck
+----
+
 Lint the shell scripts:
 
 [source,shell]

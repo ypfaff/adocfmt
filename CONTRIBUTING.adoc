@@ -36,6 +36,11 @@ Shell scripts follow the https://google.github.io/styleguide/shellguide.html[Goo
 
 Go code follows https://go.dev/doc/effective_go[Effective Go] and the https://google.github.io/styleguide/go[Google Go Style Guide], plus the rules in link:.golangci.yml[`.golangci.yml`].
 
+=== Java
+
+Java code follows the https://google.github.io/styleguide/javaguide.html[Google Java Style Guide].
+https://github.com/google/google-java-format[google-java-format] formats it, through Spotless.
+
 === Comments
 
 * Comments explain the why, not the what.

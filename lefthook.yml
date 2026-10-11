@@ -9,6 +9,10 @@ pre-commit:
       glob: "*.sh"
       run: shellcheck {staged_files}
 
+    - name: google-java-format
+      glob: "intellij-plugin/**/*.java"
+      run: intellij-plugin/gradlew --project-dir intellij-plugin --quiet spotlessCheck
+
     - name: actionlint
       glob: ".github/workflows/*.yml"
       run: go tool -modfile=tools/actionlint/go.mod actionlint

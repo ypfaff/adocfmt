@@ -4,6 +4,7 @@ import org.jetbrains.intellij.platform.gradle.models.ProductRelease
 plugins {
     java
     id("org.jetbrains.intellij.platform") version "2.19.0"
+    id("com.diffplug.spotless") version "8.10.3"
 }
 
 // The release sets the adocfmt version.
@@ -47,5 +48,13 @@ intellijPlatform {
                 channels = listOf(ProductRelease.Channel.RELEASE)
             }
         }
+    }
+}
+
+spotless {
+    java {
+        // No version, so google-java-format moves with each Spotless update,
+        // which Renovate proposes; it would not find a version written here.
+        googleJavaFormat()
     }
 }
