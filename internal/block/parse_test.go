@@ -314,7 +314,7 @@ Container "====\n"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph "== H\n"
+    Paragraph gap~ "== H\n"
   ListItem "* b\n"`,
 		},
 		{
@@ -406,7 +406,7 @@ Literal "a\nb\n"
 List "*"
   ListItem "* item\n"
     Continuation gap! "+\n"
-    Literal "c\nd\n"
+    Literal gap~ "c\nd\n"
 Container "====\n"
   Literal "e\nf\n"`,
 		},
@@ -469,7 +469,7 @@ Container meta("[.pre-wrap]\n") "====\n"
     List "*"
       ListItem "* c\n"
         Continuation gap! "+\n"
-        Literal "d\ne\n"
+        Literal gap~ "d\ne\n"
 Paragraph "f\ng\n"`,
 		},
 		{
@@ -479,12 +479,12 @@ Paragraph "f\ng\n"`,
 List meta("[.pre-wrap]\n") "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Literal "b\nc\n"
-  ListItem "* d\n"
-    List "**"
+    Literal gap~ "b\nc\n"
+  ListItem gap~ "* d\n"
+    List gap~ "**"
       ListItem "** e\n"
         Continuation gap! "+\n"
-        Literal "f\ng\n"
+        Literal gap~ "f\ng\n"
 Paragraph "h\ni\n"`,
 		},
 		{
@@ -505,7 +505,7 @@ Table "|===\n| a | b\n|===\n"`,
 			want: `
 List "*"
   ListItem "* a\n"
-    List "-"
+    List gap~ "-"
       ListItem "- b\n"
   ListItem "* c\n"`,
 		},
@@ -523,7 +523,7 @@ List "1."
 			want: `
 List "a."
   ListItem "a. a\n"
-    List "A."
+    List gap~ "A."
       ListItem "A. b\n"
   ListItem "b. c\n"`,
 		},
@@ -534,7 +534,7 @@ List "a."
 List "i)"
   ListItem "i) a\n"
   ListItem "ii) b\n"
-    List "I)"
+    List gap~ "I)"
       ListItem "III) c\n"
   ListItem "iv) d\n"`,
 		},
@@ -544,7 +544,7 @@ List "i)"
 			want: `
 List "1."
   ListItem "1. a\n"
-    List "a."
+    List gap~ "a."
       ListItem "a. b\n"
   ListItem "2. c\n"`,
 		},
@@ -554,7 +554,7 @@ List "1."
 			want: `
 List "•"
   ListItem "• a\n"
-    List "*"
+    List gap~ "*"
       ListItem "* b\n"
   ListItem "• c\n"`,
 		},
@@ -581,7 +581,7 @@ List "*"
 			want: `
 List "*"
   ListItem "*\ta\n"
-    List "1."
+    List gap~ "1."
       ListItem "1.\tb\n"`,
 		},
 		{
@@ -591,7 +591,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Verbatim "----\ncode\n----\n"
+    Verbatim gap~ "----\ncode\n----\n"
   ListItem "* b\n"`,
 		},
 		{
@@ -601,8 +601,8 @@ List "*"
 List "::"
   ListItem "a::\n"
     Continuation gap! "+\n"
-    Attribute ":x: y\n"
-    Paragraph! "more\nb::: c\n"`,
+    Attribute gap~ ":x: y\n"
+    Paragraph! gap~ "more\nb::: c\n"`,
 		},
 		{
 			name: "even across a blank line",
@@ -611,8 +611,8 @@ List "::"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Attribute ":x: y\n"
-    Paragraph "more\n"
+    Attribute gap~ ":x: y\n"
+    Paragraph gap~ "more\n"
   ListItem "* b\n"`,
 		},
 		{
@@ -629,7 +629,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal "  code\n"
+    Literal gap~ "  code\n"
   ListItem gap! "* b\n"`,
 		},
 		{
@@ -638,7 +638,7 @@ List "*"
 			want: `
 List "<>"
   ListItem "<1> a\n"
-    Literal " <2> b\n"`,
+    Literal gap~ " <2> b\n"`,
 		},
 		{
 			name: "a literal paragraph runs to the blank line, an item line included",
@@ -646,7 +646,7 @@ List "<>"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal! "  code\n* b\n"
+    Literal! gap~ "  code\n* b\n"
   ListItem gap! "* c\n"
 Paragraph "Text.\n"
 Literal "  more\n* d\n"`,
@@ -657,8 +657,8 @@ Literal "  more\n* d\n"`,
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal "  code\n"
-    Verbatim "----\nx\n----\n"
+    Literal gap~ "  code\n"
+    Verbatim gap~ "----\nx\n----\n"
   ListItem gap! "* b\n"`,
 		},
 		{
@@ -668,9 +668,9 @@ List "*"
 List "."
   ListItem ". a\n"
     Continuation gap! "+\n"
-    Verbatim "----\ncode\n----\n"
-    Literal " literal\n"
-    List "-"
+    Verbatim gap~ "----\ncode\n----\n"
+    Literal gap~ " literal\n"
+    List gap~ "-"
       ListItem "- b\n"
       ListItem "- c\n"`,
 		},
@@ -681,8 +681,8 @@ List "."
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Verbatim "----\nx\n----\n"
-    Literal! meta("[quote]\n") "  text\n- b\n"`,
+    Verbatim gap~ "----\nx\n----\n"
+    Literal! meta~("[quote]\n") "  text\n- b\n"`,
 		},
 		{
 			name: "that block may close below a blank line, as the item reads on past one",
@@ -690,8 +690,8 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal "  code\n"
-    Verbatim "----\nx\n\n  more\n----\n"`,
+    Literal gap~ "  code\n"
+    Verbatim gap~ "----\nx\n\n  more\n----\n"`,
 		},
 		{
 			name: "so does one under a continuation, and the next term ends it",
@@ -700,8 +700,8 @@ List "*"
 List "::"
   ListItem "a:: b\n"
     Continuation gap! "+\n"
-    Literal "  code\n"
-    Verbatim meta("[source]\n") "----\nx\n----\n"
+    Literal gap~ "  code\n"
+    Verbatim meta~("[source]\n") "----\nx\n----\n"
   ListItem "c:: d\n"`,
 		},
 		{
@@ -710,9 +710,9 @@ List "::"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal "  lit\n"
-    Verbatim "----\nx\n----\n"
-    List "*"
+    Literal gap~ "  lit\n"
+    Verbatim gap~ "----\nx\n----\n"
+    List gap~ "*"
       ListItem gap! "* b\n"`,
 		},
 		{
@@ -721,11 +721,11 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "::"
+    List gap~ "::"
       ListItem "c:: d\n"
-        Literal "  code\n"
+        Literal gap~ "  code\n"
       ListItem gap! "e:: f\n"
-    Verbatim "----\nx\n----\n"`,
+    Verbatim gap~ "----\nx\n----\n"`,
 		},
 		{
 			name: "no blank line may come between the blocks inside a delimited block there either",
@@ -733,8 +733,8 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal "  lit\n"
-    Container "====\n"
+    Literal gap~ "  lit\n"
+    Container gap~ "====\n"
       Paragraph gap! "text\n"
       Verbatim gap! "----\nx\n----\n"`,
 		},
@@ -745,7 +745,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Literal meta("// c\n") "  code\n"
+    Literal meta~("// c\n") "  code\n"
 Verbatim "----\nx\n----\n"`,
 		},
 		{
@@ -754,8 +754,8 @@ Verbatim "----\nx\n----\n"`,
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal gap! meta("[x]\n") "  code\n"
-    List "*"
+    Literal gap! meta~("[x]\n") "  code\n"
+    List gap~ "*"
       ListItem gap! "* b\n"`,
 		},
 		{
@@ -765,7 +765,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Container "--\n"
+    Container gap~ "--\n"
       Literal meta("[x]\n") "  code\n"`,
 		},
 		{
@@ -774,10 +774,10 @@ List "*"
 			want: `
 List "*"
   ListItem "* d\n"
-    List "**"
+    List gap~ "**"
       ListItem "** x\n"
     Continuation gap! "+\n"
-    Literal! meta("[source]\n") "c\n** u\n"`,
+    Literal! meta~("[source]\n") "c\n** u\n"`,
 		},
 		{
 			name: "where that + stands between two items of the nested list, the item above takes it, so the next one follows",
@@ -785,7 +785,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "1."
+    List gap~ "1."
       ListItem "1. one\n"
         Continuation gap! "+\n"
       ListItem "1. two\n"`,
@@ -797,7 +797,7 @@ List "*"
 List "-"
   ListItem "- d\n"
     Continuation gap! "+\n"
-    List "::"
+    List gap~ "::"
       ListItem "  t:: u\n"
       ListItem gap! "b::\n"
   ListItem gap! "- d\n"`,
@@ -817,7 +817,7 @@ Literal meta("[source]\n") "* a:: b\n----\nx\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph "one two\n"
+    Paragraph gap~ "one two\n"
   ListItem "* * *\nthree\n"`,
 		},
 		{
@@ -836,7 +836,7 @@ List "-"
 List "-"
   ListItem "- one\n"
   ListItem "- two\n"
-    Opaque "* * *\n"`,
+    Opaque gap~ "* * *\n"`,
 		},
 		{
 			name: "right under the item's line it opens a nested list, since that block is read as text only",
@@ -844,7 +844,7 @@ List "-"
 			want: `
 List "-"
   ListItem "- one\n"
-    List "*"
+    List gap~ "*"
       ListItem "* * *\n"`,
 		},
 		{
@@ -853,7 +853,7 @@ List "-"
 			want: `
 List "-"
   ListItem "- one\ntwo\n"
-    Opaque "* * *\n"`,
+    Opaque gap~ "* * *\n"`,
 		},
 		{
 			name: "under a term without text and a blank line it is an item, as Asciidoctor drops the blank line and reads the line as text only",
@@ -861,7 +861,7 @@ List "-"
 			want: `
 List "::"
   ListItem "a::\n"
-    List "-"
+    List gap~ "-"
       ListItem "- - -\n"
       ListItem "- b\n"`,
 		},
@@ -871,8 +871,8 @@ List "::"
 			want: `
 List "::"
   ListItem "a::\n"
-    Paragraph ".T\n"
-    List "-"
+    Paragraph gap~ ".T\n"
+    List gap~ "-"
       ListItem "- b\n"`,
 		},
 		{
@@ -882,7 +882,7 @@ List "::"
 List "-"
   ListItem "- one\n"
     Continuation gap! "+\n"
-    Paragraph! "two\n* * *\nthree\n"`,
+    Paragraph! gap~ "two\n* * *\nthree\n"`,
 		},
 		{
 			name: "the blank line between metadata and an indented item of a nested list may go",
@@ -890,7 +890,7 @@ List "-"
 			want: `
 List "*"
   ListItem "* a\n"
-    List meta("[horizontal]\n") "::"
+    List meta~("[horizontal]\n") "::"
       ListItem "  b:: c\n"`,
 		},
 		{
@@ -899,7 +899,7 @@ List "*"
 			want: `
 List "::"
   ListItem "t::\n"
-    Literal "  code\n"
+    Literal gap~ "  code\n"
 Verbatim "----\n----\n"`,
 		},
 		{
@@ -918,7 +918,7 @@ List "::"
 			want: `
 List "::"
   ListItem "t::\n"
-    Paragraph meta("[.r]\n") "text\n"
+    Paragraph meta!("[.r]\n") "text\n"
   ListItem "u:: v\n"`,
 		},
 		{
@@ -936,7 +936,7 @@ Verbatim "----\n"`,
 			want: `
 List "::"
   ListItem "a::\n"
-    List gap! meta("[]\n") ":::"
+    List gap! meta~("[]\n") ":::"
       ListItem "b:::\n"
 Paragraph "c\n"`,
 		},
@@ -946,7 +946,7 @@ Paragraph "c\n"`,
 			want: `
 List "::"
   ListItem "a::\n"
-    List meta("[]\n") ":::"
+    List meta~("[]\n") ":::"
       ListItem "b::: x\n"
 Paragraph "c\n"`,
 		},
@@ -956,7 +956,7 @@ Paragraph "c\n"`,
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[[id]]\n") ""
+    Opaque meta~("[[id]]\n") ""
 List "<>"
   ListItem "<1> b\n"`,
 		},
@@ -966,7 +966,7 @@ List "<>"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "<>"
+    List gap~ "<>"
       ListItem "<1> b\n"
 List "<>"
   ListItem "<2> c\n"`,
@@ -977,9 +977,9 @@ List "<>"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "<>"
+    List gap~ "<>"
       ListItem "<1> b\n"
-        List "::"
+        List gap~ "::"
           ListItem "t::\n"
       ListItem "<2> c\n"
 List "<>"
@@ -991,7 +991,7 @@ List "<>"
 			want: `
 List "::"
   ListItem "t::\n"
-    List "<>"
+    List gap~ "<>"
       ListItem "<1> b\n"
 List "<>"
   ListItem "<2> c\n"`,
@@ -1002,13 +1002,13 @@ List "<>"
 			want: `
 List "::"
   ListItem "a:: b\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta~("[x]\n") ""
 List "<>"
   ListItem "<1> c\n"
 Paragraph "Text.\n"
 List "::"
   ListItem "d:: e\n"
-    List meta("[x]\n") "<>"
+    List meta~("[x]\n") "<>"
       ListItem "<1> f\n"`,
 		},
 		{
@@ -1017,7 +1017,7 @@ List "::"
 			want: `
 List "::"
   ListItem "t::\n"
-    List meta("[.r]\n") "<>"
+    List meta~("[.r]\n") "<>"
       ListItem "<1> b\n"
 List "<>"
   ListItem "<2> c\n"`,
@@ -1028,7 +1028,7 @@ List "<>"
 			want: `
 List "::"
   ListItem "a:: b\n"
-    Opaque meta("[[id]]\n") ""
+    Opaque meta~("[[id]]\n") ""
 Setext! "<1> c\n-----\n" title "<1> c"`,
 		},
 		{
@@ -1130,7 +1130,7 @@ Paragraph! gap! "First line.\ninclude::part.adoc[]\nThird line.\n"`,
 			name: "a directive between metadata and its block keeps them bound and freezes the block",
 			src:  "[source]\ninclude::part.adoc[]\ncode\n\nAfter.\n",
 			want: `
-Literal! gap! meta("[source]\n") meta("include::part.adoc[]\n") "code\n"
+Literal! gap! meta("[source]\n") meta!("include::part.adoc[]\n") "code\n"
 Paragraph gap! "After.\n"`,
 		},
 		{
@@ -1149,10 +1149,10 @@ Paragraph meta(".Title\n") meta(":a: one \\\ntwo\n") "Text.\n"
 Literal meta("[.lead]\n") meta(":hardbreaks:\n") "a\nb\n"`,
 		},
 		{
-			name: "an entry among metadata lines reaching past its last line is marked open",
+			name: "under an entry among metadata lines reaching past its last line, the gap keeps its count",
 			src:  "[.lead]\n:a: one \\\n\nText.\n\n[.lead]\n:b: one \\\ntwo\n\nMore.\n",
 			want: `
-Paragraph meta("[.lead]\n") meta!(":a: one \\\n") "Text.\n"
+Paragraph gap~ meta("[.lead]\n") meta(":a: one \\\n") "Text.\n"
 Paragraph meta("[.lead]\n") meta(":b: one \\\ntwo\n") "More.\n"`,
 		},
 		{
@@ -1171,7 +1171,7 @@ Literal meta("[source]\n") "code\n"`,
 List extensible! "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph! gap! meta(".Title\n") meta("include::part.adoc[]\n") "Text.\n"
+    Paragraph! gap! meta~(".Title\n") meta!("include::part.adoc[]\n") "Text.\n"
   ListItem! gap! "* b\n"`,
 		},
 		{
@@ -1205,9 +1205,9 @@ Paragraph meta("..Title\n") "Text.\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph "paragraph two\n"
+    Paragraph gap~ "paragraph two\n"
     Continuation gap! "+\n"
-    Verbatim "----\ncode\n----\n"`,
+    Verbatim gap~ "----\ncode\n----\n"`,
 		},
 		{
 			name: "an attribute line right after an item binds to a block inside the item",
@@ -1215,7 +1215,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Paragraph meta("[.x]\n") "text\n"
+    Paragraph meta~("[.x]\n") "text\n"
   ListItem "* b\n"`,
 		},
 		{
@@ -1224,7 +1224,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[.x]\n") ""
+    Opaque meta~("[.x]\n") ""
   ListItem "* b\n"`,
 		},
 		{
@@ -1233,7 +1233,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta~("[x]\n") ""
   ListItem "* b\n"`,
 		},
 		{
@@ -1242,7 +1242,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta~("[x]\n") ""
 Paragraph "text\n* b\n"`,
 		},
 		{
@@ -1251,7 +1251,7 @@ Paragraph "text\n* b\n"`,
 			want: `
 List "*"
   ListItem "* a\n"
-    List meta("[x]\n") "**"
+    List meta~("[x]\n") "**"
       ListItem "** b\n"`,
 		},
 		{
@@ -1260,7 +1260,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta~("[x]\n") ""
 Verbatim "----\ncode\n----\n"
 List "*"
   ListItem "* b\n"`,
@@ -1281,8 +1281,8 @@ List meta("[x]\n") "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Verbatim "----\ncode\n----\n"
-    Paragraph "text\n"
+    Verbatim gap~ "----\ncode\n----\n"
+    Paragraph gap~ "text\n"
   ListItem "* b\n"`,
 		},
 		{
@@ -1292,12 +1292,12 @@ List "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph! "para\n- dash\n"
+    Paragraph! gap~ "para\n- dash\n"
   ListItem "* b\n"
-    List "**"
+    List gap~ "**"
       ListItem "** c\n"
         Continuation gap! "+\n"
-        Paragraph "more\n"
+        Paragraph gap~ "more\n"
   ListItem "* d\n"`,
 		},
 		{
@@ -1307,7 +1307,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph! "para\nterm:: x\n"
+    Paragraph! gap~ "para\nterm:: x\n"
 Paragraph! "Text.\nfoo:: bar\n"`,
 		},
 		{
@@ -1317,10 +1317,10 @@ Paragraph! "Text.\nfoo:: bar\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    List "-"
+    List gap~ "-"
       ListItem "- b\n"
-        Paragraph meta("[.x]\n") "para\n"
-        List "."
+        Paragraph meta~("[.x]\n") "para\n"
+        List gap~ "."
           ListItem ". c\n"`,
 		},
 		{
@@ -1347,7 +1347,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "**"
+    List gap~ "**"
       ListItem "** b\n"
         Continuation gap! "+\n"
   ListItem "* c\n"`,
@@ -1368,7 +1368,7 @@ Paragraph gap! "Text.\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta~("[x]\n") ""
   ListItem "* b\n"`,
 		},
 		{
@@ -1377,7 +1377,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque meta("[x]\n") ""
+    Opaque meta~("[x]\n") ""
 Verbatim "////\nc\n////\n"
 Paragraph "text\n"`,
 		},
@@ -1388,7 +1388,7 @@ Paragraph "text\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Opaque meta("[x]\n") meta("////\nc\n////\n") ""
+    Opaque meta~("[x]\n") meta("////\nc\n////\n") ""
 Verbatim "----\nx\n----\n"`,
 		},
 		{
@@ -1398,7 +1398,7 @@ Verbatim "----\nx\n----\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Paragraph meta("[.r]\n") meta("////\nc\n////\n") "text\n"`,
+    Paragraph meta~("[.r]\n") meta("////\nc\n////\n") "text\n"`,
 		},
 		{
 			name: "a comment line ends a +, so a blank line under it ends the item",
@@ -1407,7 +1407,7 @@ List "*"
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Opaque meta("// c\n") ""
+    Opaque meta~("// c\n") ""
 Paragraph "text\n"`,
 		},
 		{
@@ -1417,7 +1417,7 @@ Paragraph "text\n"`,
 List "::"
   ListItem "t:: d\n"
     Continuation gap! "+\n"
-    Opaque meta("// c\n") ""
+    Opaque meta~("// c\n") ""
 Paragraph meta("[.r]\n") "text\n"`,
 		},
 		{
@@ -1427,8 +1427,8 @@ Paragraph meta("[.r]\n") "text\n"`,
 List "::"
   ListItem "t:: d\n"
     Continuation gap! "+\n"
-    Verbatim "----\nx\n----\n"
-    Opaque meta(".T\n") ""
+    Verbatim gap~ "----\nx\n----\n"
+    Opaque meta~(".T\n") ""
 Opaque meta("[x]\n") "text\n"`,
 		},
 		{
@@ -1438,7 +1438,7 @@ Opaque meta("[x]\n") "text\n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+\n"
-    Container "====\n"
+    Container gap~ "====\n"
       Paragraph "text\n* b\n"`,
 		},
 		{
@@ -1557,7 +1557,7 @@ Paragraph "Note: Text.\n"`,
 List "*"
   ListItem "* NOTE: Text.\n"
     Continuation gap! "+\n"
-    Admonition "NOTE: Text.\n"`,
+    Admonition gap~ "NOTE: Text.\n"`,
 		},
 		{
 			name: "substitutions of its own make a paragraph literal",
@@ -1637,7 +1637,7 @@ List "*"
   ListItem "* one\n"
     Continuation gap! "+\n"
     Paragraph! gap! "+\n1. two\n"
-    List "1."
+    List gap~ "1."
       ListItem "1. three\n"`,
 		},
 		{
@@ -1648,7 +1648,7 @@ List "*"
   ListItem "* one\n"
     Continuation gap! "+\n"
     Continuation gap! "+\n"
-    Paragraph "text\n"`,
+    Paragraph gap~ "text\n"`,
 		},
 		{
 			name: "the block under the second one is carried too, so it reads on past an item line",
@@ -1658,7 +1658,7 @@ List "."
   ListItem ". o\n"
     Continuation gap! "+\n"
     Continuation gap! "+\n"
-    Paragraph! "more\n- d\n"`,
+    Paragraph! gap~ "more\n- d\n"`,
 		},
 		{
 			name: "a + under comment lines right under the item's line counts as no blank line, since they are the metadata of the block below",
@@ -1667,8 +1667,8 @@ List "."
 List "*"
   ListItem "* a\n// c\n"
     Continuation gap! "+\n"
-    Paragraph "text\n"
-    List "-"
+    Paragraph gap~ "text\n"
+    List gap~ "-"
       ListItem "- b\n"`,
 		},
 		{
@@ -1678,8 +1678,8 @@ List "*"
 List "::"
   ListItem "a::\n// k\n"
     Continuation gap! "+\n"
-    Paragraph ".T\n"
-    Paragraph "c\n"`,
+    Paragraph gap~ ".T\n"
+    Paragraph gap~ "c\n"`,
 		},
 		{
 			name: "metadata above a + binds to the block below it, which a verbatim style makes code",
@@ -1687,7 +1687,7 @@ List "::"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal gap! meta("[literal]\n") "One. Two.\n"`,
+    Literal gap! meta~("[literal]\n") "One. Two.\n"`,
 		},
 		{
 			name: "it reads past blank lines above the + too",
@@ -1695,7 +1695,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal gap! meta("[literal]\n") "One. Two.\n"`,
+    Literal gap! meta~("[literal]\n") "One. Two.\n"`,
 		},
 		{
 			name: "a + right under the one it reads past is the first line of the code",
@@ -1703,7 +1703,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal gap! meta("[literal]\n") "+\nOne. Two.\n"`,
+    Literal gap! meta~("[literal]\n") "+\nOne. Two.\n"`,
 		},
 		{
 			name: "past a nested list the item holds the + as it stands, so it is the first line of the code",
@@ -1711,9 +1711,9 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "::"
+    List gap~ "::"
       ListItem "b::\n"
-    Literal meta("[literal]\n") "+\nOne. Two.\n"`,
+    Literal meta~("[literal]\n") "+\nOne. Two.\n"`,
 		},
 		{
 			name: "the code runs to the blank line, past a delimiter and an item line",
@@ -1721,9 +1721,9 @@ List "*"
 			want: `
 List "1."
   ListItem "1. a\n"
-    List "::"
+    List gap~ "::"
       ListItem "u::\n"
-    Literal! meta("[source]\n") "+\n----\ncode\n----\n- b\n"`,
+    Literal! meta~("[source]\n") "+\n----\ncode\n----\n- b\n"`,
 		},
 		{
 			name: "it binds the same way in a nested item and under a +",
@@ -1731,14 +1731,14 @@ List "1."
 			want: `
 List "*"
   ListItem "* a\n"
-    List "**"
+    List gap~ "**"
       ListItem "** b\n"
-        Literal gap! meta("[literal]\n") "One. Two.\n"
+        Literal gap! meta~("[literal]\n") "One. Two.\n"
 Paragraph "text\n"
 List "::"
   ListItem "t:: d\n"
     Continuation gap! "+\n"
-    Literal gap! meta("[verse]\n") "One. Two.\n"`,
+    Literal gap! meta~("[verse]\n") "One. Two.\n"`,
 		},
 		{
 			name: "right under the item's line a block title is text, which a verbatim style makes code",
@@ -1746,8 +1746,8 @@ List "::"
 			want: `
 List "*"
   ListItem "* b\n"
-    Literal gap! meta("[source]\n") ".T\n"
-    Paragraph "text\n"`,
+    Literal gap! meta~("[source]\n") ".T\n"
+    Paragraph gap~ "text\n"`,
 		},
 		{
 			name: "comment lines between the item's line and the metadata change nothing",
@@ -1755,8 +1755,8 @@ List "*"
 			want: `
 List "*"
   ListItem "* b\n// c\n"
-    Literal gap! meta("[source]\n") ".T\n"
-    Paragraph "text\n"`,
+    Literal gap! meta~("[source]\n") ".T\n"
+    Paragraph gap~ "text\n"`,
 		},
 		{
 			name: "a directive there counts as metadata, so the block title under it is text",
@@ -1764,7 +1764,7 @@ List "*"
 			want: `
 List extensible! "*"
   ListItem "* a\n"
-    Paragraph! gap! meta("[.r]\n") meta("ifdef::x[]\n") ".T\nendif::[]\n"`,
+    Paragraph! gap! meta~("[.r]\n") meta!("ifdef::x[]\n") ".T\nendif::[]\n"`,
 		},
 		{
 			name: "so is an attribute entry",
@@ -1772,7 +1772,7 @@ List extensible! "*"
 			want: `
 List "."
   ListItem ". o\n"
-    Literal meta("[literal]\n") ":a: b\ntext\n"`,
+    Literal meta~("[literal]\n") ":a: b\ntext\n"`,
 		},
 		{
 			name: "and so is a break, which a comment style reads on past an item line",
@@ -1780,7 +1780,7 @@ List "."
 			want: `
 List "*"
   ListItem "* a\n"
-    Literal! meta("[comment]\n") "---\nc:: d\n"`,
+    Literal! meta~("[comment]\n") "---\nc:: d\n"`,
 		},
 		{
 			name: "and so is a block macro, so a + under the paragraph carries the block below",
@@ -1788,9 +1788,9 @@ List "*"
 			want: `
 List "*"
   ListItem "* b\n"
-    Opaque meta("[%hardbreaks]\n") "image::a.png[]\n.T\n"
+    Opaque meta~("[%hardbreaks]\n") "image::a.png[]\n.T\n"
     Continuation gap! "+\n"
-    Paragraph! "text\nc:: d\n"`,
+    Paragraph! gap~ "text\nc:: d\n"`,
 		},
 		{
 			name: "under more text of the item a block title is metadata again",
@@ -1798,7 +1798,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* b\nmore\n"
-    Literal meta("[source]\n") meta(".T\n") "text\n"`,
+    Literal meta~("[source]\n") meta!(".T\n") "text\n"`,
 		},
 		{
 			name: "under a + a block title is metadata again",
@@ -1807,7 +1807,7 @@ List "*"
 List "*"
   ListItem "* b\n"
     Continuation gap! "+\n"
-    Literal meta("[source]\n") meta(".T\n") "text\n"`,
+    Literal meta~("[source]\n") meta!(".T\n") "text\n"`,
 		},
 		{
 			name: "the paragraph below the + still ends at an item line",
@@ -1815,8 +1815,8 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Paragraph gap! meta("[.r]\n") "text\n"
-    List "**"
+    Paragraph gap! meta~("[.r]\n") "text\n"
+    List gap~ "**"
       ListItem "** n\n"`,
 		},
 		{
@@ -1825,7 +1825,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Paragraph! gap! meta("[quote]\n") "text\nc:: d\n"`,
+    Paragraph! gap! meta~("[quote]\n") "text\nc:: d\n"`,
 		},
 		{
 			name: "which also reads a quote-shaped paragraph past an item line",
@@ -1833,7 +1833,7 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    Opaque! meta("[sidebar]\n") "> x\nc:: d\n"`,
+    Opaque! meta~("[sidebar]\n") "> x\nc:: d\n"`,
 		},
 		{
 			name: "where no block follows the +, the metadata binds to nothing",
@@ -1841,10 +1841,10 @@ List "*"
 			want: `
 List "*"
   ListItem "* a\n"
-    List "::"
+    List gap~ "::"
       ListItem "b:: c\n"
         Continuation gap! "+\n"
-        Opaque gap! meta(".T\n") ""
+        Opaque gap! meta~(".T\n") ""
       ListItem "c:: d\n"`,
 		},
 		{
@@ -1861,7 +1861,7 @@ Literal meta("[verse]\n") "detached\n"`,
 			want: `
 List "::"
   ListItem "term::\n"
-    List meta("[start=3]\n") "1."
+    List meta~("[start=3]\n") "1."
       ListItem "1. one\n"`,
 		},
 		{
@@ -1878,7 +1878,7 @@ Literal! meta("[source]\n") "b:: y\nc:: z\n"`,
 			want: `
 List "::"
   ListItem "a:: x\n"
-    List "*"
+    List gap~ "*"
       ListItem "* y\n"
 Paragraph meta("[.r]\n") "more\n"`,
 		},
@@ -1888,9 +1888,9 @@ Paragraph meta("[.r]\n") "more\n"`,
 			want: `
 List "::"
   ListItem "a:: x\n"
-    List "*"
+    List gap~ "*"
       ListItem "* y\n"
-        Opaque meta("[.r]\n") ""
+        Opaque meta~("[.r]\n") ""
       ListItem "* z\n"`,
 		},
 		{
@@ -1930,7 +1930,7 @@ Directive! gap! "include::part.adoc[]  \n"`,
 List "*"
   ListItem "* a\n"
     Continuation gap! "+  \n"
-    Verbatim "----\ncode\n----\n"`,
+    Verbatim gap~ "----\ncode\n----\n"`,
 		},
 		{
 			name: "a heading title ends before trailing whitespace and the closing marker",
