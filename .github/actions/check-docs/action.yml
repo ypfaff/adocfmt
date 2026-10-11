@@ -12,6 +12,6 @@ runs:
     # would need the release app to hold the workflows permission.
     #
     # The paths leave out testdata, whose cases are meant to be unformatted.
-    - uses: ypfaff/adocfmt@bdce4a53002e81375decf9fc66ab111aec992a7e # v0.4.0
+    - uses: ypfaff/adocfmt@ed5126dd3270fa56cae8f3c6ebbaf447702cdf47 # v0.4.1
       with:
         args: --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
