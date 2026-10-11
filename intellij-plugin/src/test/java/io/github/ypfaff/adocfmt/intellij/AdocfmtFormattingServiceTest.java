@@ -23,8 +23,10 @@ public class AdocfmtFormattingServiceTest extends BasePlatformTestCase {
   @Override
   protected void setUp() throws Exception {
     super.setUp();
-    // The light project lives on from test to test, and so does its switch.
+    // The light project and the IDE live on from test to test, and so do their
+    // settings.
     AdocfmtSettings.getInstance(getProject()).setEnabled(true);
+    AdocfmtIdeSettings.getInstance().setBinaryPath("");
   }
 
   public void testFormatsTheFile() {
@@ -81,6 +83,15 @@ public class AdocfmtFormattingServiceTest extends BasePlatformTestCase {
     String errors = reformatCapturingErrors();
     myFixture.checkResult(UNFORMATTED);
     assertTrue(errors, errors.contains("adocfmt could not run: The adocfmt binary is missing"));
+  }
+
+  public void testReportsAMissingCustomBinary() {
+    String missing = Path.of("no-adocfmt-here").toAbsolutePath().toString();
+    AdocfmtIdeSettings.getInstance().setBinaryPath(missing);
+    myFixture.configureByText("test.adoc", UNFORMATTED);
+    String errors = reformatCapturingErrors();
+    myFixture.checkResult(UNFORMATTED);
+    assertTrue(errors, errors.contains("adocfmt could not run: Cannot run program"));
   }
 
   private void reformat() {

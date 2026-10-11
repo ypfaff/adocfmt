@@ -24,7 +24,7 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Formats AsciiDoc files with the adocfmt binary that the plugin carries. */
+/** Formats AsciiDoc files with the adocfmt binary. */
 public final class AdocfmtFormattingService extends AsyncDocumentFormattingService
     implements PluginAware {
   private Path pluginDirectory;
@@ -116,9 +116,10 @@ public final class AdocfmtFormattingService extends AsyncDocumentFormattingServi
     }
 
     private ProcessOutput format(String document) throws ExecutionException {
+      String binary =
+          Binary.choose(AdocfmtIdeSettings.getInstance().getBinaryPath(), pluginDirectory);
       GeneralCommandLine command =
-          new GeneralCommandLine(Binary.find(pluginDirectory).toString())
-              .withCharset(StandardCharsets.UTF_8);
+          new GeneralCommandLine(binary).withCharset(StandardCharsets.UTF_8);
       CapturingProcessHandler handler = new CapturingProcessHandler(command);
       process = handler;
       // adocfmt reads all of stdin before it writes anything, so writing first

@@ -42,6 +42,21 @@ public class BinaryTest {
   }
 
   @Test
+  public void chooseTakesTheCustomPathOverTheBundledBinary() throws Exception {
+    Path root = pluginDirectory.getRoot().toPath();
+    createBinary(binaryIn(root));
+    assertEquals("/opt/adocfmt", Binary.choose("/opt/adocfmt", root));
+  }
+
+  @Test
+  public void chooseFallsBackToTheBundledBinaryWithoutACustomPath() throws Exception {
+    Path root = pluginDirectory.getRoot().toPath();
+    Path binary = binaryIn(root);
+    createBinary(binary);
+    assertEquals(binary.toString(), Binary.choose("", root));
+  }
+
+  @Test
   public void findReportsAMissingBinary() {
     ExecutionException missing =
         assertThrows(
@@ -60,6 +75,11 @@ public class BinaryTest {
 
     assertEquals(binary, Binary.find(pluginDirectory.getRoot().toPath()));
     assertTrue(Files.isExecutable(binary));
+  }
+
+  private static void createBinary(Path binary) throws Exception {
+    Files.createDirectories(binary.getParent());
+    Files.createFile(binary);
   }
 
   private static Path binaryIn(Path pluginDirectory) {

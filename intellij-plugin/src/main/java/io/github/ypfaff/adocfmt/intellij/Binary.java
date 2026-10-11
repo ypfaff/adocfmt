@@ -7,9 +7,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.jetbrains.annotations.Nullable;
 
-/** Finds the adocfmt binary that the plugin carries for this machine. */
+/** Finds the adocfmt binary to run: the user's own, or the one the plugin carries. */
 final class Binary {
   private Binary() {}
+
+  // The plugin leaves the user's own binary as it is, executable bit included.
+  static String choose(String customPath, Path pluginDirectory) throws ExecutionException {
+    return customPath.isBlank() ? find(pluginDirectory).toString() : customPath;
+  }
 
   static Path find(Path pluginDirectory) throws ExecutionException {
     String platform = platform(OS.CURRENT, CpuArch.CURRENT);
