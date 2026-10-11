@@ -87,9 +87,15 @@ func Lines(src []byte) [][]byte {
 	return lines
 }
 
+// lineContent is a line without its trailing whitespace, which the parser cuts
+// before it reads any line. Every question below about a single line asks it
+// of the content, so a caller cannot ask it of a line the parser never sees.
+func lineContent(line []byte) []byte { return line[:textEnd(line, 0, len(line))] }
+
 // HeadingTitle reports the title a one-line section title carries, read the way
 // the parser reads it, and whether the line is one at all.
 func HeadingTitle(line []byte) ([]byte, bool) {
+	line = lineContent(line)
 	sh, ok := headingShape(line, 0)
 	if !ok {
 		return nil, false
@@ -102,6 +108,7 @@ func HeadingTitle(line []byte) ([]byte, bool) {
 // items of a list are compared on rather than the text they carry, see
 // tree.List.Marker.
 func ListMarker(line []byte) (string, bool) {
+	line = lineContent(line)
 	body := bytes.TrimLeft(line, " \t")
 	if len(body) == 0 {
 		return "", false
@@ -131,7 +138,7 @@ func LineBelow(src []byte, at int) []byte {
 // within one character, so a rule that shortens a line asks first: a line it
 // makes shorter can reach that length and become a section title.
 func UnderlinesTitle(title, underline []byte) bool {
-	_, ok := setextPair(title, underline)
+	_, ok := setextPair(lineContent(title), lineContent(underline))
 	return ok
 }
 
@@ -140,6 +147,7 @@ func UnderlinesTitle(title, underline []byte) bool {
 // about a fence that is legal at that width: a line shaped like the opener is
 // one the opener may not be shortened to.
 func Fences(delim tree.Delimiter, line []byte) (int, bool) {
+	line = lineContent(line)
 	if len(line) == 0 || line[0] != delim.Char || !uniform(line[1:], delim.Fill) {
 		return 0, false
 	}

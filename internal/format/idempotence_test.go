@@ -40,3 +40,33 @@ func checkSecondRun(t *testing.T, once []byte) {
 		t.Errorf("the second run differs at %s", firstDifferingLine(once, twice))
 	}
 }
+
+// TestSecondRunAfterRubyWhitespace pins what FuzzFormatIsIdempotent found where
+// a line ends in a character Asciidoctor's rstrip strips beyond spaces and
+// tabs: \v, \f or NUL. The printer has to read the line as Asciidoctor does,
+// or the first run writes what the second strips.
+func TestSecondRunAfterRubyWhitespace(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{name: "NUL as a document title", src: "= \x00 =\n", want: "= \x00 =\n"},
+		{name: "NUL as a section title", src: "== \x00 ==\n", want: "== \x00 ==\n"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			once, err := Format([]byte(test.src))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if string(once) != test.want {
+				t.Errorf("got %q, want %q", once, test.want)
+			}
+			checkSecondRun(t, once)
+		})
+	}
+}
