@@ -452,7 +452,8 @@ func metaKind(sh shape) (tree.MetaKind, bool) {
 // discrete style makes a heading out of the line anywhere.
 //
 // A level 0 title in either form is the document header while nothing but the
-// blocks precedesTitle names came before it.
+// blocks precedesTitle names came before it, and no block title stands above
+// it, see titled.
 //
 // In a block read as text only, see readsTextOnly, Asciidoctor looks for no
 // break, no block macro and no attribute entry: such a line is text. Nor does
@@ -464,7 +465,7 @@ func (p *parser) body(b tree.NodeBase, closer []byte, textOnly bool) tree.Node {
 	if textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
 		sh.kind = shapeText
 	}
-	atStart := p.atStart
+	atStart := p.atStart && !titled(p.src, b.Meta)
 	p.atStart = atStart && precedesTitle(sh)
 
 	sectionLevel := closer == nil && len(p.markers) == 0
@@ -565,6 +566,14 @@ func precedesTitle(sh shape) bool {
 	default:
 		return false
 	}
+}
+
+// titled reports whether the metadata gives the block a title, as .Title and
+// [title=...] do. Asciidoctor reads no document header under one, so a level 0
+// title there is a section.
+func titled(src []byte, meta []tree.Meta) bool {
+	return slices.ContainsFunc(meta, func(m tree.Meta) bool { return m.Kind == tree.MetaTitle }) ||
+		hasAttr(src, meta, "title")
 }
 
 // header is the document header, which stays compact: it runs to the first

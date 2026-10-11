@@ -85,6 +85,27 @@ Header "= Title\nAuthor Name\n" title "Title"
 Paragraph "Text.\n"`,
 		},
 		{
+			name: "a block title above a level 0 title makes it a section, so the lines under it are a paragraph",
+			src:  ".Title\n= Doc\none\ntwo\n",
+			want: `
+Heading meta(".Title\n") "= Doc\n" title "Doc"
+Paragraph "one\ntwo\n"`,
+		},
+		{
+			name: "a title attribute does too, also across a blank line, an attribute entry and a comment block",
+			src:  "[title=Foo]\n\n:a: b\n////\nc\n////\nDoc\n===\none\n",
+			want: `
+Setext meta("[title=Foo]\n") meta(":a: b\n") meta("////\nc\n////\n") "Doc\n===\n" title "Doc"
+Paragraph "one\n"`,
+		},
+		{
+			name: "metadata without a title keeps the header",
+			src:  "[role=x]\n[[a]]\n// c\n= Doc\nAuthor Name\n\nText.\n",
+			want: `
+Header meta("[role=x]\n") meta("[[a]]\n") meta("// c\n") "= Doc\nAuthor Name\n" title "Doc"
+Paragraph "Text.\n"`,
+		},
+		{
 			name: "a comment block under the title is read without being counted",
 			src:  "= Title\n////\nnote\n////\nAuthor Name\nv1, 2020\n\nText.\n",
 			want: `
