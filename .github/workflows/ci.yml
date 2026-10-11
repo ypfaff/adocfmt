@@ -76,6 +76,32 @@ jobs:
       - name: Test
         run: go test ./...
 
+  intellij-plugin:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: intellij-plugin
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Scorecard's Binary-Artifacts check accepts the committed
+      # gradle-wrapper.jar only when this action validates it.
+      - uses: gradle/actions/wrapper-validation@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # No Gradle cache: the IDEs it would hold take most of the repository's
+      # 10 GB of cache and would push out the Go caches.
+      - name: Build
+        run: ./gradlew build
+
+      - name: Verify the plugin
+        run: ./gradlew verifyPlugin
+
   # goreleaser and govulncheck run only in the release and the weekly scan, so
   # an update that breaks either would pass every other check here.
   release-tools:

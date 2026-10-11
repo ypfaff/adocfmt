@@ -1,0 +1,8 @@
+<idea-plugin>
+    <id>io.github.ypfaff.adocfmt</id>
+    <name>adocfmt</name>
+    <vendor url="https://github.com/ypfaff/adocfmt">Yannick Pfaff</vendor>
+    <description>Formats AsciiDoc files with adocfmt, an opinionated AsciiDoc formatter.</description>
+
+    <depends>com.intellij.modules.platform</depends>
+</idea-plugin>

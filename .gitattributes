@@ -2,6 +2,9 @@
 # clone is configured to do.
 * text=auto eol=lf
 
+# Except the batch scripts, which cmd.exe expects with CRLF.
+*.bat text eol=crlf
+
 # Except in these cases, where the line endings are what the case tests.
 testdata/golden/blank-lines/crlf/* -text
 testdata/golden/blank-lines/crlf-no-final-newline/* -text

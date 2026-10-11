@@ -13,6 +13,10 @@ Go::
 Version 1.27 or later, as link:../../go.mod[`go.mod`] states.
 The `toolchain` line there names the release CI builds with, and an older Go downloads that release on first use.
 
+JDK::
+Version 21, which builds the IntelliJ plugin in link:../../intellij-plugin[`intellij-plugin`].
+Gradle comes with the wrapper there, so you do not install it.
+
 Asciidoctor::
 The release that the tests run with.
 link:../../internal/asciidoctorcases/cases.go[`internal/asciidoctorcases`] pins it, and link:../../tools/fetch-asciidoctor-cases/main.go[`tools/fetch-asciidoctor-cases`] prints it for you.
@@ -45,6 +49,15 @@ You do not install actionlint, which lints the GitHub workflows.
 ----
 go build ./...
 ----
+
+Build the IntelliJ plugin and check it against IntelliJ IDEA 2024.3 and the latest release:
+
+[source,shell]
+----
+intellij-plugin/gradlew --project-dir intellij-plugin build verifyPlugin
+----
+
+The first run downloads both IDEs, about 1 GB each.
 
 [#test]
 == Test

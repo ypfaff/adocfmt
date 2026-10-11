@@ -22,6 +22,11 @@ tmp/
 bin/
 dist/
 
+# IntelliJ plugin build output
+intellij-plugin/.gradle/
+intellij-plugin/.intellijPlatform/
+intellij-plugin/build/
+
 # Website build output
 website/public/
 website/resources/
