@@ -7,7 +7,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 plugins {
     java
     id("org.jetbrains.intellij.platform") version "2.19.0"
-    id("com.diffplug.spotless") version "8.10.3"
+    id("com.diffplug.spotless") version "8.10.4"
 }
 
 // The release sets the adocfmt version.
