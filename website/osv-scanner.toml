@@ -6,3 +6,20 @@ id = "GHSA-238p-pmpm-9mq7"
 # Delete with the first Mermaid release that bundles KaTeX 0.18.2 or later.
 ignoreUntil = 2027-01-06
 reason = "KaTeX comes bundled in mermaid.min.js, but exploiting it needs prototype pollution and attacker-written math; the static site renders only its own diagrams."
+
+# The three DOMPurify advisories: delete them with the first Mermaid release that
+# bundles DOMPurify 3.4.17 or later.
+[[IgnoredVulns]]
+id = "GHSA-cg2g-xh64-v4q7"
+ignoreUntil = 2027-01-24
+reason = "DOMPurify comes bundled in mermaid.min.js, but Mermaid sets none of SAFE_FOR_TEMPLATES, IN_PLACE and PARSER_MEDIA_TYPE; the static site renders only its own diagrams."
+
+[[IgnoredVulns]]
+id = "GHSA-mrv2-3pqr-j5jr"
+ignoreUntil = 2027-01-24
+reason = "DOMPurify comes bundled in mermaid.min.js, but Mermaid sets none of SAFE_FOR_TEMPLATES, IN_PLACE and PARSER_MEDIA_TYPE; the static site renders only its own diagrams."
+
+[[IgnoredVulns]]
+id = "GHSA-c6gr-qvv4-5v3f"
+ignoreUntil = 2027-01-24
+reason = "DOMPurify comes bundled in mermaid.min.js, but Mermaid sets none of SAFE_FOR_TEMPLATES, IN_PLACE and PARSER_MEDIA_TYPE; the static site renders only its own diagrams."
