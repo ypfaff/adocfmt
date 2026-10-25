@@ -21,7 +21,8 @@ module:
       target: assets
 
 params:
-  description: Format your AsciiDoc without changing what it renders.
+  homeTitle: adocfmt · AsciiDoc formatter
+  description: adocfmt is an AsciiDoc formatter that does not change what your document renders. Use it on the command line, in CI with the GitHub Action, or in IntelliJ IDEA.
   repo: https://github.com/ypfaff/adocfmt
   # Section titles and order live here, not in _index.adoc files that GitHub
   # would show as nearly empty pages.
