@@ -5,7 +5,7 @@ linkTitle: Install
 ---
 = Install adocfmt
 
-Install adocfmt with Homebrew, or download a release archive and put the binary on your `PATH`.
+Install adocfmt with Homebrew, pin it per project with mise, or download a release archive and put the binary on your `PATH`.
 For IntelliJ IDEA, the xref:use-in-intellij.adoc[adocfmt plugin] brings its own binary.
 
 [#homebrew]
@@ -27,6 +27,22 @@ A tap is a repository that Homebrew reads formulas from.
 ----
 brew install ypfaff/adocfmt/adocfmt
 ----
+
+[#mise]
+== Install with mise
+
+https://mise.jdx.dev[mise] pins adocfmt to one release per project.
+
+In the project directory, run:
+
+[source,shell]
+----
+mise use github:ypfaff/adocfmt@1.2.3
+----
+
+Replace `1.2.3` with the version you want.
+mise installs that release and writes it to the project's `mise.toml`.
+Commit `mise.toml`, and `mise.lock` if the project has one, so that everyone working on the project formats with the same release.
 
 [#archive]
 == Install from a release archive
