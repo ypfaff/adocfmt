@@ -1,0 +1,19 @@
+term:: description
+another term:: another description
+term:: description
++
+more description
+
+another term:: another description
+nested:: text
+* item
+
+indented::
+
+  literal
+
+last:: text
+bare::
+* item
+
+next:: text

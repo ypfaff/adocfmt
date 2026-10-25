@@ -1,5 +1,4 @@
 * item
 a:: one
-
 b:: two
 * next

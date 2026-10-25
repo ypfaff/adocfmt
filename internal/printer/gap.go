@@ -18,9 +18,8 @@ const (
 //
 // Asciidoctor renders every block type the same with and without a blank line
 // in front of it, so one between siblings costs nothing. Neither does one
-// between two description list terms, where it makes a term easy to find,
-// since its marker trails it instead of leading the line. The items of the
-// other lists the rule writes without one.
+// between two description list terms, where it shows where an entry with
+// blocks of its own ends. The other items the rule writes without one.
 func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 	if p.raw || g.Stage == tree.Exact {
 		p.span(g.Span)
@@ -38,7 +37,7 @@ func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 	case betweenSiblings:
 		p.blank()
 	case betweenTerms:
-		if !bareTerm(prev) {
+		if hasBlocks(prev) {
 			p.blank()
 		}
 	}
@@ -87,9 +86,9 @@ func (p *printer) collapse(g tree.Gap) {
 
 func (p *printer) blank() { p.out.WriteString(p.eol) }
 
-// bareTerm reports whether the item is a term with no text and no blocks of its
-// own. Asciidoctor gives such a term the description of the term below.
-func bareTerm(prev tree.Node) bool {
-	item, ok := prev.(*tree.ListItem)
-	return ok && item.Text.Empty() && len(item.Children) == 0
+// hasBlocks reports whether the item holds blocks besides its text, such as a
+// paragraph attached with a + or a nested list.
+func hasBlocks(node tree.Node) bool {
+	item, ok := node.(*tree.ListItem)
+	return ok && len(item.Children) > 0
 }

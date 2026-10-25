@@ -10,5 +10,4 @@ Text.
 
 colour::
 term:: one
-
 other:: two
