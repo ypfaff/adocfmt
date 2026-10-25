@@ -15,8 +15,7 @@ adocfmt applies the rules on this page and leaves the rest of the document as it
 * Line endings keep their form: a file with Windows line endings keeps them.
 A line that a rule writes ends the same way as the rest of the file.
 * Front matter, the block of YAML that some static site generators put at the top of a file, is left alone.
-* Lines whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional] lose only their trailing whitespace.
-No other rule changes them, because their content is known only after Asciidoctor resolves the directive.
+* <<trailing-whitespace,Trailing whitespace removal>> is the only rule that changes a line whose meaning depends on an https://docs.asciidoctor.org/asciidoc/latest/directives/include/[include] or a https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/[conditional], because its content is known only after Asciidoctor resolves the directive.
 * adocfmt refuses a document that it cannot read reliably.
 It reports what it found and writes nothing.
 * A file with the comment `// adocfmt: ignore-file` above its document title is left exactly as it is; see xref:cli.adoc#ignore-file[Leave a file unformatted].
