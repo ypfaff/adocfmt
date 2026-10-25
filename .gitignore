@@ -15,6 +15,9 @@
 # Local planning / scratch files
 tmp/
 
+# Local lefthook overrides
+lefthook-local.yml
+
 # Fuzz findings
 **/testdata/fuzz/
 

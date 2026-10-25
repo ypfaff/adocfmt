@@ -1,4 +1,8 @@
-# Install with: lefthook install
+# Install with: mise run setup
+
+# Starts lefthook through mise, so that the jobs find the tools mise.toml
+# pins even when a Git GUI runs the hooks outside an activated shell.
+lefthook: mise exec -- lefthook
 
 pre-commit:
   jobs:
