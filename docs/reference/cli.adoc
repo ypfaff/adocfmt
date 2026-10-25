@@ -28,7 +28,6 @@ A file that is already formatted is not touched.
 It needs at least one path.
 It prints nothing for the files it writes.
 For a symlink, it writes the file that the link points to and leaves the link in place.
-
 `-c`, `--check`::
 Changes no file.
 Lists on stdout every file that is not formatted, one path per line, and exits with 1 if it lists any.
@@ -43,7 +42,6 @@ docs/setup.adoc
 
 `--version`::
 Prints the version.
-
 `-h`, `--help`::
 Prints the help.
 
@@ -78,12 +76,10 @@ Symlinks::
 A symlink you name on the command line is followed, whether it points to a file or a directory.
 A symlink the walk finds inside a directory is skipped, whether it points to a file or a directory.
 So no file is formatted twice through a link.
-
 Order::
 Paths are processed in the order you name them.
 Inside a directory, the walk visits the entries in byte order of their names, so `Z.adoc` comes before `a.adoc`.
 A subdirectory is walked at its place in that order.
-
 Names::
 adocfmt reports each file under the path you typed.
 Here `site-link` is a symlink to the directory `site`, and `adocfmt --check site-link` prints:
@@ -121,7 +117,6 @@ Spelling::
 Two slashes, then any number of spaces or tabs, then `adocfmt: ignore-file` in lowercase, with one space after the colon.
 After it, a space or a tab can start a reason, which adocfmt ignores.
 Spellings such as `// ADOCFMT: ignore-file`, `// adocfmt-ignore-file` or `// adocfmt ignore-file` are ordinary comments.
-
 Placement::
 Only blank lines, other comment lines and comment blocks may stand above the comment, after the YAML front matter if the file has any.
 The comment must be a comment line of its own, not a line inside a `////` comment block.
@@ -153,11 +148,9 @@ title: API reference
 Success.
 The document was written to stdout, the files were written, or `--check` found every file formatted.
 `--help` and `--version` exit with 0 too.
-
 `1`::
 `--check` found at least one file that is not formatted.
 Only `--check` exits with 1.
-
 `2`::
 An error.
 Either the command line is wrong, a path or file cannot be read or written, or adocfmt refused a document.
@@ -192,7 +185,6 @@ The reported line is an opening delimiter, such as `----` or `====`, and no late
 The block runs to the end of the file.
 Add a closing line equal to the opening one.
 A fenced code block that opens with a language, such as `++```ruby++`, closes with the bare fence `++```++`.
-
 `closes the block opened above it`::
 The reported line equals the opening delimiter of an enclosing block, but it stands inside a nested block.
 Asciidoctor ends the enclosing block at this line, which is not what the nesting suggests.
@@ -226,11 +218,9 @@ code
 `conditional region has no endif`::
 The directive on the reported line opens a conditional region, and no `endif::[]` closes it.
 Add the `endif::[]` where the region ends.
-
 `endif closes no conditional region`::
 The `endif` on the reported line has no open region to close.
 Remove it, or add the directive that opens the region.
-
 `malformed preprocessor directive`::
 Asciidoctor rejects the directive on the reported line.
 An `ifdef` or `ifndef` needs an attribute name, as in `ifdef::name[]`.
@@ -251,12 +241,10 @@ adocfmt refuses the document in the same way.
 
 `source is not valid UTF-8`::
 Convert the file to UTF-8.
-
 `source has mixed line endings: 1 CRLF, 1 LF`::
 Some lines end with a carriage return and a line feed, as on Windows, and others with a line feed alone.
 The message counts both.
 Convert the file to one of the two.
-
 `source has carriage returns that end no line`::
 The file holds a carriage return that is not followed by a line feed.
 Remove it, or replace it with a line ending.

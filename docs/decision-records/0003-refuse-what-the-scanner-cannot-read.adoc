@@ -32,11 +32,9 @@ Formatting either reading breaks the other, so refusing is the only answer that 
 Format the part the scanner understood::
 A block that never closes swallows the rest of the file, so such a run formats next to nothing and reports success.
 The output is quiet where the user needs to hear that the document is broken.
-
 Warnings beside the output::
 The document is written anyway, and a warning on stderr is what a commit hook or a CI run scrolls past.
 Formatters that took this route later added a flag to fail on warnings; starting with the failure skips that step.
-
 Report how much of the document stayed unformatted::
 A percentage still needs the user to work out where and why, and no formatter this project looked at reports one.
 The findings name the line, which is what the user needs to fix the document.

@@ -45,19 +45,15 @@ The parser's reading of the document.
 Each node is one block, such as a section title, a paragraph, a list or a delimited block.
 Metadata lines, such as `[source,go]`, `.Title` or a comment, belong to the block below them.
 The parser is the only place that decides what kind of block a line belongs to.
-
 Span::
 The byte range of the source that a node covers.
 Every byte belongs to exactly one node, so printing the nodes in order gives back the source.
-
 Gap::
 The blank lines in front of a node.
 Its stage says how far a rule may change them: a free gap is the printer's to write, one that keeps its count stays without blank lines or with at least one, and an exact one stays as it stands.
-
 Frozen::
 A node the printer leaves as it stands: its meaning depends on something the parser does not resolve, such as an include, a conditional or the front matter, or one of its lines means something else once it moves, such as a comment line joined into a paragraph.
 No rule may add, remove, join or split lines in a frozen node.
-
 Finding::
 Structure the parser cannot trust, such as a block that never closes, reported with its line number.
 
