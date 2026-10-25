@@ -62,24 +62,17 @@
       matchManagers: ['github-actions'],
       matchDepTypes: ['action'],
       matchUpdateTypes: ['minor', 'patch'],
-      // adocfmt stays out while at 0.x, where a minor can break like a major:
-      // its own pull request takes the reformatted docs.
-      matchPackageNames: ['!ypfaff/adocfmt'],
       groupName: 'actions',
     },
     {
       // Its own releases need neither the week nor the Monday. The release run
       // moves the pin itself when the docs pass, so Renovate waits it out and
-      // only proposes the releases that reformat the docs.
-      matchPackageNames: ['ypfaff/adocfmt'],
-      schedule: ['at any time'],
-      minimumReleaseAge: '30 minutes',
-    },
-    {
-      // GitHub's tags carry a v, the versions in mise.toml do not.
-      matchManagers: ['mise'],
+      // only proposes the releases that reformat the docs. GitHub's tags carry
+      // a v, the versions in mise.toml do not.
       matchPackageNames: ['ypfaff/adocfmt'],
       extractVersion: '^v(?<version>.+)$',
+      schedule: ['at any time'],
+      minimumReleaseAge: '30 minutes',
     },
     {
       // One PR moves the toolchain line in go.mod and the Go in mise.toml
