@@ -4,7 +4,6 @@ b. beta
 i) roman
 
 term:: text
-
 other::
   folded
 
