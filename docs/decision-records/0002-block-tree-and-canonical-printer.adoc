@@ -40,14 +40,11 @@ Asciidoctor defines what a document means, and it is the oracle the tests measur
 Text-to-text rule passes::
 The shape of the formatter in decision record 0001.
 Each pass derives block structure again from its own tracker, and the pipeline needs an order between passes and repeated runs until the output settles.
-
 Rules as transformations over a shared tree::
 Fixes the shared classification, but keeps the ordering between rules and spreads the formatting of one kind of block across several of them instead of one function.
-
 A canonical printer without a raw fallback::
 What gofmt does: it prints the whole program from its model, which works because Go has a specification and a complete grammar behind it.
 AsciiDoc has neither, so a block modelled wrongly would be printed wrongly instead of surviving untouched.
-
 Asciidoctor as the parser::
 It resolves includes and conditionals before a tree exists, so the output would depend on files and flags the formatter cannot see.
 Its model also answers a different question: a parser needs to know what a document means, a formatter needs to know which bytes belong to which unit, comments and blank lines included.

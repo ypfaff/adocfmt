@@ -18,11 +18,9 @@ On top of them, three kinds of tests check the formatter as a whole:
 Asciidoctor cases::
 The test inputs of the Asciidoctor test suite, one file each under link:../../testdata/asciidoctor-cases[`testdata/asciidoctor-cases`].
 They give breadth, but hold little prose, and the lines inside an `ifdef` that is not set never reach the rendering.
-
 Golden cases::
 Documents written for a rule, under link:../../testdata/golden[`testdata/golden`].
 They cover what the Asciidoctor cases miss, and a new or changed rule comes with them.
-
 Fuzzing::
 Go's fuzzer mutates both sets in search of input that breaks a guarantee.
 The seeds run with every `go test`, the search only on demand.
