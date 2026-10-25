@@ -21,8 +21,6 @@ mise run setup
 
 `mise run setup` installs the Asciidoctor gem that the tests run with and the Git hooks that link:../../lefthook.yml[`lefthook.yml`] defines.
 
-Install adocfmt, which formats the documentation, as xref:../how-to/install.adoc[Install adocfmt] describes.
-
 == Build
 
 [source,shell]
@@ -90,11 +88,11 @@ Lint the GitHub workflows:
 go tool -modfile=tools/actionlint/go.mod actionlint
 ----
 
-Check the formatting of the documentation, leaving out the cases under `testdata`, which are meant to be unformatted:
+Check the formatting of the documentation:
 
 [source,shell]
 ----
-adocfmt --check README.adoc CONTRIBUTING.adoc CODE_OF_CONDUCT.adoc docs
+mise run check-docs
 ----
 
 TIP: After `mise run setup`, every commit runs these linters first.

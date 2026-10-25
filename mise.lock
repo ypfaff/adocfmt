@@ -2,6 +2,29 @@
 
 lockfile_version = 3
 
+[[tools."github:ypfaff/adocfmt"]]
+version = "0.6.0"
+backend = "github:ypfaff/adocfmt"
+specifiers = ["0.6.0"]
+
+[tools."github:ypfaff/adocfmt"."platforms.linux-arm64"]
+checksum = "sha256:0092f150ee418fdf4828671b2c8cec8e577d4cd62476d40c19b04f92c3f9416e"
+url = "https://github.com/ypfaff/adocfmt/releases/download/v0.6.0/adocfmt_0.6.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/631851035"
+provenance = "github-attestations"
+
+[tools."github:ypfaff/adocfmt"."platforms.linux-x64"]
+checksum = "sha256:dea0fc425b8fad7b39c05818fbf8c09501c35dab0211ad1c9c55be7b70ea545d"
+url = "https://github.com/ypfaff/adocfmt/releases/download/v0.6.0/adocfmt_0.6.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/631851032"
+provenance = "github-attestations"
+
+[tools."github:ypfaff/adocfmt"."platforms.macos-arm64"]
+checksum = "sha256:ce7c7b4d01368d8499305c8ab8ef64b6e067be02099e456ba55a6a37a23e14ba"
+url = "https://github.com/ypfaff/adocfmt/releases/download/v0.6.0/adocfmt_0.6.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/631851034"
+provenance = "github-attestations"
+
 [[tools.go]]
 version = "1.27.3"
 backend = "core:go"
