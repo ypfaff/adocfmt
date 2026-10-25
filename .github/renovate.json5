@@ -76,6 +76,12 @@
       minimumReleaseAge: '30 minutes',
     },
     {
+      // GitHub's tags carry a v, the versions in mise.toml do not.
+      matchManagers: ['mise'],
+      matchPackageNames: ['ypfaff/adocfmt'],
+      extractVersion: '^v(?<version>.+)$',
+    },
+    {
       // One PR moves the toolchain line in go.mod and the Go in mise.toml
       matchDepNames: ['go'],
       groupName: 'go',
