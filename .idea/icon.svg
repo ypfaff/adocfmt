@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="adocfmt">
+  <title>adocfmt</title>
+  <defs>
+    <linearGradient id="adocfmt-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f3fb8"/>
+      <stop offset="1" stop-color="#3a86f0"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#adocfmt-bg)"/>
+  <g stroke="#fff" stroke-width="5" stroke-linecap="round">
+    <path opacity=".45" d="M13 22H26M9 32H21M15 42H25"/>
+    <path d="M37 22H55M37 32H55M37 42H55"/>
+  </g>
+</svg>
