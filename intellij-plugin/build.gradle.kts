@@ -11,7 +11,8 @@ plugins {
 }
 
 // The release sets the adocfmt version.
-version = providers.gradleProperty("pluginVersion").getOrElse("0.0.0-dev")
+val releaseVersion = providers.gradleProperty("pluginVersion")
+version = releaseVersion.getOrElse("0.0.0-dev")
 
 java {
     toolchain {
@@ -41,6 +42,11 @@ intellijPlatform {
             // Unset, because the default 243.* would disable the plugin in
             // every newer IDE until the next release.
             untilBuild = provider { null }
+        }
+        // What's New on the Marketplace links the release notes on GitHub. A
+        // build without a release version has none.
+        changeNotes = releaseVersion.map {
+            """<a href="https://github.com/ypfaff/adocfmt/releases/tag/v$it">Release notes of adocfmt $it</a>"""
         }
     }
     // The release signs the plugin; a build without these leaves it unsigned.
