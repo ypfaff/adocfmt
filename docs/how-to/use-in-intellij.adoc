@@ -12,10 +12,7 @@ The AsciiDoc plugin can stay: it keeps the preview and the highlighting, and ado
 [#install]
 == Install the plugin
 
-NOTE: The plugin is waiting for its review on JetBrains Marketplace.
-Until it is listed there, install it from the zip of a release.
-
-In *Settings > Plugins > Marketplace*, search for `adocfmt` and install it.
+Install it from link:https://plugins.jetbrains.com/plugin/35007-adocfmt[JetBrains Marketplace]: in *Settings > Plugins > Marketplace*, search for `adocfmt` and install it.
 
 Or download the plugin zip of a release from the link:https://github.com/ypfaff/adocfmt/releases[releases page].
 Then, in *Settings > Plugins*, click the gear icon, select *Install Plugin from Disk*, and choose the zip.
