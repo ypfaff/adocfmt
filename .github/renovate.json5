@@ -76,10 +76,15 @@
       minimumReleaseAge: '30 minutes',
     },
     {
+      // One PR moves the toolchain line in go.mod and the Go in mise.toml
+      matchDepNames: ['go'],
+      groupName: 'go',
+    },
+    {
       // A Go patch release mostly fixes the standard library, which ships in
       // the binary, so it needs neither the week nor the Monday. A new minor
       // waits, so the tools have time to support it.
-      matchDepTypes: ['toolchain'],
+      matchDepNames: ['go'],
       matchUpdateTypes: ['patch'],
       schedule: ['at any time'],
       minimumReleaseAge: null,
@@ -100,9 +105,15 @@
       enabled: false,
     },
     {
+      // Renovate gets no release dates for the JDK, so it cannot wait the week
+      // and proposes a new JDK right away instead of never.
+      matchDepNames: ['java'],
+      minimumReleaseAgeBehaviour: 'timestamp-optional',
+    },
+    {
       // The plugin builds against IntelliJ 2024.3, which runs on Java 21, so
-      // the JDK of the workflows moves only when the plugin's oldest IDE does.
-      matchDepNames: ['java-jdk'],
+      // the JDK in mise.toml moves only when the plugin's oldest IDE does.
+      matchDepNames: ['java'],
       matchUpdateTypes: ['major'],
       enabled: false,
     },

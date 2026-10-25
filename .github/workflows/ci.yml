@@ -34,6 +34,16 @@ jobs:
       # of modules and builds.
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
 
+      - name: Check that mise.toml and go.mod name the same Go
+        run: |
+          mise_go="$(mise current go)"
+          mod_go="$(go mod edit -json | jq --raw-output '.Toolchain // .Go')"
+          mod_go="${mod_go#go}"
+          if [[ "${mise_go}" != "${mod_go}" ]]; then
+            echo "::error::mise.toml pins Go ${mise_go}, go.mod names ${mod_go}"
+            exit 1
+          fi
+
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           install-mode: none
