@@ -276,7 +276,7 @@ h1 { margin: 0 0 24px; font-size: 2.1rem; letter-spacing: -.02em; }
 .home { max-width: 1040px; margin: 0 auto; padding: 72px 24px 48px; }
 .hero { text-align: center; }
 .hero-icon { display: block; margin: 0 auto 24px; border-radius: 16px; box-shadow: 0 12px 40px -12px rgba(58, 134, 240, .55); }
-.hero h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 32px; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 32px; text-wrap: balance; }
 
 .button {
   display: inline-block;
