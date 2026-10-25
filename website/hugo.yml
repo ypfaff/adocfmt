@@ -21,7 +21,7 @@ module:
       target: assets
 
 params:
-  description: An opinionated AsciiDoc formatter.
+  description: Format your AsciiDoc without changing what it renders.
   repo: https://github.com/ypfaff/adocfmt
   # Section titles and order live here, not in _index.adoc files that GitHub
   # would show as nearly empty pages.
