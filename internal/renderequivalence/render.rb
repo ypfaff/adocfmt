@@ -7,6 +7,8 @@ require 'asciidoctor'
 require 'json'
 
 $stdout.sync = true
+# Go writes UTF-8, whatever the locale says.
+$stdin.set_encoding('UTF-8')
 Asciidoctor::LoggerManager.logger = Asciidoctor::NullLogger.new
 
 $stdin.each_line do |line|

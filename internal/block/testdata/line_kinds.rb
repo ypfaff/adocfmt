@@ -48,5 +48,7 @@ def kind(line)
   CONTEXTS.fetch Asciidoctor::Parser.next_block(Asciidoctor::Reader.new([line]), doc).context
 end
 
+# Go writes UTF-8, whatever the locale says.
+$stdin.set_encoding('UTF-8')
 puts Asciidoctor::VERSION
 $stdin.each_line { |json| puts kind(JSON.parse(json)) }
