@@ -203,36 +203,39 @@ jobs:
           done
           git push --force origin "refs/tags/${major}"
 
-      # Moves the pin in the documentation check to this release, but only when
-      # the release finds the docs formatted. If it does not, the pin stays, and
-      # Renovate opens a PR where the docs get reformatted.
-      - name: Pin the release in the documentation check
+      # Moves the pin in mise.toml to this release, but only when the release
+      # finds the docs formatted. If it does not, the pin stays, and Renovate
+      # opens a PR where the docs get reformatted.
+      - name: Pin the release in mise.toml
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
-          SHA: ${{ steps.tag.outputs.sha }}
-        run: |
-          go run ./tools/set-action-pin \
-            --sha "${SHA}" \
-            --version "${VERSION}" \
-            --file .github/actions/check-docs/action.yml
+        run: mise use "github:ypfaff/adocfmt@${VERSION}"
 
       - name: Check the documentation with the release
         id: check-docs
         continue-on-error: true
-        uses: ./.github/actions/check-docs
+        run: mise run check-docs
 
       - name: Push the pin
         if: steps.check-docs.outcome == 'success'
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          git add .github/actions/check-docs/action.yml
+          git add mise.toml mise.lock
           # A retry of the same version finds the pin already committed.
           git diff --cached --quiet ||
-            git commit --message "ci(deps): update ypfaff/adocfmt action to v${VERSION}"
+            git commit --message "chore(deps): update dependency github:ypfaff/adocfmt to v${VERSION}"
           git pull --rebase origin "${GITHUB_REF_NAME}"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Leave the pin to Renovate
         if: steps.check-docs.outcome == 'failure'
         run: echo "::warning::The documentation check with the release failed; Renovate proposes the pin in a PR"
+
+      # The action as users run it, without a version: its default names this
+      # release since the step that set it above.
+      - name: Test the released action
+        uses: ./
+        with:
+          args: --version
