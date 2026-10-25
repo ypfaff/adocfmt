@@ -1,0 +1,48 @@
+name: Publish IntelliJ plugin
+
+# Uploads the plugin the release workflow built and signed, so a failed upload
+# leaves the release untouched and runs again by hand.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Publish the plugin of this release, without the v
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+env:
+  TAG: ${{ github.event.release.tag_name || format('v{0}', inputs.version) }}
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # No reviewer, since the release was already approved.
+    environment: jetbrains-marketplace
+    steps:
+      - name: Download the plugin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --pattern "adocfmt_${TAG#v}_intellij-plugin.zip" \
+            --dir "${RUNNER_TEMP}"
+
+      # https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html
+      # No channel publishes to Stable. No retry, since a POST that timed out
+      # may still have created the update.
+      - name: Upload the plugin to JetBrains Marketplace
+        env:
+          MARKETPLACE_TOKEN: ${{ secrets.INTELLIJ_MARKETPLACE_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --header "Authorization: Bearer ${MARKETPLACE_TOKEN}" \
+            --form xmlId=io.github.ypfaff.adocfmt \
+            --form file=@"${RUNNER_TEMP}/adocfmt_${TAG#v}_intellij-plugin.zip" \
+            https://plugins.jetbrains.com/api/updates/upload
