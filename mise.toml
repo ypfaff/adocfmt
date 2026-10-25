@@ -5,7 +5,7 @@
 go = "1.27.3"
 golangci-lint = "2.14.0"
 goreleaser = "2.18.3"
-java = "temurin-21.0.12+8.0.LTS"
+java = "temurin-21.0.13+9.0.LTS"
 lefthook = "2.2.2"
 ruby = "4.0.7"
 shellcheck = "0.11.0"
