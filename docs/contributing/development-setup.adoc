@@ -95,7 +95,7 @@ Check the formatting of the documentation:
 mise run check-docs
 ----
 
-TIP: After `mise run setup`, every commit runs these linters first.
+TIP: After `mise run setup`, every commit runs these linters first and checks its message.
 
 [#website]
 == Build the website

@@ -28,6 +28,14 @@ pre-commit:
         - "testdata/**"
       run: adocfmt --check {staged_files}
 
+commit-msg:
+  # Merge commits never land on main, whose history is linear.
+  skip:
+    - merge
+  jobs:
+    - name: conventional-commits
+      run: go run ./tools/check-commit-message < {1}
+
 pre-push:
   jobs:
     - name: test
