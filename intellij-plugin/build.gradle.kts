@@ -16,7 +16,7 @@ version = releaseVersion.getOrElse("0.0.0-dev")
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
@@ -29,8 +29,13 @@ repositories {
 
 dependencies {
     intellijPlatform {
-        intellijIdeaCommunity("2024.3")
+        intellijIdea("2026.2.3")
         testFramework(TestFrameworkType.Platform)
+        // Without it, every test fails at startup with "Cannot create
+        // extension" in the Ultimate plugin. Remove it once
+        // https://github.com/JetBrains/intellij-platform-gradle-plugin/issues/2261
+        // is fixed.
+        testBundledPlugins("com.intellij.modules.ultimate")
     }
     testImplementation("junit:junit:4.13.2")
 }
@@ -38,8 +43,8 @@ dependencies {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "243"
-            // Unset, because the default 243.* would disable the plugin in
+            sinceBuild = "262"
+            // Unset, because the default 262.* would disable the plugin in
             // every newer IDE until the next release.
             untilBuild = provider { null }
         }

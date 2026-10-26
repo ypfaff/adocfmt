@@ -110,7 +110,7 @@
       minimumReleaseAgeBehaviour: 'timestamp-optional',
     },
     {
-      // The plugin builds against IntelliJ 2024.3, which runs on Java 21, so
+      // The plugin builds against IntelliJ 2026.2, which runs on Java 25, so
       // the JDK in mise.toml moves only when the plugin's oldest IDE does.
       matchDepNames: ['java'],
       matchUpdateTypes: ['major'],
