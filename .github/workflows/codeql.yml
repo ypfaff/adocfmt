@@ -19,28 +19,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # A pull request scans the plugin's Java only when it changes the plugin,
-  # because that scan takes three minutes and blocks the merge until it ends.
-  # Every other event scans everything.
-  changes:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      pull-requests: read
-    outputs:
-      java: ${{ github.event_name != 'pull_request' || steps.filter.outputs.java == 'true' }}
-    steps:
-      - if: github.event_name == 'pull_request'
-        id: filter
-        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        with:
-          filters: |
-            java:
-              - intellij-plugin/**
-              - .github/workflows/codeql.yml
-
   analyze:
-    needs: changes
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -61,20 +40,15 @@ jobs:
           # without one CodeQL still reads every Java file.
           - language: java-kotlin
             build-mode: none
-    env:
-      SCAN: ${{ matrix.language != 'java-kotlin' || needs.changes.outputs.java == 'true' }}
     steps:
-      - if: env.SCAN == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - if: env.SCAN == 'true'
-        uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: github/codeql-action/init@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
           queries: security-extended
 
-      - if: env.SCAN == 'true'
-        uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
+      - uses: github/codeql-action/analyze@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         with:
           category: /language:${{ matrix.language }}
