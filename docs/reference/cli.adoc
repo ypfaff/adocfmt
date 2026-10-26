@@ -12,9 +12,10 @@ This page describes the `adocfmt` command: its flags, which files it reads, its 
 
 [source,shell]
 ----
-adocfmt README.adoc     # prints the formatted file
-adocfmt --write docs    # formats the AsciiDoc files under docs/ in place
-adocfmt --check docs    # lists the files that are not formatted
+adocfmt README.adoc               # prints the formatted file
+adocfmt --write docs              # formats the AsciiDoc files under docs/ in place
+adocfmt --check docs              # lists the files that are not formatted
+adocfmt --check docs README.adoc  # checks several paths in one run
 ----
 
 `adocfmt --help` prints the flags.
@@ -66,6 +67,7 @@ Everything else goes to stderr.
 [#files]
 == Which files are collected
 
+You can name any number of files and directories.
 A file you name on the command line is formatted whatever its extension.
 
 A directory you name is walked, including its subdirectories.
