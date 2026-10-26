@@ -42,6 +42,10 @@ Go code follows https://go.dev/doc/effective_go[Effective Go] and the https://go
 Java code follows the https://google.github.io/styleguide/javaguide.html[Google Java Style Guide].
 https://github.com/google/google-java-format[google-java-format] formats it, through Spotless.
 
+=== TypeScript
+
+https://biomejs.dev[Biome] formats the TypeScript code and the JSON beside it, and lints both with its recommended rules and the settings in link:biome.json[`biome.json`].
+
 === Comments
 
 * Comments explain the why, not the what.

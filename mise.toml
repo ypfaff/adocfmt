@@ -1,5 +1,6 @@
 [tools]
 "github:ypfaff/adocfmt" = "0.8.0"
+biome = "2.5.15"
 # The same as the toolchain line in go.mod; see the go rule in
 # .github/renovate.json5.
 go = "1.27.3"

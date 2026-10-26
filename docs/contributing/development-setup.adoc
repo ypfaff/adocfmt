@@ -74,6 +74,13 @@ Check the formatting of the Java code; `spotlessApply` instead of `spotlessCheck
 intellij-plugin/gradlew --project-dir intellij-plugin spotlessCheck
 ----
 
+Check the formatting of the TypeScript code and its JSON and lint them; `biome check --write` fixes what it can:
+
+[source,shell]
+----
+biome ci
+----
+
 Lint the shell scripts:
 
 [source,shell]

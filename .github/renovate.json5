@@ -75,6 +75,12 @@
       minimumReleaseAge: '30 minutes',
     },
     {
+      // Biome tags its releases as @biomejs/biome@<version>, which Renovate
+      // reads as no version at all.
+      matchDepNames: ['biome'],
+      extractVersion: '^@biomejs/biome@(?<version>.+)$',
+    },
+    {
       // One PR moves the toolchain line in go.mod and the Go in mise.toml
       matchDepNames: ['go'],
       groupName: 'go',

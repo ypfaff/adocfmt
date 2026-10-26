@@ -44,7 +44,7 @@ test("rejects with an AbortError once the signal is aborted", async () => {
 
 test("formats a document of several MB with multi-byte characters", async () => {
   const body = "Grüße aus Köln, 東京 und Αθήνα.\n".repeat(150_000);
-  const outcome = await format(binary, "## Größe\n\n" + body);
+  const outcome = await format(binary, `## Größe\n\n${body}`);
   assert.ok(outcome.kind === "formatted");
-  assert.ok(outcome.text === "== Größe\n\n" + body);
+  assert.ok(outcome.text === `== Größe\n\n${body}`);
 });

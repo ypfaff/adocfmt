@@ -17,6 +17,10 @@ pre-commit:
       glob: "intellij-plugin/**/*.java"
       run: intellij-plugin/gradlew --project-dir intellij-plugin --quiet spotlessCheck
 
+    - name: biome
+      glob: "vscode-extension/*.{ts,json}"
+      run: biome check --no-errors-on-unmatched {staged_files}
+
     - name: actionlint
       glob: ".github/workflows/*.yml"
       run: go tool -modfile=tools/actionlint/go.mod actionlint

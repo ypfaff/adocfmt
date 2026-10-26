@@ -2,7 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as vscode from "vscode";
 import { bundledBinary, format } from "./adocfmt";
-import { Finding, Outcome } from "./outcome";
+import type { Finding, Outcome } from "./outcome";
 
 export function activate(context: vscode.ExtensionContext): void {
   const findings = vscode.languages.createDiagnosticCollection("adocfmt");

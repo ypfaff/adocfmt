@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import * as path from "node:path";
-import { Outcome, outcomeOf } from "./outcome";
+import { type Outcome, outcomeOf } from "./outcome";
 
 /** The binary that the extension carries in its bin directory. */
 export function bundledBinary(extensionDirectory: string): string {
