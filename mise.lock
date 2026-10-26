@@ -3,26 +3,26 @@
 lockfile_version = 3
 
 [[tools."github:ypfaff/adocfmt"]]
-version = "0.7.0"
+version = "0.8.0"
 backend = "github:ypfaff/adocfmt"
-specifiers = ["0.7.0"]
+specifiers = ["0.8.0"]
 
 [tools."github:ypfaff/adocfmt"."platforms.linux-arm64"]
-checksum = "sha256:215399143769ff3f48a80f3f7beb70f56cd4d6cde8e2385e62d2689d595e5333"
-url = "https://github.com/ypfaff/adocfmt/releases/download/v0.7.0/adocfmt_0.7.0_linux_arm64.tar.gz"
-url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/676355230"
+checksum = "sha256:7ed1ac47d73927f9e267c556516ca2bb2986fee57297c8c9645d585a2fedf514"
+url = "https://github.com/ypfaff/adocfmt/releases/download/v0.8.0/adocfmt_0.8.0_linux_arm64.tar.gz"
+url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/679442510"
 provenance = "github-attestations"
 
 [tools."github:ypfaff/adocfmt"."platforms.linux-x64"]
-checksum = "sha256:99c2c5350de20b0ffea301b29661bcd5b3ad1a9163bc29122b548fc63933a6a7"
-url = "https://github.com/ypfaff/adocfmt/releases/download/v0.7.0/adocfmt_0.7.0_linux_amd64.tar.gz"
-url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/676355228"
+checksum = "sha256:9658af3e4ef6486e4b9a464f00bbf2c1a24e24c5e89c404efa0f4d1b126143ec"
+url = "https://github.com/ypfaff/adocfmt/releases/download/v0.8.0/adocfmt_0.8.0_linux_amd64.tar.gz"
+url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/679442516"
 provenance = "github-attestations"
 
 [tools."github:ypfaff/adocfmt"."platforms.macos-arm64"]
-checksum = "sha256:13eef0d3d5cbb7bde453b8746a0e943648488d615b23edea60be844467f6d5a4"
-url = "https://github.com/ypfaff/adocfmt/releases/download/v0.7.0/adocfmt_0.7.0_darwin_arm64.tar.gz"
-url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/676355229"
+checksum = "sha256:b275263f4239c44b371fe02354f9deb8a881bc22e25de8c11e6ac41e8d298ac6"
+url = "https://github.com/ypfaff/adocfmt/releases/download/v0.8.0/adocfmt_0.8.0_darwin_arm64.tar.gz"
+url_api = "https://api.github.com/repos/ypfaff/adocfmt/releases/assets/679442561"
 provenance = "github-attestations"
 
 [[tools.go]]
