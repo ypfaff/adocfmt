@@ -15,8 +15,9 @@ Further pages for contributors:
 == Conventions
 
 * English by default.
-* https://www.conventionalcommits.org/[Conventional Commits], PR titles included.
+* https://www.conventionalcommits.org/[Conventional Commits], PR titles included; link:tools/check-commit-message/main.go[`check-commit-message`] checks them.
 * One logical change per commit, so history stays reviewable and revertable.
+* Write the PR description like a commit body: the maintainer squashes a PR whose commits form one logical change into its title and description, and rebases all others.
 * Work on feature branches, never commit to the default branch.
 * No emojis in commits, code, or comments.
 
