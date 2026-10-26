@@ -66,8 +66,14 @@ public final class AdocfmtFormattingService extends AsyncDocumentFormattingServi
     return EnumSet.of(Feature.FORMAT_FRAGMENTS);
   }
 
+  // A paste with "Reformat block" and some quick fixes may change only
+  // whitespace. adocfmt changes more than that, so it leaves the document as it
+  // is.
   @Override
   protected @Nullable FormattingTask createFormattingTask(@NotNull AsyncFormattingRequest request) {
+    if (request.canChangeWhitespaceOnly()) {
+      return null;
+    }
     return new Run(request, request.getContext().getContainingFile().getName());
   }
 

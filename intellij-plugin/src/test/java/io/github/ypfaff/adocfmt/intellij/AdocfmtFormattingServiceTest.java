@@ -43,6 +43,16 @@ public class AdocfmtFormattingServiceTest extends BasePlatformTestCase {
     myFixture.checkResult(FORMATTED);
   }
 
+  public void testLeavesTheFileWhenOnlyWhitespaceMayChange() {
+    PsiFile file = myFixture.configureByText("test.adoc", UNFORMATTED);
+    WriteCommandAction.runWriteCommandAction(
+        getProject(),
+        () -> {
+          CodeStyleManager.getInstance(getProject()).reformat(file, true);
+        });
+    myFixture.checkResult(UNFORMATTED);
+  }
+
   public void testReportsTheFindingsOfARefusal() {
     myFixture.configureByText("test.adoc", REFUSED);
     String errors = reformatCapturingErrors();
