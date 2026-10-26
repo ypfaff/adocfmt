@@ -28,7 +28,7 @@ mise run setup
 go build ./...
 ----
 
-Build the IntelliJ plugin and check it against IntelliJ IDEA 2024.3 and the latest release:
+Build the IntelliJ plugin and check it against IntelliJ IDEA 2026.2 and the latest release:
 
 [source,shell]
 ----

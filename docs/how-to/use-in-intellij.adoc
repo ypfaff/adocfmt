@@ -5,7 +5,7 @@ linkTitle: Use in IntelliJ IDEA
 ---
 = Use adocfmt in IntelliJ IDEA
 
-The adocfmt plugin makes *Reformat Code* format AsciiDoc files with adocfmt, in IntelliJ IDEA and the other JetBrains IDEs from version 2024.3 on.
+The adocfmt plugin makes *Reformat Code* format AsciiDoc files with adocfmt, in IntelliJ IDEA and the other JetBrains IDEs from version 2026.2 on.
 It brings its own adocfmt binary, so there is nothing else to install.
 The AsciiDoc plugin can stay: it keeps the preview and the highlighting, and adocfmt takes over the formatting.
 
