@@ -69,6 +69,32 @@ jobs:
       - name: Check the formatting of the documentation
         run: mise run check-docs
 
+  commit-messages:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+        with:
+          version: 2026.10.15
+
+      # The checkout is GitHub's merge of the pull request into its base
+      # branch, so its first parent is the base and its second the pull
+      # request. Merge commits never land on main, whose history is linear.
+      - name: Check the commit messages
+        run: |
+          failed=0
+          commits="$(git rev-list --no-merges --reverse HEAD^1..HEAD^2)"
+          for commit in ${commits}; do
+            echo "Checking $(git log -1 --format='%h %s' "${commit}")"
+            git log -1 --format=%B "${commit}" | go run ./tools/check-commit-message || failed=1
+          done
+          exit "${failed}"
+
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -185,7 +211,7 @@ jobs:
   # only an entry in needs.
   ci-status:
     if: always()
-    needs: [lint, adocfmt, test, changes, intellij-plugin, release-tools]
+    needs: [lint, adocfmt, commit-messages, test, changes, intellij-plugin, release-tools]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
