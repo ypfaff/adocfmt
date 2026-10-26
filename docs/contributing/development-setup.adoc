@@ -37,6 +37,16 @@ intellij-plugin/gradlew --project-dir intellij-plugin build verifyPlugin
 
 The first run downloads both IDEs, about 1 GB each.
 
+Build and test the VS Code extension.
+Its tests run the adocfmt binary that `build-adocfmt` builds, so that comes first:
+
+[source,shell]
+----
+npm --prefix vscode-extension ci --ignore-scripts
+npm --prefix vscode-extension run build-adocfmt
+npm --prefix vscode-extension test
+----
+
 [#test]
 == Test
 

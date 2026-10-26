@@ -56,6 +56,9 @@ jobs:
       - name: Lint the workflows
         run: go tool -modfile=tools/actionlint/go.mod actionlint
 
+      - name: Lint the TypeScript
+        run: biome ci
+
   adocfmt:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -118,8 +121,8 @@ jobs:
       - name: Test
         run: go test ./...
 
-  # A pull request runs the plugin job only when it changes what that job
-  # checks; every other event runs it in full.
+  # A pull request runs the plugin and extension jobs only when it changes what
+  # they check; every other event runs them in full.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -127,13 +130,14 @@ jobs:
       pull-requests: read
     outputs:
       plugin: ${{ github.event_name != 'pull_request' || steps.filter.outputs.plugin == 'true' }}
+      extension: ${{ github.event_name != 'pull_request' || steps.filter.outputs.extension == 'true' }}
       binary: ${{ github.event_name != 'pull_request' || steps.filter.outputs.binary == 'true' }}
     steps:
-      # What the plugin job reads: its own directory, what go build
-      # ./cmd/adocfmt needs, the license files it bundles, and the JDK that
-      # mise.toml pins. A path missing here shows up in the run on main, which
-      # checks everything. A change to this workflow counts as a plugin change,
-      # so it runs every step.
+      # What the plugin and extension jobs read: their own directories, what go
+      # build ./cmd/adocfmt needs, the license files the plugin bundles, and the
+      # JDK and Node that mise.toml pins. A path missing here shows up in the run
+      # on main, which checks everything. A change to this workflow counts as a
+      # change to both, so each runs in full.
       - if: github.event_name == 'pull_request'
         id: filter
         uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
@@ -141,6 +145,9 @@ jobs:
           filters: |
             plugin:
               - intellij-plugin/**
+              - .github/workflows/ci.yml
+            extension:
+              - vscode-extension/**
               - .github/workflows/ci.yml
             binary:
               - cmd/**
@@ -184,6 +191,33 @@ jobs:
         if: needs.changes.outputs.plugin == 'true'
         run: ./gradlew verifyPlugin
 
+  # No setup-go: the Go that mise installs builds adocfmt in seconds, and the
+  # Go cache that this short job would save first lacks what the Go jobs build.
+  vscode-extension:
+    needs: changes
+    if: needs.changes.outputs.extension == 'true' || needs.changes.outputs.binary == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: vscode-extension
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
+        with:
+          version: 2026.10.15
+
+      # No dependency needs an install script, so none runs.
+      - name: Install the dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Build adocfmt
+        run: npm run build-adocfmt
+
+      - name: Build and test
+        run: npm test
+
   # goreleaser and govulncheck run only in the release and the weekly scan, so
   # an update that breaks either would pass every other check here.
   release-tools:
@@ -211,7 +245,7 @@ jobs:
   # only an entry in needs.
   ci-status:
     if: always()
-    needs: [lint, adocfmt, commit-messages, test, changes, intellij-plugin, release-tools]
+    needs: [lint, adocfmt, commit-messages, test, changes, intellij-plugin, vscode-extension, release-tools]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
