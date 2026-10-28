@@ -125,8 +125,6 @@ type NodeBase struct {
 	Frozen bool
 }
 
-func (b *NodeBase) node() {}
-
 // Base implements Node.
 func (b *NodeBase) Base() *NodeBase { return b }
 
@@ -137,6 +135,8 @@ func (b *NodeBase) Extent() Span {
 	}
 	return Span{b.Gap.Span.Start, b.Lines.End}
 }
+
+func (b *NodeBase) node() {}
 
 // Header is the document header: the level 0 title, in one-line or two-line
 // form, with the author, revision and attribute lines that follow it without a
