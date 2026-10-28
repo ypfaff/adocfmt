@@ -22,6 +22,8 @@ func styledDiscrete(src []byte, meta []tree.Meta) bool {
 
 // verbatimStyles are the block styles that turn prose into content no rule may
 // reflow. An attribute line above a paragraph is enough to switch it.
+//
+//nolint:goconst // style names, as Asciidoctor lists them
 var verbatimStyles = map[string]bool{
 	"source": true, "listing": true, "literal": true, "verse": true,
 	"pass": true, "stem": true, "latexmath": true, "asciimath": true,
