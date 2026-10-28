@@ -86,6 +86,7 @@ linters:
     - depguard
     - dupl
     - dupword
+    - embeddedstructfieldcheck
     - gochecknoinits
     - gocritic
     - godoclint
@@ -123,6 +124,9 @@ linters:
               desc: use github.com/gofrs/uuid/v5 or later
     dupword:
       comments-only: true
+    embeddedstructfieldcheck:
+      empty-line: true  # the default, stated because the schema claims false
+      forbid-mutex: true
     funlen:
       lines: -1  # golines wraps long lines, so count statements only
     gocritic:
