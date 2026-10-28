@@ -61,6 +61,8 @@ func byCase(byCause map[string][]string) map[string]string {
 }
 
 func TestFormatIsRenderEquivalent(t *testing.T) {
+	t.Parallel()
+
 	if testing.Short() {
 		t.Skip("renders every document with Asciidoctor")
 	}

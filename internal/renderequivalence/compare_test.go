@@ -42,6 +42,8 @@ func TestComments(t *testing.T) {
 // reports anything would pass them too. This test breaks the output on purpose,
 // such as by dropping a comment, and asserts that the matching check reports it.
 func TestChecksCatchCorruption(t *testing.T) {
+	t.Parallel()
+
 	const src = "= Title\nAnna Muster\n\n// a comment\nSome prose.\n\n----\nkeep   these   spaces\n----\n"
 
 	tests := []struct {

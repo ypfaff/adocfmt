@@ -16,6 +16,8 @@ import (
 const goldenDir = "../../" + golden.Dir
 
 func TestGoldenCases(t *testing.T) {
+	t.Parallel()
+
 	for _, dir := range goldenCases(t) {
 		t.Run(caseName(dir), func(t *testing.T) {
 			t.Parallel()
@@ -81,6 +83,8 @@ func quoteLine(lines []string, at int) string {
 }
 
 func TestFirstDifferingLine(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		want string
