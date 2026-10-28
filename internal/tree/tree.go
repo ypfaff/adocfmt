@@ -148,6 +148,7 @@ func (b *NodeBase) Extent() Span {
 // which turns on compat-mode and therefore may not be collapsed.
 type Header struct {
 	NodeBase
+
 	Title      Span
 	TitleLines Span
 	TwoLine    bool
@@ -157,6 +158,7 @@ type Header struct {
 // reads a Markdown heading as a section title too.
 type Heading struct {
 	NodeBase
+
 	Marker byte
 	Level  int
 	Title  Span
@@ -166,6 +168,7 @@ type Heading struct {
 // reads the underline as a delimiter, and so does the parser.
 type Setext struct {
 	NodeBase
+
 	Level int
 	Title Span
 }
@@ -188,6 +191,7 @@ type Literal struct{ NodeBase }
 // with a style only an extension knows.
 type Verbatim struct {
 	NodeBase
+
 	Delim Delimiter
 }
 
@@ -195,6 +199,7 @@ type Verbatim struct {
 // quote and open blocks.
 type Container struct {
 	NodeBase
+
 	Delim    Delimiter
 	Children []Node
 	Tail     Gap
@@ -203,6 +208,7 @@ type Container struct {
 // Table stays opaque until a rule needs its cells.
 type Table struct {
 	NodeBase
+
 	Delim Delimiter
 }
 
@@ -220,6 +226,7 @@ type Table struct {
 // terms.
 type List struct {
 	NodeBase
+
 	Marker      string
 	Open        []string
 	Section     bool
@@ -237,6 +244,7 @@ type List struct {
 // Empty, it marks a term standing without text.
 type ListItem struct {
 	NodeBase
+
 	Marker    Span
 	Principal Span
 	Text      Span
