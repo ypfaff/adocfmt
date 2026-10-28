@@ -283,7 +283,7 @@ type Finding struct {
 	Message string
 }
 
-func (f Finding) Error() string { return fmt.Sprintf("line %d: %s", f.Line, f.Message) }
+func (f Finding) String() string { return fmt.Sprintf("line %d: %s", f.Line, f.Message) }
 
 // LineEnding is what ends a line. block.Terminator answers the same question
 // for one line, and may answer that it ends without one; a document always has
