@@ -13,6 +13,19 @@ import (
 // ignoredSrc would change if adocfmt formatted it.
 const ignoredSrc = "// adocfmt: ignore-file\nText.   \n\n\n== Section ==\n"
 
+// checkStream fails the test unless the stream holds want. An empty want asks
+// for an empty stream, since every stream holds the empty string.
+func checkStream(t *testing.T, name, got, want string) {
+	t.Helper()
+
+	switch {
+	case want == "" && got != "":
+		t.Errorf("%s is %q, want nothing", name, got)
+	case !strings.Contains(got, want):
+		t.Errorf("%s is %q, want it to hold %q", name, got, want)
+	}
+}
+
 func TestRun(t *testing.T) {
 	t.Parallel()
 
@@ -224,23 +237,11 @@ func TestRun(t *testing.T) {
 			if code != test.code {
 				t.Errorf("got exit %d, want %d (stderr: %s)", code, test.code, &stderr)
 			}
-			// An empty expectation means the stream stays empty, which is how a
-			// run that answers on one stream says it produced nothing on the other.
-			pin := func(name string, got *bytes.Buffer, want string) {
-				t.Helper()
+			checkStream(t, "stdout", stdout.String(), test.stdout)
+			checkStream(t, "stderr", stderr.String(), test.stderr)
 
-				switch {
-				case want == "" && got.Len() > 0:
-					t.Errorf("%s is %q, want nothing", name, got)
-				case !strings.Contains(got.String(), want):
-					t.Errorf("%s is %q, want it to hold %q", name, got, want)
-				}
-			}
-			pin("stdout", &stdout, test.stdout)
-			pin("stderr", &stderr, test.stderr)
-
-			// A run with nothing to complain about complains nowhere, which is
-			// what lets an editor read stdout back into a buffer.
+			// A clean run stays off stderr, so that an editor can read stdout back
+			// into a buffer.
 			if code == exitOK && stderr.Len() > 0 {
 				t.Errorf("a clean run wrote to stderr: %s", &stderr)
 			}
