@@ -3,6 +3,7 @@
 package repo
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -12,8 +13,8 @@ import (
 )
 
 // Root returns the directory holding this module's go.mod.
-func Root() (string, error) {
-	out, err := exec.Command("go", "env", "GOMOD").Output()
+func Root(ctx context.Context) (string, error) {
+	out, err := exec.CommandContext(ctx, "go", "env", "GOMOD").Output()
 	if err != nil {
 		return "", fmt.Errorf("locating the module: %w", err)
 	}

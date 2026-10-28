@@ -26,7 +26,7 @@ type Document struct {
 func Documents(tb testing.TB) []Document {
 	tb.Helper()
 
-	root, err := repo.Root()
+	root, err := repo.Root(tb.Context())
 	if err != nil {
 		tb.Fatal(err)
 	}

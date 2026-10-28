@@ -9,6 +9,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -23,13 +24,13 @@ import (
 func main() {
 	log.SetFlags(0)
 
-	if err := run(); err != nil {
+	if err := run(context.Background()); err != nil {
 		log.Fatalln("error:", err)
 	}
 }
 
-func run() error {
-	root, err := repo.Root()
+func run(ctx context.Context) error {
+	root, err := repo.Root(ctx)
 	if err != nil {
 		return err
 	}

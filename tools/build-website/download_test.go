@@ -27,7 +27,7 @@ func TestDownload(t *testing.T) {
 	cacheDir := t.TempDir()
 
 	for range 2 {
-		got, err := download(cacheDir, server.URL+"/file", integrity)
+		got, err := download(t.Context(), cacheDir, server.URL+"/file", integrity)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -40,10 +40,10 @@ func TestDownload(t *testing.T) {
 	}
 
 	wrong := "sha512-" + base64.StdEncoding.EncodeToString(make([]byte, sha512.Size))
-	if _, err := download(t.TempDir(), server.URL+"/file", wrong); err == nil {
+	if _, err := download(t.Context(), t.TempDir(), server.URL+"/file", wrong); err == nil {
 		t.Error("a file that does not match its integrity was accepted")
 	}
-	if _, err := download(t.TempDir(), server.URL+"/file", "sha1-AAAA"); err == nil {
+	if _, err := download(t.Context(), t.TempDir(), server.URL+"/file", "sha1-AAAA"); err == nil {
 		t.Error("an integrity that is not SHA-512 was accepted")
 	}
 }

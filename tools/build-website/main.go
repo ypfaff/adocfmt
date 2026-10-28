@@ -10,6 +10,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -37,13 +38,13 @@ func main() {
 	serve := flag.Bool("serve", false, "serve the site after building it")
 	flag.Parse()
 
-	if err := run(*serve); err != nil {
+	if err := run(context.Background(), *serve); err != nil {
 		log.Fatalln("error:", err)
 	}
 }
 
-func run(serve bool) error {
-	root, err := repo.Root()
+func run(ctx context.Context, serve bool) error {
+	root, err := repo.Root(ctx)
 	if err != nil {
 		return err
 	}
@@ -86,20 +87,20 @@ func run(serve bool) error {
 	if serve {
 		args = append(args, "--baseURL", fmt.Sprintf("http://%s/%s/", address, basePath))
 	}
-	if err := runIn(root, "go", args...); err != nil {
+	if err := runIn(ctx, root, "go", args...); err != nil {
 		return fmt.Errorf("building with Hugo: %w", err)
 	}
-	if err := vendor(cacheDir, packages, site); err != nil {
+	if err := vendor(ctx, cacheDir, packages, site); err != nil {
 		return err
 	}
 
 	// Pagefind indexes the built pages and writes its search bundle next to
 	// them. It reads pagefind.yml from the website directory.
-	pagefindBin, err := pagefind(cacheDir, packages)
+	pagefindBin, err := pagefind(ctx, cacheDir, packages)
 	if err != nil {
 		return err
 	}
-	if err := runIn(filepath.Join(root, siteDir), pagefindBin, "--site", site); err != nil {
+	if err := runIn(ctx, filepath.Join(root, siteDir), pagefindBin, "--site", site); err != nil {
 		return fmt.Errorf("indexing with Pagefind: %w", err)
 	}
 
@@ -111,8 +112,8 @@ func run(serve bool) error {
 	return http.ListenAndServe(address, http.FileServer(http.Dir(out)))
 }
 
-func runIn(dir, name string, args ...string) error {
-	cmd := exec.Command(name, args...)
+func runIn(ctx context.Context, dir, name string, args ...string) error {
+	cmd := exec.CommandContext(ctx, name, args...)
 	cmd.Dir = dir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
