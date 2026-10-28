@@ -14,6 +14,8 @@ import (
 // cases those are is pinned in internal/renderequivalence, so one that newly
 // refuses fails there instead of quietly dropping out of this test.
 func TestFormatIsIdempotent(t *testing.T) {
+	t.Parallel()
+
 	for _, doc := range testdocs.Documents(t) {
 		t.Run(doc.Name, func(t *testing.T) {
 			t.Parallel()
@@ -46,6 +48,8 @@ func checkSecondRun(t *testing.T, once []byte) {
 // tabs: \v, \f or NUL. The printer has to read the line as Asciidoctor does,
 // or the first run writes what the second strips.
 func TestSecondRunAfterRubyWhitespace(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string

@@ -14,6 +14,8 @@ import (
 const ignoredSrc = "// adocfmt: ignore-file\nText.   \n\n\n== Section ==\n"
 
 func TestRun(t *testing.T) {
+	t.Parallel()
+
 	dir := t.TempDir()
 	write := func(name, content string) string {
 		t.Helper()

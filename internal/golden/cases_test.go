@@ -8,6 +8,8 @@ import (
 )
 
 func TestCases(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		files []string

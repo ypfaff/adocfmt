@@ -13,6 +13,8 @@ import (
 // checks cannot stand in for this, because they collapse the whitespace a lost
 // blank line would show up in.
 func TestPrintIsIdentity(t *testing.T) {
+	t.Parallel()
+
 	for _, doc := range testdocs.Documents(t) {
 		t.Run(doc.Name, func(t *testing.T) {
 			t.Parallel()

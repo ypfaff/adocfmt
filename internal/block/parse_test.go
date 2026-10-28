@@ -9,6 +9,8 @@ import (
 )
 
 func TestParse(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -2051,6 +2053,8 @@ Heading "= Title\n" title "Title"`,
 }
 
 func TestParseReports(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -2211,6 +2215,8 @@ func TestParseReports(t *testing.T) {
 
 // TestParseRejects covers what the parser must not repair silently.
 func TestParseRejects(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -2233,6 +2239,8 @@ func TestParseRejects(t *testing.T) {
 
 // TestParseLineEnding covers the answer a rule writing a line of its own reads.
 func TestParseLineEnding(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -2262,6 +2270,8 @@ func TestParseLineEnding(t *testing.T) {
 // the printer whether a term stands without text. Behind the marker it ends
 // where Asciidoctor's rstrip ends a line, so a form feed or NUL there is none.
 func TestItemText(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name string
 		src  string
@@ -2298,6 +2308,8 @@ func TestItemText(t *testing.T) {
 
 // TestReadsAs pins what a rewrite of a node's lines must not turn them into.
 func TestReadsAs(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name  string
 		node  tree.Node
