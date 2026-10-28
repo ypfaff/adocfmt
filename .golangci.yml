@@ -73,6 +73,7 @@ linters:
     - exptostd
     - mirror
     - modernize
+    - perfsprint
     - predeclared
     - unconvert
     - unparam
@@ -132,6 +133,8 @@ linters:
     nolintlint:
       require-explanation: true
       require-specific: true
+    perfsprint:
+      strconcat: false  # concatenation reads worse than a format string
     revive:
       rules:
         - name: blank-imports
