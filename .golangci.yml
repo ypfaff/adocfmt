@@ -132,6 +132,8 @@ linters:
     embeddedstructfieldcheck:
       empty-line: true  # the default, stated because the schema claims false
       forbid-mutex: true
+    errcheck:
+      check-type-assertions: true
     exhaustive:
       check:
         - switch
