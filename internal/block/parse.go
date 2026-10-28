@@ -173,14 +173,14 @@ type readOpts struct {
 	// list_type: the block belongs to an item of that list.
 	lists []string
 	// textOnly is text_only: the first block of a list item is read as text
-	// only, see body.
+	// only, see textOnlyShape.
 	textOnly bool
 	// breakAtList is break_at_list, which node works out for the block it
 	// reads: a paragraph ends at any item line, see endsProse.
 	breakAtList bool
 	// carried holds for the blocks a + attaches to an item. Asciidoctor reads
 	// that + as a blank line it skips, see skips, and a further + right under
-	// it as text, see body.
+	// it as text, see continuation.
 	carried bool
 	// preWrap holds inside a delimited block or a list with the pre-wrap role,
 	// which the browser hands down to every paragraph in it, see
@@ -499,76 +499,90 @@ func metaKind(sh shape) (tree.MetaKind, bool) {
 	}
 }
 
-// body reads the block itself. Section titles exist at section level only:
-// inside a delimited block or a list item, Asciidoctor reads a title line as
-// prose and a would-be underline as the delimiter it looks like. Only a
-// discrete style makes a heading out of the line anywhere.
-//
-// A level 0 title in either form is the document header while nothing but the
-// blocks precedesTitle names came before it, and no block title stands above
-// it, see titled.
-//
-// In a block read as text only, see readOpts.textOnly, Asciidoctor looks for no
-// break, no block macro and no attribute entry: such a line is text, unless it
-// reads as an item, since Asciidoctor still looks for a list. Nor does it look
-// for a Markdown quote, a quoted paragraph, an admonition label or a literal
-// paragraph, which the parser still reads as Opaque, Admonition or Literal;
-// that only costs formatting.
+// body reads the block itself.
 func (p *parser) body(b tree.NodeBase, opts readOpts) tree.Node {
 	sh := p.shape()
-	if opts.textOnly && (sh.kind == shapeBreak || sh.kind == shapeMacro || sh.kind == shapeAttrEntry) {
-		sh.kind = shapeText
-		if item, ok := listShape(p.text(p.lines[p.at]), p.lines[p.at].text.Start); ok {
-			sh = item
-		}
+	if opts.textOnly {
+		sh = p.textOnlyShape(sh)
 	}
 	atStart := p.atStart && !titled(p.src, b.Meta)
 	p.atStart = atStart && precedesTitle(sh)
-
-	sectionLevel := p.atSectionLevel()
-	if sectionLevel && startsTitle(sh.kind) {
-		if underline, level, ok := p.setextUnderline(); ok {
-			if atStart && level == 0 {
-				return p.header(b, p.lines[p.at].text, underline)
-			}
-			return p.setext(b, level, underline)
-		}
+	if title, ok := p.sectionTitle(b, sh, atStart); ok {
+		return title
 	}
 	switch sh.kind {
 	case shapeDelimiter:
 		return p.delimited(b, sh, opts)
-	case shapeHeading:
-		if atStart && sh.level == 0 {
-			return p.header(b, sh.span, p.at)
-		}
-		if sectionLevel || styledDiscrete(p.src, b.Meta) {
-			b.Lines = p.take()
-			return &tree.Heading{NodeBase: b, Marker: sh.char, Level: sh.level, Title: sh.span}
-		}
-		return p.contentBlock(b, sh, opts)
 	case shapeAttrEntry:
 		return p.attribute(b)
 	case shapeDirective:
 		return p.directive(b, sh)
 	case shapeContinuation:
-		// A + carries the block under it only inside a list, and only where no
-		// other + carries it already. Under metadata, one that carries is part
-		// of the gap, see metaGap. One that reaches here is a line like any
-		// other outside a list, which contentBlock reads: text, or code under a
-		// verbatim style. Inside a list a strict verbatim style makes it code
-		// too; otherwise it is read as it stands, frozen.
-		if !opts.inList() || strictVerbatimStyles[styleOf(p.src, b.Meta)] {
-			return p.contentBlock(b, sh, opts)
-		}
-		if (opts.carried && b.Gap.Span.Empty()) || len(b.Meta) > 0 {
-			return p.plusText(b, opts, endsCarriedPlus)
-		}
-		b.Gap.Stage = tree.Exact
-		b.Lines = p.take()
-		return &tree.Continuation{NodeBase: b}
+		return p.continuation(b, sh, opts)
 	default:
 		return p.contentBlock(b, sh, opts)
 	}
+}
+
+// textOnlyShape is how a line reads in a block read as text only. Asciidoctor
+// then looks for no break, no block macro and no attribute entry, but still for
+// a list. Nor does it look for a Markdown quote, a quoted paragraph, an
+// admonition label or a literal paragraph, which the parser still reads as
+// Opaque, Admonition or Literal; that only costs formatting.
+func (p *parser) textOnlyShape(sh shape) shape {
+	switch sh.kind {
+	case shapeBreak, shapeMacro, shapeAttrEntry:
+		if item, ok := listShape(p.text(p.lines[p.at]), p.lines[p.at].text.Start); ok {
+			return item
+		}
+		sh.kind = shapeText
+		return sh
+	default:
+		return sh
+	}
+}
+
+// sectionTitle reads a section title in either form, or the document header.
+// Section titles exist at section level only: elsewhere Asciidoctor reads a
+// title line as prose and a would-be underline as the delimiter it looks like.
+// Only a discrete style makes a heading out of the line anywhere.
+func (p *parser) sectionTitle(b tree.NodeBase, sh shape, atStart bool) (tree.Node, bool) {
+	sectionLevel := p.atSectionLevel()
+	if sectionLevel && startsTitle(sh.kind) {
+		if underline, level, ok := p.setextUnderline(); ok {
+			if atStart && level == 0 {
+				return p.header(b, p.lines[p.at].text, underline), true
+			}
+			return p.setext(b, level, underline), true
+		}
+	}
+	if sh.kind != shapeHeading {
+		return nil, false
+	}
+	if atStart && sh.level == 0 {
+		return p.header(b, sh.span, p.at), true
+	}
+	if !sectionLevel && !styledDiscrete(p.src, b.Meta) {
+		return nil, false
+	}
+	b.Lines = p.take()
+	return &tree.Heading{NodeBase: b, Marker: sh.char, Level: sh.level, Title: sh.span}, true
+}
+
+// continuation reads a + line. Asciidoctor lets one carry the block under it
+// only inside a list, and only where no other + carries it already. Under
+// metadata, one that carries is part of the gap, see metaGap.
+func (p *parser) continuation(b tree.NodeBase, sh shape, opts readOpts) tree.Node {
+	if !opts.inList() || strictVerbatimStyles[styleOf(p.src, b.Meta)] {
+		return p.contentBlock(b, sh, opts)
+	}
+	carriedAlready := opts.carried && b.Gap.Span.Empty()
+	if carriedAlready || len(b.Meta) > 0 {
+		return p.plusText(b, opts, endsCarriedPlus)
+	}
+	b.Gap.Stage = tree.Exact
+	b.Lines = p.take()
+	return &tree.Continuation{NodeBase: b}
 }
 
 // contentBlock reads a block whose kind a verbatim style above it overrides:
