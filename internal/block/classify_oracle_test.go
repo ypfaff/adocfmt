@@ -88,7 +88,7 @@ func kindName(sh shape) string {
 	return kindNames[sh.kind]
 }
 
-var kindNames = map[shapeKind]string{
+var kindNames = map[shapeKind]string{ //nolint:exhaustive // oracleLines drops the blank lines
 	shapeText:         "text",
 	shapeHeading:      "heading",
 	shapeDelimiter:    "delimiter",

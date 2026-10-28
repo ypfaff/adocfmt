@@ -36,6 +36,8 @@ func (p *printer) gap(g tree.Gap, prev tree.Node, w where) {
 	switch w {
 	case betweenSiblings:
 		p.blank()
+	case betweenItems:
+		// No blank line, see the doc comment.
 	case betweenTerms:
 		if hasBlocks(prev) {
 			p.blank()

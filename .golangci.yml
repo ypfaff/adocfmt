@@ -40,6 +40,7 @@ linters:
     - errcheck
     - errchkjson
     - errorlint
+    - exhaustive
     - fatcontext
     - gocheckcompilerdirectives
     - gochecksumtype
@@ -129,6 +130,11 @@ linters:
     embeddedstructfieldcheck:
       empty-line: true  # the default, stated because the schema claims false
       forbid-mutex: true
+    exhaustive:
+      check:
+        - switch
+        - mapliteral
+      default-signifies-exhaustive: true
     funlen:
       lines: -1  # golines wraps long lines, so count statements only
     gocritic:
