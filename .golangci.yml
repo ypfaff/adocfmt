@@ -87,6 +87,7 @@ linters:
     - dupl
     - dupword
     - embeddedstructfieldcheck
+    - funcorder
     - gochecknoinits
     - gocritic
     - godoclint
