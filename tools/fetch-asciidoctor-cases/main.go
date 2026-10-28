@@ -37,7 +37,9 @@ func main() {
 	flag.Parse()
 
 	if *printVersion {
-		fmt.Println(asciidoctorcases.Version)
+		if _, err := fmt.Fprintln(os.Stdout, asciidoctorcases.Version); err != nil {
+			log.Fatalln("error:", err)
+		}
 		return
 	}
 

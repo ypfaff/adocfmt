@@ -89,6 +89,7 @@ linters:
     - dupword
     - embeddedstructfieldcheck
     - errname
+    - forbidigo
     - funcorder
     - gochecknoinits
     - goconst
@@ -136,6 +137,10 @@ linters:
         - switch
         - mapliteral
       default-signifies-exhaustive: true
+    forbidigo:
+      forbid:
+        - pattern: ^(fmt\.Print(|f|ln)|print|println)$
+          msg: write to an io.Writer passed in, or use a logger
     funlen:
       lines: -1  # golines wraps long lines, so count statements only
     goconst:

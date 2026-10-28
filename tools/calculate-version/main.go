@@ -64,8 +64,8 @@ func run(ctx context.Context, bump, explicit string) error {
 		return fmt.Errorf("tag v%s exists already", version)
 	}
 
-	fmt.Println(version)
-	return nil
+	_, err = fmt.Fprintln(os.Stdout, version)
+	return err
 }
 
 func latestTag(ctx context.Context) (string, error) {
