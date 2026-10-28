@@ -15,10 +15,9 @@ var notRenderable = map[string]string{
 	"syntax_highlighter/0043-should-honor-cgi-style-options-on-language-if-rouge-version-": "Asciidoctor 2.0.26 calls CGI.parse, which Ruby 4 removed",
 }
 
-// refused names the cases Format turns down, and why. Asciidoctor's suite
-// keeps documents it warns about, and the formatter refuses what Asciidoctor
-// warns about rather than formatting the part it understood. A case that
-// formats after all fails the test, so the list tracks the parser.
+// refused names the cases Format turns down, and why. They are documents
+// Asciidoctor warns about, see decision record 0003. A case that formats
+// after all fails, so the list tracks the parser.
 var refused = byCase(map[string][]string{
 	"a block never closes": {
 		"attributes/0028-should-warn-if-unterminated-block-comment-is-detected-in-doc",
@@ -78,17 +77,7 @@ func TestFormatIsRenderEquivalent(t *testing.T) {
 				t.Skip(reason)
 			}
 
-			formatted, err := format.Format(doc.Src)
-			reason, refused := refused[doc.Name]
-			switch {
-			case refused && err == nil:
-				t.Fatal("formats; remove it from refused")
-			case refused:
-				t.Skipf("%s: %v", reason, err)
-			case err != nil:
-				t.Fatal(err)
-			}
-			findings, err := Differences(doc.Src, formatted)
+			findings, err := Differences(doc.Src, formatOrSkip(t, doc))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -97,4 +86,20 @@ func TestFormatIsRenderEquivalent(t *testing.T) {
 			}
 		})
 	}
+}
+
+func formatOrSkip(t *testing.T, doc testdocs.Document) []byte {
+	t.Helper()
+
+	formatted, err := format.Format(doc.Src)
+	cause, listed := refused[doc.Name]
+	switch {
+	case listed && err == nil:
+		t.Fatal("formats; remove it from refused")
+	case listed:
+		t.Skipf("%s: %v", cause, err)
+	case err != nil:
+		t.Fatal(err)
+	}
+	return formatted
 }
