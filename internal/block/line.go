@@ -230,18 +230,8 @@ func classify(src []byte, l line) shape {
 	if len(body) == 0 {
 		return shape{kind: shapeBlank}
 	}
-	indent := l.text.Start + len(s) - len(body)
-
-	if indent > l.text.Start {
-		// Markdown allows a thematic break to sit up to three spaces in.
-		if spaces := indent - l.text.Start; spaces <= 3 && uniform(s[:spaces], ' ') && isMarkdownBreak(body) {
-			return shape{kind: shapeBreak}
-		}
-		// Asciidoctor reads a callout only at the start of a line.
-		if sh, ok := markerShape(body, indent); ok && sh.marker != calloutMarker {
-			return sh
-		}
-		return shape{kind: shapeIndented}
+	if indent := s[:len(s)-len(body)]; len(indent) > 0 {
+		return indentedShape(indent, body, l.text.Start)
 	}
 	if sh, ok := delimiterShape(s); ok {
 		return sh
@@ -282,6 +272,20 @@ func classify(src []byte, l line) shape {
 		return shape{kind: shapeQuote}
 	}
 	return shape{kind: shapeText}
+}
+
+// indentedShape classifies a line that starts with a space or a tab. Of all
+// shapes, only a list item and a Markdown break may be indented.
+func indentedShape(indent, body []byte, start int) shape {
+	// Markdown allows a thematic break to sit up to three spaces in.
+	if len(indent) <= 3 && uniform(indent, ' ') && isMarkdownBreak(body) {
+		return shape{kind: shapeBreak}
+	}
+	// Asciidoctor reads a callout only at the start of a line.
+	if sh, ok := markerShape(body, start+len(indent)); ok && sh.marker != calloutMarker {
+		return sh
+	}
+	return shape{kind: shapeIndented}
 }
 
 // openBlockWidth is the one width an open block has, and so what tells it apart
