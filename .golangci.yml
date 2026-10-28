@@ -16,5 +16,18 @@ linters:
 
 formatters:
   enable:
-    - gofmt
-    - goimports
+    - gci
+    - gofumpt
+    - golines
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+    gofumpt:
+      extra:
+        group-params: true    # replaces gocritic paramTypeCombine
+        clothe-returns: true  # no naked returns, replaces nakedret
+    golines:
+      max-len: 120

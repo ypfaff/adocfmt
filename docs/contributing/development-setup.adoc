@@ -67,6 +67,13 @@ Lint the Go code:
 golangci-lint run
 ----
 
+Format the Go code:
+
+[source,shell]
+----
+golangci-lint fmt
+----
+
 Check the formatting of the Java code; `spotlessApply` instead of `spotlessCheck` formats it:
 
 [source,shell]
