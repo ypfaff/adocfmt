@@ -91,6 +91,7 @@ linters:
     - errname
     - funcorder
     - gochecknoinits
+    - goconst
     - gocritic
     - godoclint
     - godot
@@ -137,6 +138,8 @@ linters:
       default-signifies-exhaustive: true
     funlen:
       lines: -1  # golines wraps long lines, so count statements only
+    goconst:
+      ignore-tests: true
     gocritic:
       enable-all: true
       disabled-checks:
