@@ -59,12 +59,18 @@ func check(message string) []string {
 func checkSubject(subject string) []string {
 	var problems []string
 	if length := utf8.RuneCountInString(subject); length > maxSubjectLength {
-		problems = append(problems, fmt.Sprintf("the subject has %d characters, more than %d", length, maxSubjectLength))
+		problems = append(
+			problems,
+			fmt.Sprintf("the subject has %d characters, more than %d", length, maxSubjectLength),
+		)
 	}
 
 	match := subjectForm.FindStringSubmatch(subject)
 	if match == nil {
-		return append(problems, fmt.Sprintf("the subject %q is not of the form type(scope)!: description, in lowercase", subject))
+		return append(
+			problems,
+			fmt.Sprintf("the subject %q is not of the form type(scope)!: description, in lowercase", subject),
+		)
 	}
 	kind, description := match[1], match[2]
 	if !slices.Contains(types, kind) {

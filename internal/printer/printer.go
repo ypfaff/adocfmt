@@ -78,7 +78,7 @@ func (p *printer) nodes(nodes []tree.Node, tail tree.Gap, w where) {
 // node emits one node. Its own gap is the one between its last metadata line
 // and the block, so where it has metadata the gap in front of it is the first
 // metadata line's.
-func (p *printer) node(node tree.Node, prev tree.Node, w where) {
+func (p *printer) node(node, prev tree.Node, w where) {
 	meta := node.Base().Meta
 	if len(meta) == 0 {
 		p.gap(node.Base().Gap, prev, w)

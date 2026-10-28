@@ -79,7 +79,8 @@ func ReadsAs(node tree.Node, lines []byte) bool {
 		return false
 	}
 	got := doc.Nodes[0]
-	if got.Base().Frozen || reflect.TypeOf(got) != reflect.TypeOf(node) || got.Base().Lines != (tree.Span{Start: 0, End: len(lines)}) {
+	if got.Base().Frozen || reflect.TypeOf(got) != reflect.TypeOf(node) ||
+		got.Base().Lines != (tree.Span{Start: 0, End: len(lines)}) {
 		return false
 	}
 	for _, line := range Lines(lines)[1:] {
@@ -1112,7 +1113,10 @@ func (p *parser) frontMatter() tree.Node {
 	}
 	p.at++
 	p.freeze = true
-	b := tree.NodeBase{Gap: tree.Gap{Span: tree.Span{Start: start, End: start}}, Lines: tree.Span{Start: start, End: p.pos()}}
+	b := tree.NodeBase{
+		Gap:   tree.Gap{Span: tree.Span{Start: start, End: start}},
+		Lines: tree.Span{Start: start, End: p.pos()},
+	}
 	return &tree.FrontMatter{NodeBase: b}
 }
 
