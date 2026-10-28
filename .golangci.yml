@@ -1,18 +1,13 @@
+# Shared golangci-lint config, tested with golangci-lint v2.15.0 and Go 1.27.
+# Everything above the PROJECT-SPECIFIC marker at the end is identical in all
+# repos: to update, replace that part and keep what is below the marker. Only
+# exclusion rules are project-specific; anything else changes for all repos.
 version: "2"
 
-linters:
-  # standard = errcheck, govet, ineffassign, staticcheck, unused.
-  default: standard
-
-  enable:
-    - errorlint # correct error wrapping (%w, errors.Is)
-    - misspell  # typos in comments and strings
-    - revive    # style and convention checks (successor to golint)
-
-  exclusions:
-    presets:
-      - common-false-positives
-      - std-error-handling
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  uniq-by-line: false
 
 formatters:
   enable:
@@ -31,3 +26,160 @@ formatters:
         clothe-returns: true  # no naked returns, replaces nakedret
     golines:
       max-len: 120
+
+linters:
+  default: none
+  enable:
+    # Bugs and correctness
+    - asasalint
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - contextcheck
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errorlint
+    - fatcontext
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - gosec
+    - govet
+    - ineffassign
+    - makezero
+    - musttag
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - reassign
+    - recvcheck
+    - rowserrcheck
+    - spancheck
+    - sqlclosecheck
+    - staticcheck
+    - unused
+    - wastedassign
+
+    # Library-specific (silent when the library is not used)
+    - loggercheck
+    - promlinter
+    - protogetter
+    - sloglint
+    - testifylint
+    - zerologlint
+
+    # Modern, idiomatic Go
+    - exptostd
+    - mirror
+    - predeclared
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - usetesting
+
+    # Style and consistency
+    - asciicheck
+    - containedctx
+    - depguard
+    - dupl
+    - dupword
+    - gochecknoinits
+    - gomoddirectives
+    - goprintffuncname
+    - iface
+    - inamedparam
+    - iotamixing
+    - misspell
+    - nolintlint
+    - revive
+
+    # Complexity
+    - funlen
+
+    # Tests
+    - testableexamples
+  settings:
+    depguard:
+      rules:
+        replaced:
+          deny:
+            - pkg: math/rand$
+              desc: use math/rand/v2
+            - pkg: github.com/pkg/errors
+              desc: use errors and fmt.Errorf with %w
+            - pkg: github.com/golang/protobuf
+              desc: use google.golang.org/protobuf
+            - pkg: github.com/satori/go.uuid
+              desc: use github.com/google/uuid
+            - pkg: github.com/gofrs/uuid$
+              desc: use github.com/gofrs/uuid/v5 or later
+    dupword:
+      comments-only: true
+    funlen:
+      lines: -1  # golines wraps long lines, so count statements only
+    gosec:
+      excludes:
+        - G104  # duplicate of errcheck
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment
+        - shadow  # flags almost only err redeclarations
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    revive:
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+          arguments:
+            - allowTypesBefore: "*testing.T,testing.TB"
+        - name: datarace
+        - name: deep-exit
+        - name: defer
+        - name: early-return
+          arguments:
+            - preserveScope
+        - name: exported
+        - name: if-return
+        - name: import-alias-naming
+        - name: increment-decrement
+        - name: indent-error-flow
+          arguments:
+            - preserveScope
+        - name: redundant-import-alias
+        - name: superfluous-else
+          arguments:
+            - preserveScope
+        - name: unexported-naming
+        - name: unexported-return
+    sloglint:
+      static-msg: true
+      key-naming-case: snake
+    staticcheck:
+      checks:
+        - all
+        - -ST1020  # duplicate of revive exported
+        - -ST1021  # duplicate of revive exported
+        - -ST1022  # duplicate of revive exported
+    usetesting:
+      context-background: true
+      context-todo: true
+      os-temp-dir: true
+
+  exclusions:
+    presets:
+      - common-false-positives
+      - std-error-handling
+    warn-unused: true
+    rules:
+      - path: _test\.go$
+        linters:
+          - gosec
+        text: G301|G302|G306  # file modes of test fixtures
+
+      # ---- PROJECT-SPECIFIC: everything above is shared across repos ----
+      - path: ^tools/
+        linters:
+          - gosec
+        text: G114|G301|G306|G703  # dev tools, not shipped
