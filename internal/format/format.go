@@ -17,7 +17,7 @@ type Finding = tree.Finding
 //
 // The findings stay apart rather than joined into one message, so a caller can
 // write the path it read in front of each of them.
-type Refusal struct{ Findings []Finding }
+type Refusal struct{ Findings []Finding } //nolint:errname // a term of its own, see decision record 0003
 
 // Error joins the findings, one per line.
 //
@@ -30,7 +30,7 @@ func (r *Refusal) Error() string {
 	}
 	lines := make([]string, len(r.Findings))
 	for at, finding := range r.Findings {
-		lines[at] = finding.Error()
+		lines[at] = finding.String()
 	}
 	return strings.Join(lines, "\n")
 }
