@@ -1,0 +1,4 @@
+# Commits that only reformat, which git blame skips.
+
+# style: format the Go code with gofumpt, gci and golines
+8cda7ef7d3906425bbfb3d574cc1f1968fcb0011

@@ -20,6 +20,7 @@ mise run setup
 ----
 
 `mise run setup` installs the Asciidoctor gem that the tests run with and the Git hooks that link:../../lefthook.yml[`lefthook.yml`] defines.
+It also makes `git blame` skip the commits in link:../../.git-blame-ignore-revs[`.git-blame-ignore-revs`], which only reformat.
 
 == Build
 

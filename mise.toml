@@ -25,6 +25,9 @@ gem install asciidoctor --version "${version}" --no-document
 '''
 
 [tasks.setup]
-description = "Install the Asciidoctor gem and the Git hooks"
+description = "Install the Asciidoctor gem and the Git hooks, and set up git blame"
 depends = ["install-asciidoctor"]
-run = "lefthook install"
+run = [
+  "lefthook install",
+  "git config blame.ignoreRevsFile .git-blame-ignore-revs",
+]
