@@ -152,16 +152,7 @@ func (r *itemReader) step() bool {
 	}
 	// Ruby: if ListContinuationMarker === prev_line
 	if r.prev == prevPlus {
-		if r.continuation == continuationInactive {
-			r.continuation, r.hasText = continuationActive, true
-			// Ruby: buffer[-1] = ListContinuationPlaceholder unless within_nested_list
-			if !r.withinNested {
-				r.placeholders[r.plus] = true
-			}
-		}
-		// Ruby: if ListContinuationMarker === this_line
-		if sh.kind == shapeContinuation {
-			r.adjacentContinuation()
+		if r.afterContinuation(sh) {
 			return true
 		}
 	}
@@ -198,16 +189,28 @@ func (r *itemReader) step() bool {
 	return true
 }
 
-// adjacentContinuation reads a + right under another: the first one freezes
+// afterContinuation reads the line under a +, which activates an inactive
+// continuation. It reports whether the line is a + too: the first such + freezes
 // the continuation and goes into the buffer, any further one is dropped.
-func (r *itemReader) adjacentContinuation() {
-	// Ruby: if continuation != :frozen
-	if r.continuation != continuationFrozen {
-		r.continuation = continuationFrozen
-		r.take()
-		return
+func (r *itemReader) afterContinuation(sh shape) bool {
+	if r.continuation == continuationInactive {
+		r.continuation, r.hasText = continuationActive, true
+		// Ruby: buffer[-1] = ListContinuationPlaceholder unless within_nested_list
+		if !r.withinNested {
+			r.placeholders[r.plus] = true
+		}
 	}
-	r.drop()
+	// Ruby: if ListContinuationMarker === this_line
+	if sh.kind != shapeContinuation {
+		return false
+	}
+	if r.continuation == continuationFrozen {
+		r.drop()
+		return true
+	}
+	r.continuation = continuationFrozen
+	r.take()
+	return true
 }
 
 // takeBlock takes a delimited block whole, down to its closing line.
