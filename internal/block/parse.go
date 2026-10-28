@@ -96,7 +96,7 @@ func ReadsAs(node tree.Node, lines []byte) bool {
 // rule writing the first line ending has to pick one.
 func lineEnding(src []byte) (tree.LineEnding, error) {
 	crlf, lf := 0, 0
-	for at := 0; at < len(src); at++ {
+	for at := range src {
 		switch src[at] {
 		case '\n':
 			if at > 0 && src[at-1] == '\r' {

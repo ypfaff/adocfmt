@@ -41,7 +41,7 @@ func extract(ruby string) []testCase {
 		capturing  bool
 	)
 
-	for _, line := range strings.Split(ruby, "\n") {
+	for line := range strings.SplitSeq(ruby, "\n") {
 		if capturing {
 			if strings.TrimSpace(line) == terminator {
 				capturing = false

@@ -53,8 +53,7 @@ func TestFormatRejects(t *testing.T) {
 		t.Errorf("got error %v, want one about mixed line endings", err)
 	}
 
-	var refusal *Refusal
-	if errors.As(err, &refusal) {
+	if _, ok := errors.AsType[*Refusal](err); ok {
 		t.Errorf("got a *Refusal, want a plain error")
 	}
 }

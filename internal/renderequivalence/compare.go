@@ -55,7 +55,7 @@ func verbatimBlocks(rendered string) []string {
 // when formatting really changed it.
 func comments(src []byte) []string {
 	var found []string
-	for _, line := range strings.Split(string(src), "\n") {
+	for line := range strings.SplitSeq(string(src), "\n") {
 		if content := strings.TrimRight(line, rubySpace); isComment(content) {
 			found = append(found, content)
 		}

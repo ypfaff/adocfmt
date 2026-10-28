@@ -1,6 +1,8 @@
 package printer
 
 import (
+	"slices"
+
 	"github.com/ypfaff/adocfmt/internal/block"
 	"github.com/ypfaff/adocfmt/internal/tree"
 )
@@ -63,7 +65,7 @@ func enclose(around []tree.Delimiter, node tree.Node, delim tree.Delimiter) []tr
 	if rewritable(node, delim) {
 		return around
 	}
-	return append(around[:len(around):len(around)], delim)
+	return append(slices.Clip(around), delim)
 }
 
 // pick records the width the fence is written at, the smallest one neither a
