@@ -843,28 +843,34 @@ func opensAnyList(src []byte, l line) bool {
 }
 
 // descriptionMarker finds the term separator of a description list. The term
-// itself is free text, so the separator is what identifies the list.
+// itself is free text, so the separator is what identifies the list. The term
+// ends at the first separator that fits: a::::: b is the term a: and ::::.
 func descriptionMarker(s []byte) (int, string, bool) {
 	for at := 1; at < len(s); at++ {
-		if s[at] != ':' && s[at] != ';' {
-			continue
-		}
-		run := at
-		for run < len(s) && s[run] == s[at] {
-			run++
-		}
-		width := run - at
-		if s[at] == ';' && width != 2 {
-			continue
-		}
-		if s[at] == ':' && (width < 2 || width > 4) {
-			continue
-		}
-		if run == len(s) || followsSpace(s, run) {
-			return run, string(s[at:run]), true
+		end, ok := termSeparator(s, at)
+		if ok && (end == len(s) || followsSpace(s, end)) {
+			return end, string(s[at:end]), true
 		}
 	}
 	return 0, "", false
+}
+
+// termSeparator returns the end of the run that starts at s[at], and whether
+// that run separates a term.
+func termSeparator(s []byte, at int) (int, bool) {
+	c := s[at]
+	if c != ':' && c != ';' {
+		return 0, false
+	}
+	end := at
+	for end < len(s) && s[end] == c {
+		end++
+	}
+	width := end - at
+	if c == ';' {
+		return end, width == 2
+	}
+	return end, width >= 2 && width <= 4
 }
 
 // followsSpace reports whether a marker of the given width is followed by
