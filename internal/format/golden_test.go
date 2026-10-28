@@ -34,12 +34,12 @@ func TestGoldenCases(t *testing.T) {
 	}
 }
 
-func goldenCases(t testing.TB) []string {
-	t.Helper()
+func goldenCases(tb testing.TB) []string {
+	tb.Helper()
 
 	cases, err := golden.Cases(goldenDir)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return cases
 }
@@ -48,12 +48,12 @@ func caseName(dir string) string {
 	return strings.TrimPrefix(filepath.ToSlash(dir), goldenDir+"/")
 }
 
-func readCase(t testing.TB, dir, name string) []byte {
-	t.Helper()
+func readCase(tb testing.TB, dir, name string) []byte {
+	tb.Helper()
 
 	src, err := os.ReadFile(filepath.Join(dir, name))
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return src
 }

@@ -23,32 +23,32 @@ type Document struct {
 
 // Documents returns every Asciidoctor case, then the input of every golden
 // case, each in path order.
-func Documents(t testing.TB) []Document {
-	t.Helper()
+func Documents(tb testing.TB) []Document {
+	tb.Helper()
 
 	root, err := repo.Root()
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	asciidoctorDir := filepath.Join(root, asciidoctorcases.Dir)
 	asciidoctorFiles, err := asciidoctorcases.Files(asciidoctorDir)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	goldenDir := filepath.Join(root, golden.Dir)
 	goldenCases, err := golden.Cases(goldenDir)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 
 	// An Asciidoctor case is a single file. A golden case is a directory,
 	// and only its input file is read.
 	var docs []Document
 	for _, caseFile := range asciidoctorFiles {
-		docs = append(docs, read(t, name(asciidoctorDir, caseFile), caseFile))
+		docs = append(docs, read(tb, name(asciidoctorDir, caseFile), caseFile))
 	}
 	for _, caseDir := range goldenCases {
-		docs = append(docs, read(t, name(goldenDir, caseDir), filepath.Join(caseDir, golden.InputFile)))
+		docs = append(docs, read(tb, name(goldenDir, caseDir), filepath.Join(caseDir, golden.InputFile)))
 	}
 	return docs
 }
@@ -60,12 +60,12 @@ func name(root, path string) string {
 	return strings.TrimSuffix(rel, ".adoc")
 }
 
-func read(t testing.TB, name, path string) Document {
-	t.Helper()
+func read(tb testing.TB, name, path string) Document {
+	tb.Helper()
 
 	src, err := os.ReadFile(path)
 	if err != nil {
-		t.Fatal(err)
+		tb.Fatal(err)
 	}
 	return Document{Name: name, Src: src}
 }
