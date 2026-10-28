@@ -492,13 +492,10 @@ func isMacroTarget(rest []byte, shortest int) bool {
 
 func isSpaceByte(c byte) bool { return c == ' ' || c == '\t' }
 
-// directiveShape recognizes a preprocessor directive, name::target[text],
-// mirroring Asciidoctor's ConditionalDirectiveRx and IncludeDirectiveRx: the
-// target of a conditional holds no space, and that of an include neither starts
-// nor ends with one. ifdef and ifndef with text in the brackets apply to that
-// text alone and open no region; ifeval carries its expression there and always
-// opens one. What Asciidoctor rejects as malformed is still a directive line,
-// marked bad so the parser reports it.
+// directiveShape recognizes a preprocessor directive, name::target[text], as
+// Asciidoctor's ConditionalDirectiveRx and IncludeDirectiveRx do. What
+// Asciidoctor rejects as malformed is still a directive line, marked bad so the
+// parser reports it.
 func directiveShape(s []byte) (shape, bool) {
 	name, rest, ok := bytes.Cut(s, []byte("::"))
 	if !ok || len(rest) == 0 || rest[len(rest)-1] != ']' {
@@ -523,21 +520,22 @@ func directiveShape(s []byte) (shape, bool) {
 	switch string(name) {
 	case "ifdef", "ifndef":
 		sh.bad = len(target) == 0
-		if !sh.bad && len(text) == 0 {
+		// With text in the brackets, the directive applies to that text alone.
+		if len(text) == 0 {
 			sh.cond = 1
 		}
 	case "ifeval":
 		sh.bad = len(target) > 0 || !isEvalExpression(bytes.Trim(text, rubySpace))
-		if !sh.bad {
-			sh.cond = 1
-		}
+		sh.cond = 1
 	case "endif":
 		sh.bad = len(text) > 0
-		if !sh.bad {
-			sh.cond = -1
-		}
+		sh.cond = -1
 	default:
 		return shape{}, false
+	}
+	// A malformed directive opens or closes no region.
+	if sh.bad {
+		sh.cond = 0
 	}
 	return sh, true
 }
