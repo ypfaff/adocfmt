@@ -107,6 +107,7 @@ linters:
 
     # Complexity
     - funlen
+    - gocognit
 
     # Tests
     - testableexamples
@@ -147,6 +148,8 @@ linters:
       lines: -1  # golines wraps long lines, so count statements only
     goconst:
       ignore-tests: true
+    gocognit:
+      min-complexity: 15
     gocritic:
       enable-all: true
       disabled-checks:
