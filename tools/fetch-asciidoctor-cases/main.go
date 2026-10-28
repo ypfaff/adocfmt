@@ -11,6 +11,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -40,13 +41,13 @@ func main() {
 		return
 	}
 
-	if err := run(); err != nil {
+	if err := run(context.Background()); err != nil {
 		log.Fatalln("error:", err)
 	}
 }
 
-func run() error {
-	root, err := repo.Root()
+func run(ctx context.Context) error {
+	root, err := repo.Root(ctx)
 	if err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func run() error {
 	defer os.RemoveAll(checkout)
 
 	log.Printf("cloning %s at %s", asciidoctorURL, asciidoctorTag)
-	clone := exec.Command("git", "clone", "--quiet", "--depth", "1",
+	clone := exec.CommandContext(ctx, "git", "clone", "--quiet", "--depth", "1",
 		"--config", "advice.detachedHead=false", "--branch", asciidoctorTag, asciidoctorURL, checkout)
 	clone.Stderr = os.Stderr
 	if err := clone.Run(); err != nil {

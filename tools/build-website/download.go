@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
@@ -19,7 +20,7 @@ import (
 // download returns the file at url, which must match integrity, a hash as
 // package-lock.json writes it ("sha512-" and the digest in base64). It keeps a
 // verified copy in cacheDir, so a machine fetches each pinned file only once.
-func download(cacheDir, url, integrity string) ([]byte, error) {
+func download(ctx context.Context, cacheDir, url, integrity string) ([]byte, error) {
 	want, err := sha512Digest(integrity)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", url, err)
@@ -32,7 +33,11 @@ func download(cacheDir, url, integrity string) ([]byte, error) {
 	log.Printf("downloading %s", url)
 	// A stalled connection would otherwise hang the build until CI kills it.
 	client := &http.Client{Timeout: 5 * time.Minute}
-	resp, err := client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

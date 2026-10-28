@@ -3,6 +3,7 @@ package block
 import (
 	"bytes"
 	"cmp"
+	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -45,7 +46,7 @@ func TestClassifyAgreesWithAsciidoctor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want, err := asciidoctorKinds(lines)
+	want, err := asciidoctorKinds(t.Context(), lines)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +150,7 @@ func edits(l string) []string {
 // asciidoctorKinds runs line_kinds.rb over the lines once and returns the
 // kind it prints for each. It fails on an Asciidoctor other than the one the
 // cases are pinned to, so an upgrade reruns the comparison on purpose.
-func asciidoctorKinds(lines []string) ([]string, error) {
+func asciidoctorKinds(ctx context.Context, lines []string) ([]string, error) {
 	var in bytes.Buffer
 	enc := json.NewEncoder(&in)
 	for _, l := range lines {
@@ -157,7 +158,7 @@ func asciidoctorKinds(lines []string) ([]string, error) {
 			return nil, err
 		}
 	}
-	cmd := exec.Command("ruby", "testdata/line_kinds.rb")
+	cmd := exec.CommandContext(ctx, "ruby", "testdata/line_kinds.rb")
 	cmd.Stdin = &in
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr

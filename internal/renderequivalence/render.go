@@ -1,6 +1,7 @@
 package renderequivalence
 
 import (
+	"context"
 	_ "embed"
 	"encoding/json"
 	"errors"
@@ -24,7 +25,8 @@ type renderer struct {
 }
 
 func startAsciidoctor() (*renderer, error) {
-	cmd := exec.Command("ruby", "-e", renderScript)
+	// No test's context: the process serves every test of the run.
+	cmd := exec.CommandContext(context.Background(), "ruby", "-e", renderScript)
 	cmd.Stderr = os.Stderr
 	in, err := cmd.StdinPipe()
 	if err != nil {

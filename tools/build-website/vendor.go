@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path"
 	"path/filepath"
@@ -14,13 +15,13 @@ var vendorFiles = []struct{ pkg, path string }{
 }
 
 // vendor writes the vendor files into the vendor directory of site.
-func vendor(cacheDir string, packages map[string]npmPackage, site string) error {
+func vendor(ctx context.Context, cacheDir string, packages map[string]npmPackage, site string) error {
 	dir := filepath.Join(site, "vendor")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	for _, file := range vendorFiles {
-		data, err := npmFile(cacheDir, packages, file.pkg, file.path)
+		data, err := npmFile(ctx, cacheDir, packages, file.pkg, file.path)
 		if err != nil {
 			return err
 		}

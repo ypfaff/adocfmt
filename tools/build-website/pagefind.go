@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,7 +11,7 @@ import (
 // pagefind writes the Pagefind binary for this platform into cacheDir and
 // returns its path. It is written anew on every build, so a half-written copy
 // never lingers.
-func pagefind(cacheDir string, packages map[string]npmPackage) (string, error) {
+func pagefind(ctx context.Context, cacheDir string, packages map[string]npmPackage) (string, error) {
 	// Pagefind ships one package per platform, named like Go's platform
 	// except for the processor.
 	arch := map[string]string{"amd64": "x64", "arm64": "arm64"}[runtime.GOARCH]
@@ -20,7 +21,7 @@ func pagefind(cacheDir string, packages map[string]npmPackage) (string, error) {
 		binary += ".exe"
 	}
 
-	data, err := npmFile(cacheDir, packages, name, "bin/"+binary)
+	data, err := npmFile(ctx, cacheDir, packages, name, "bin/"+binary)
 	if err != nil {
 		return "", fmt.Errorf("pagefind for %s/%s: %w", runtime.GOOS, runtime.GOARCH, err)
 	}

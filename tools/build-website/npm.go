@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -46,12 +47,12 @@ func readLockfile(path string) (map[string]npmPackage, error) {
 }
 
 // npmFile returns the file at path inside the package called name.
-func npmFile(cacheDir string, packages map[string]npmPackage, name, path string) ([]byte, error) {
+func npmFile(ctx context.Context, cacheDir string, packages map[string]npmPackage, name, path string) ([]byte, error) {
 	pkg, ok := packages[name]
 	if !ok {
 		return nil, fmt.Errorf("%s pins no %s", lockfile, name)
 	}
-	tarball, err := download(cacheDir, pkg.Resolved, pkg.Integrity)
+	tarball, err := download(ctx, cacheDir, pkg.Resolved, pkg.Integrity)
 	if err != nil {
 		return nil, err
 	}

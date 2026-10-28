@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -25,19 +26,19 @@ func main() {
 	explicit := flag.String("explicit", "", "use this version instead of raising the newest tag")
 	flag.Parse()
 
-	if err := run(*bump, *explicit); err != nil {
+	if err := run(context.Background(), *bump, *explicit); err != nil {
 		log.Fatalln("error:", err)
 	}
 }
 
-func run(bump, explicit string) error {
+func run(ctx context.Context, bump, explicit string) error {
 	if (bump == "") == (explicit == "") {
 		return errors.New("exactly one of --bump and --explicit is required")
 	}
 
 	version := strings.TrimPrefix(explicit, "v")
 	if bump != "" {
-		tag, err := latestTag()
+		tag, err := latestTag(ctx)
 		if err != nil {
 			return err
 		}
@@ -55,7 +56,7 @@ func run(bump, explicit string) error {
 	}
 
 	// A tag that exists would make the release overwrite a published one.
-	exists, err := tagExists("v" + version)
+	exists, err := tagExists(ctx, "v"+version)
 	if err != nil {
 		return err
 	}
@@ -67,8 +68,8 @@ func run(bump, explicit string) error {
 	return nil
 }
 
-func latestTag() (string, error) {
-	cmd := exec.Command("git", "tag", "--list", "v[0-9]*", "--sort=-version:refname")
+func latestTag(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "tag", "--list", "v[0-9]*", "--sort=-version:refname")
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {
@@ -78,8 +79,8 @@ func latestTag() (string, error) {
 	return first, nil
 }
 
-func tagExists(tag string) (bool, error) {
-	cmd := exec.Command("git", "tag", "--list", tag)
+func tagExists(ctx context.Context, tag string) (bool, error) {
+	cmd := exec.CommandContext(ctx, "git", "tag", "--list", tag)
 	cmd.Stderr = os.Stderr
 	out, err := cmd.Output()
 	if err != nil {

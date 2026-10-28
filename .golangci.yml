@@ -51,6 +51,7 @@ linters:
     - nilerr
     - nilnesserr
     - nilnil
+    - noctx
     - reassign
     - recvcheck
     - rowserrcheck
