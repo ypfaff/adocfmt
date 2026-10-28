@@ -748,43 +748,42 @@ const calloutMarker = "<>"
 // bullet is the one non-ASCII list marker Asciidoctor knows.
 var bullet = []byte("\u2022")
 
-// numberedMarker recognizes an ordered list marker. The key is the marker
-// Asciidoctor normalizes the item to, since that is what it compares to decide
-// whether the next item continues the list or nests: 1. and 2. share a list,
-// a. after 1. does not.
+// numberedMarker recognizes an ordered list marker. The key is the first
+// marker of its series, as Asciidoctor normalizes it, so 1. and 2. share a list
+// while a. after 1. nests.
 func numberedMarker(s []byte) (int, string, bool) {
-	run := 0
-	for run < len(s) && isDigit(s[run]) {
-		run++
-	}
-	if run > 0 {
-		if run < len(s) && s[run] == '.' && followsSpace(s, run+1) {
-			return run + 1, "1.", true
-		}
-		return 0, "", false
-	}
-	for run < len(s) && bytes.IndexByte(romanDigits, s[run]) >= 0 {
-		run++
-	}
-	if run > 0 && run < len(s) && s[run] == ')' && followsSpace(s, run+1) {
+	digits := leadingRun(s, isDigit)
+	romans := leadingRun(s, isRomanDigit)
+	switch {
+	case digits > 0 && closedBy(s, digits, '.'):
+		return digits + 1, "1.", true
+	case closedBy(s, 1, '.') && isUpper(s[0]):
+		return 2, "A.", true
+	case closedBy(s, 1, '.') && isLower(s[0]):
+		return 2, "a.", true
+	case romans > 0 && closedBy(s, romans, ')'):
 		// Asciidoctor styles a mixed-case run by the letter before the paren.
-		if isUpper(s[run-1]) {
-			return run + 1, "I)", true
+		if isUpper(s[romans-1]) {
+			return romans + 1, "I)", true
 		}
-		return run + 1, "i)", true
-	}
-	if len(s) > 1 && s[1] == '.' && followsSpace(s, 2) {
-		switch {
-		case isUpper(s[0]):
-			return 2, "A.", true
-		case isLower(s[0]):
-			return 2, "a.", true
-		}
+		return romans + 1, "i)", true
 	}
 	return 0, "", false
 }
 
-var romanDigits = []byte("IVXivx")
+func leadingRun(s []byte, in func(byte) bool) int {
+	run := 0
+	for run < len(s) && in(s[run]) {
+		run++
+	}
+	return run
+}
+
+func closedBy(s []byte, at int, delim byte) bool {
+	return at < len(s) && s[at] == delim && followsSpace(s, at+1)
+}
+
+func isRomanDigit(c byte) bool { return strings.IndexByte("IVXivx", c) >= 0 }
 
 func isDigit(c byte) bool { return c >= '0' && c <= '9' }
 
