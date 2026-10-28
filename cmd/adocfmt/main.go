@@ -17,7 +17,7 @@ import (
 	"github.com/ypfaff/adocfmt/internal/format"
 )
 
-// What the release pipeline stamps in with -ldflags -X
+// What the release pipeline stamps in with -ldflags -X.
 var (
 	version = "(development)"
 	commit  string

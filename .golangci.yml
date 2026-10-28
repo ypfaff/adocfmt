@@ -87,6 +87,8 @@ linters:
     - dupl
     - dupword
     - gochecknoinits
+    - godoclint
+    - godot
     - gomoddirectives
     - goprintffuncname
     - iface
@@ -122,6 +124,12 @@ linters:
       comments-only: true
     funlen:
       lines: -1  # golines wraps long lines, so count statements only
+    godoclint:
+      default: none
+      enable:
+        - no-unused-link
+        - require-stdlib-doclink
+        - single-pkg-doc
     gosec:
       excludes:
         - G104  # duplicate of errcheck
@@ -190,3 +198,6 @@ linters:
         linters:
           - gosec
         text: G114|G301|G306|G703  # dev tools, not shipped
+      - linters:
+          - godot
+        source: '^\s*// Ruby: '  # quotes the Asciidoctor source it mirrors

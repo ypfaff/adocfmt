@@ -59,7 +59,7 @@ func TestFormatRejects(t *testing.T) {
 }
 
 // TestRefusalWithoutFindings pins that the exported type answers rather than
-// panics when it holds nothing, which errors.As lets a caller reach.
+// panics when it holds nothing, which [errors.As] lets a caller reach.
 func TestRefusalWithoutFindings(t *testing.T) {
 	t.Parallel()
 
