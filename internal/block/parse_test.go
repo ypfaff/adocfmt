@@ -2298,7 +2298,11 @@ func TestItemText(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			item := doc.Nodes[0].(*tree.List).Items[0]
+			list, ok := doc.Nodes[0].(*tree.List)
+			if !ok {
+				t.Fatalf("got a %T, want a list", doc.Nodes[0])
+			}
+			item := list.Items[0]
 			if got := string(doc.Src[item.Text.Start:item.Text.End]); got != test.want {
 				t.Errorf("got %q, want %q", got, test.want)
 			}
