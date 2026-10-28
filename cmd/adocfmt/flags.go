@@ -57,7 +57,7 @@ With no path adocfmt reads stdin and writes the result to stdout.
 `
 
 // usage goes to stdout, because a reader asked for it. A short and a long name
-// are one entry, which flag.PrintDefaults cannot do.
+// are one entry, which [flag.PrintDefaults] cannot do.
 func usage(w io.Writer) {
 	_, _ = io.WriteString(w, usageHeader)
 	for _, entry := range (&options{}).entries() {

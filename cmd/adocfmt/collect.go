@@ -18,7 +18,7 @@ var extensions = []string{".adoc", ".asciidoc"}
 // A path it cannot read is reported and passed over, the way a file that cannot
 // be formatted is, so one bad path does not hide the rest of the run.
 //
-// os.Stat follows a symlink, so a link named on the command line is collected
+// [os.Stat] follows a symlink, so a link named on the command line is collected
 // like the file it points at.
 func collect(paths []string, stderr io.Writer) ([]string, int) {
 	var files []string
@@ -42,7 +42,7 @@ func collect(paths []string, stderr io.Writer) ([]string, int) {
 }
 
 // walk lists the AsciiDoc files below dir, in path order and under dir's own
-// name. A link inside the tree is passed over, which is what fs.WalkDir does
+// name. A link inside the tree is passed over, which is what [fs.WalkDir] does
 // anyway: a link is no regular file, so the walk reaches neither the directory
 // behind it nor the file.
 func walk(dir string, stderr io.Writer) ([]string, int) {

@@ -53,9 +53,9 @@ func TestWriteReplacesTheFile(t *testing.T) {
 
 // TestWriteKeepsTheMode pins that the file keeps the mode it had. The rename
 // swaps the inode, so without carrying it over the file would come back at the
-// 0600 os.CreateTemp gives a temporary file. The bits above the permissions go
-// the same way, and a formatter that disarms a setuid script is worse than one
-// that refuses to touch it.
+// 0600 [os.CreateTemp] gives a temporary file. The bits above the permissions
+// go the same way, and a formatter that disarms a setuid script is worse than
+// one that refuses to touch it.
 func TestWriteKeepsTheMode(t *testing.T) {
 	t.Parallel()
 
