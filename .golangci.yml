@@ -87,6 +87,7 @@ linters:
     - dupl
     - dupword
     - gochecknoinits
+    - gocritic
     - godoclint
     - godot
     - gomoddirectives
@@ -124,6 +125,28 @@ linters:
       comments-only: true
     funlen:
       lines: -1  # golines wraps long lines, so count statements only
+    gocritic:
+      enable-all: true
+      disabled-checks:
+        - builtinShadow      # duplicate of predeclared
+        - builtinShadowDecl  # duplicate of predeclared
+        - deferInLoop        # duplicate of revive defer
+        - dupImport          # duplicate of staticcheck ST1019
+        - exposedSyncMutex   # duplicate of embeddedstructfieldcheck forbid-mutex
+        - hugeParam          # micro-optimization, pointers change semantics
+        - ifElseChain        # duplicate of staticcheck QF1003
+        - octalLiteral       # duplicate of gofumpt
+        - paramTypeCombine   # duplicate of gofumpt group-params
+        - preferFprint       # duplicate of staticcheck QF1012
+        - rangeValCopy       # micro-optimization
+        - redundantSprint    # duplicate of perfsprint and staticcheck S1025
+        - unnamedResult      # pushes towards named results
+        - whyNoLint          # duplicate of nolintlint
+      settings:
+        captLocal:
+          paramsOnly: false
+        underef:
+          skipRecvDeref: false
     godoclint:
       default: none
       enable:
@@ -199,5 +222,6 @@ linters:
           - gosec
         text: G114|G301|G306|G703  # dev tools, not shipped
       - linters:
+          - gocritic
           - godot
         source: '^\s*// Ruby: '  # quotes the Asciidoctor source it mirrors

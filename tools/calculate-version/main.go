@@ -17,7 +17,7 @@ import (
 	"strings"
 )
 
-var semver = regexp.MustCompile(`^[0-9]+\.[0-9]+\.[0-9]+$`)
+var semver = regexp.MustCompile(`^\d+\.\d+\.\d+$`)
 
 func main() {
 	log.SetFlags(0)
