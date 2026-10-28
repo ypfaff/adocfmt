@@ -335,7 +335,12 @@ func headingShape(s []byte, start int) (shape, bool) {
 		return shape{}, false
 	}
 	end := trimTrailingMarker(s[at:], s[:level]) + at
-	return shape{kind: shapeHeading, char: s[0], level: level - 1, span: tree.Span{Start: start + at, End: start + end}}, true
+	return shape{
+		kind:  shapeHeading,
+		char:  s[0],
+		level: level - 1,
+		span:  tree.Span{Start: start + at, End: start + end},
+	}, true
 }
 
 // trimTrailingMarker returns the length of the title without the closing

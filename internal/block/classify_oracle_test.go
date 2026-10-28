@@ -66,7 +66,10 @@ func TestClassifyAgreesWithAsciidoctor(t *testing.T) {
 	}
 	pairs := slices.Collect(maps.Keys(disagree))
 	slices.SortFunc(pairs, func(a, b pair) int {
-		return cmp.Or(len(disagree[b])-len(disagree[a]), strings.Compare(a.asciidoctor+a.classify, b.asciidoctor+b.classify))
+		return cmp.Or(
+			len(disagree[b])-len(disagree[a]),
+			strings.Compare(a.asciidoctor+a.classify, b.asciidoctor+b.classify),
+		)
 	})
 	for _, p := range pairs {
 		examples := disagree[p][:min(5, len(disagree[p]))]

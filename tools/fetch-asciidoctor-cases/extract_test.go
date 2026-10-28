@@ -61,7 +61,10 @@ func TestFileName(t *testing.T) {
 		{"Should Parse A Block", "should-parse-a-block"},
 		{"a -- b", "a-b"},
 		{"...", "case"},
-		{"an extremely long test name that runs past the limit the file name allows", "an-extremely-long-test-name-that-runs-past-the-limit-the-fil"},
+		{
+			"an extremely long test name that runs past the limit the file name allows",
+			"an-extremely-long-test-name-that-runs-past-the-limit-the-fil",
+		},
 	}
 	for _, test := range tests {
 		if got := fileName(test.in); got != test.want {

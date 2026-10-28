@@ -74,7 +74,10 @@ func TestBlockRoles(t *testing.T) {
 		var src []byte
 		var meta []tree.Meta
 		for _, line := range test.lines {
-			meta = append(meta, tree.Meta{Kind: tree.MetaAttributes, Lines: tree.Span{Start: len(src), End: len(src) + len(line)}})
+			meta = append(
+				meta,
+				tree.Meta{Kind: tree.MetaAttributes, Lines: tree.Span{Start: len(src), End: len(src) + len(line)}},
+			)
 			src = append(src, line...)
 		}
 		if got := blockRoles(src, meta); !slices.Equal(got, test.want) {

@@ -28,23 +28,33 @@ func TestCheck(t *testing.T) {
 		},
 		{
 			message: "Fix the parser",
-			want:    []string{`the subject "Fix the parser" is not of the form type(scope)!: description, in lowercase`},
+			want: []string{
+				`the subject "Fix the parser" is not of the form type(scope)!: description, in lowercase`,
+			},
 		},
 		{
 			message: "feat(Block): add a rule",
-			want:    []string{`the subject "feat(Block): add a rule" is not of the form type(scope)!: description, in lowercase`},
+			want: []string{
+				`the subject "feat(Block): add a rule" is not of the form type(scope)!: description, in lowercase`,
+			},
 		},
 		{
 			message: "feat:  Add a rule",
-			want:    []string{`the subject "feat:  Add a rule" is not of the form type(scope)!: description, in lowercase`},
+			want: []string{
+				`the subject "feat:  Add a rule" is not of the form type(scope)!: description, in lowercase`,
+			},
 		},
 		{
 			message: "fixup! feat: add a rule",
-			want:    []string{`the subject "fixup! feat: add a rule" is not of the form type(scope)!: description, in lowercase`},
+			want: []string{
+				`the subject "fixup! feat: add a rule" is not of the form type(scope)!: description, in lowercase`,
+			},
 		},
 		{
 			message: "feature: add a rule",
-			want:    []string{`the type "feature" is none of build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test`},
+			want: []string{
+				`the type "feature" is none of build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test`,
+			},
 		},
 		{
 			message: "feat: Add a rule",

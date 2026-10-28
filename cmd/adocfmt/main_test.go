@@ -136,10 +136,13 @@ func TestRun(t *testing.T) {
 			stderr: "--write needs a path",
 		},
 		{
-			name:   "a refused document names its file and line per finding",
-			args:   []string{refused},
-			code:   exitError,
-			stderr: fmt.Sprintf("%[1]s:1: conditional region has no endif\n%[1]s:3: block has no closing delimiter\n", refused),
+			name: "a refused document names its file and line per finding",
+			args: []string{refused},
+			code: exitError,
+			stderr: fmt.Sprintf(
+				"%[1]s:1: conditional region has no endif\n%[1]s:3: block has no closing delimiter\n",
+				refused,
+			),
 		},
 		{
 			name:   "a rejected source carries no line, so it gets the name alone",

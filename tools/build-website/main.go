@@ -78,9 +78,11 @@ func run(serve bool) error {
 
 	// A warning fails the build, so a missing layout or a broken page cannot
 	// slip through to the deployed site. Not --quiet: it drops the errors too.
-	args := []string{"tool", "-modfile=tools/hugo/go.mod", "hugo", "build",
+	args := []string{
+		"tool", "-modfile=tools/hugo/go.mod", "hugo", "build",
 		"--source", siteDir, "--destination", site,
-		"--minify", "--panicOnWarning"}
+		"--minify", "--panicOnWarning",
+	}
 	if serve {
 		args = append(args, "--baseURL", fmt.Sprintf("http://%s/%s/", address, basePath))
 	}

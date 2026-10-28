@@ -14,9 +14,14 @@ func TestCases(t *testing.T) {
 		want  []string
 	}{
 		{
-			name:  "one case per directory, nested directories included",
-			files: []string{"simple/input.adoc", "simple/golden.adoc", "lists/nested/input.adoc", "lists/nested/golden.adoc"},
-			want:  []string{"lists/nested", "simple"},
+			name: "one case per directory, nested directories included",
+			files: []string{
+				"simple/input.adoc",
+				"simple/golden.adoc",
+				"lists/nested/input.adoc",
+				"lists/nested/golden.adoc",
+			},
+			want: []string{"lists/nested", "simple"},
 		},
 		{
 			name:  "a half written case still counts",
