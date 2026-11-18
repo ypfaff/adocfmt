@@ -1,0 +1,6 @@
+# Only what the extension runs goes into the VSIX. out/*.js leaves out the
+# tests in out/test.
+**
+!package.json
+!out/*.js
+!bin/**

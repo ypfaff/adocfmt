@@ -1,0 +1,59 @@
+{
+  "name": "adocfmt",
+  "displayName": "adocfmt",
+  "description": "Formats AsciiDoc files with adocfmt, without changing what they render.",
+  "version": "0.0.0",
+  "publisher": "ypfaff",
+  "license": "Apache-2.0",
+  "repository": "https://github.com/ypfaff/adocfmt",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onLanguage:asciidoc"
+  ],
+  "main": "./out/extension.js",
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "contributes": {
+    "languages": [
+      {
+        "id": "asciidoc",
+        "aliases": [
+          "AsciiDoc"
+        ],
+        "extensions": [
+          ".adoc",
+          ".asciidoc"
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "adocfmt",
+      "properties": {
+        "adocfmt.path": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path of an adocfmt binary to run instead of the bundled one."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "build-adocfmt": "go build -trimpath -o bin/ ../cmd/adocfmt",
+    "test": "npm run build && node --test \"out/test/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "20.19.43",
+    "@types/vscode": "1.90.0",
+    "typescript": "7.0.2"
+  }
+}
