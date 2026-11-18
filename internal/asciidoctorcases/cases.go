@@ -5,8 +5,10 @@
 package asciidoctorcases
 
 import (
+	"context"
 	"fmt"
 	"io/fs"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -22,6 +24,16 @@ const Dir = "testdata/asciidoctor-cases"
 // lib/asciidoctor/rx.rb and lib/asciidoctor.rb, because the classification
 // check sees only the lines the cases hold.
 const Version = "2.0.26"
+
+// CheckGem fails when Ruby cannot load the Asciidoctor gem. A Ruby upgrade
+// leaves the new Ruby without it, and every test that asks Asciidoctor then
+// fails on its own.
+func CheckGem(ctx context.Context) error {
+	if err := exec.CommandContext(ctx, "ruby", "-e", "require 'asciidoctor'").Run(); err != nil {
+		return fmt.Errorf("ruby cannot load the asciidoctor gem (%w), install it with: mise run setup", err)
+	}
+	return nil
+}
 
 // Files returns every case below root, in path order. The README the generator
 // leaves next to them is not a case.

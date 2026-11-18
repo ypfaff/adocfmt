@@ -4,6 +4,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 )
 
 func TestNormalizeHTML(t *testing.T) {
@@ -43,6 +45,10 @@ func TestComments(t *testing.T) {
 // such as by dropping a comment, and asserts that the matching check reports it.
 func TestChecksCatchCorruption(t *testing.T) {
 	t.Parallel()
+
+	if err := asciidoctorcases.CheckGem(t.Context()); err != nil {
+		t.Fatal(err)
+	}
 
 	const src = "= Title\nAnna Muster\n\n// a comment\nSome prose.\n\n----\nkeep   these   spaces\n----\n"
 

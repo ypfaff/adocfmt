@@ -1,9 +1,9 @@
 package renderequivalence
 
 import (
-	"os/exec"
 	"testing"
 
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/format"
 	"github.com/ypfaff/adocfmt/internal/testdocs"
 )
@@ -65,8 +65,8 @@ func TestFormatIsRenderEquivalent(t *testing.T) {
 	if testing.Short() {
 		t.Skip("renders every document with Asciidoctor")
 	}
-	if _, err := exec.LookPath("ruby"); err != nil {
-		t.Fatal("ruby is not on the PATH")
+	if err := asciidoctorcases.CheckGem(t.Context()); err != nil {
+		t.Fatal(err)
 	}
 
 	for _, doc := range testdocs.Documents(t) {

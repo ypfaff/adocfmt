@@ -38,8 +38,8 @@ func TestClassifyAgreesWithAsciidoctor(t *testing.T) {
 	if testing.Short() {
 		t.Skip("reads every line with Asciidoctor")
 	}
-	if _, err := exec.LookPath("ruby"); err != nil {
-		t.Fatal("ruby is not on the PATH")
+	if err := asciidoctorcases.CheckGem(t.Context()); err != nil {
+		t.Fatal(err)
 	}
 
 	lines, err := oracleLines()
