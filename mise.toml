@@ -2,7 +2,7 @@
 "github:ypfaff/adocfmt" = "0.8.0"
 # The same as the toolchain line in go.mod; see the go rule in
 # .github/renovate.json5.
-go = "1.27.3"
+go = "1.27.4"
 golangci-lint = "2.15.0"
 goreleaser = "2.18.3"
 java = "temurin-25.0.5+8.0.LTS"
