@@ -17,6 +17,11 @@
   semanticCommitType: 'chore',
   semanticCommitScope: 'deps',
 
+  vulnerabilityAlerts: {
+    commitMessageSuffix: '',
+    labels: ['security'],
+  },
+
   // The status checks require an up-to-date branch, so a pull request left
   // behind by a merge is rebased and ready to merge again.
   rebaseWhen: 'behind-base-branch',
