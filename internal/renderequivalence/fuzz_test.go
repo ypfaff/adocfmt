@@ -1,9 +1,9 @@
 package renderequivalence
 
 import (
-	"os/exec"
 	"testing"
 
+	"github.com/ypfaff/adocfmt/internal/asciidoctorcases"
 	"github.com/ypfaff/adocfmt/internal/format"
 	"github.com/ypfaff/adocfmt/internal/testdocs"
 )
@@ -17,8 +17,8 @@ func FuzzFormatIsRenderEquivalent(f *testing.F) {
 	if testing.Short() {
 		f.Skip("renders every input with Asciidoctor")
 	}
-	if _, err := exec.LookPath("ruby"); err != nil {
-		f.Fatal("ruby is not on the PATH")
+	if err := asciidoctorcases.CheckGem(f.Context()); err != nil {
+		f.Fatal(err)
 	}
 
 	for _, doc := range testdocs.Documents(f) {
