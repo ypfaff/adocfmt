@@ -6,7 +6,7 @@ import org.jetbrains.intellij.platform.gradle.tasks.PrepareSandboxTask
 
 plugins {
     java
-    id("org.jetbrains.intellij.platform") version "2.19.0"
+    id("org.jetbrains.intellij.platform") version "2.20.1"
     id("com.diffplug.spotless") version "8.11.0"
 }
 
