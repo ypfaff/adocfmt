@@ -28,7 +28,7 @@ jobs:
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
-          version: 2026.10.15
+          version: 2026.11.6
 
       # Without a Go version, setup-go takes mise's Go and only adds its cache
       # of modules and builds.
@@ -64,7 +64,7 @@ jobs:
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
-          version: 2026.10.15
+          version: 2026.11.6
 
       - name: Check the formatting of the documentation
         run: mise run check-docs
@@ -80,7 +80,7 @@ jobs:
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
-          version: 2026.10.15
+          version: 2026.11.6
 
       # The checkout is GitHub's merge of the pull request into its base
       # branch, so its first parent is the base and its second the pull
@@ -103,7 +103,7 @@ jobs:
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
-          version: 2026.10.15
+          version: 2026.11.6
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
 
@@ -168,7 +168,7 @@ jobs:
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
-          version: 2026.10.15
+          version: 2026.11.6
 
       # The tests run the adocfmt binary that the build makes with go build.
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -194,7 +194,7 @@ jobs:
 
       - uses: jdx/mise-action@fc42bcc7ddbf51124c30f95a877a0c5168a3bfde # v5.2.1
         with:
-          version: 2026.10.15
+          version: 2026.11.6
 
       - name: Check the GoReleaser configuration
         run: goreleaser check
