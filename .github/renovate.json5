@@ -11,7 +11,7 @@
   // proposing one. Security fixes skip the wait.
   minimumReleaseAge: '7 days',
   // Lists the updates still waiting, the open ones and the dependencies found.
-  dependencyDashboard: true,
+  dependencyDashboard: { enabled: true },
 
   semanticCommits: 'enabled',
   semanticCommitType: 'chore',
