@@ -245,7 +245,7 @@ linters:
       - path: ^tools/
         linters:
           - gosec
-        text: G114|G301|G306|G703  # dev tools, not shipped
+        text: G114|G301|G306|G703|G704  # dev tools, not shipped
       - linters:
           - gocritic
           - godot
