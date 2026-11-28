@@ -12,6 +12,14 @@
   minimumReleaseAge: '7 days',
   // Lists the updates still waiting, the open ones and the dependencies found.
   dependencyDashboard: { enabled: true },
+  // The java rule goes ahead without release dates on purpose, so the warning
+  // Renovate logs for it is no problem to list on the dashboard.
+  logLevelRemap: [
+    {
+      matchMessage: '/^Some .+ did not have a releaseTimestamp, .+timestamp-optional/',
+      newLogLevel: 'info',
+    },
+  ],
 
   semanticCommits: 'enabled',
   semanticCommitType: 'chore',
